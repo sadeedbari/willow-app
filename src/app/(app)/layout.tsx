@@ -46,6 +46,17 @@ const NAV = [
       </>
     ),
   },
+  {
+    href: "/staff",
+    label: "Staff",
+    color: "bg-hue-staff",
+    icon: (
+      <>
+        <circle cx="12" cy="8" r="3.6" />
+        <path d="M5 20c0-3.9 3.1-6.5 7-6.5s7 2.6 7 6.5" />
+      </>
+    ),
+  },
 ];
 
 function initialsOf(name: string) {

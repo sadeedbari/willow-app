@@ -20,6 +20,8 @@
   --hue-clients-tint: #fbeee8;
   --hue-notes: #9e8fd6;
   --hue-notes-tint: #f1edfa;
+  --hue-staff: #5fa97b;
+  --hue-staff-tint: #e9f4ec;
 
   --ok: #2f8f63;
   --ok-tint: #e7f5ec;
@@ -50,6 +52,8 @@
   --color-hue-clients-tint: var(--hue-clients-tint);
   --color-hue-notes: var(--hue-notes);
   --color-hue-notes-tint: var(--hue-notes-tint);
+  --color-hue-staff: var(--hue-staff);
+  --color-hue-staff-tint: var(--hue-staff-tint);
 
   --color-ok: var(--ok);
   --color-ok-tint: var(--ok-tint);

@@ -14,9 +14,15 @@ export async function login(formData: FormData) {
     redirect(`/login?error=${encodeURIComponent(error.message)}`);
   }
 
-  // Route based on whether this user has finished the practice-signup
-  // (bootstrap) step yet, not just whether they're authenticated.
+  // Route based on account state, not just whether they're authenticated:
+  // already on a practice -> dashboard; invited to join one -> accept it
+  // (never let an invited user accidentally found a new practice instead);
+  // otherwise -> onboarding to create their own.
   const { data: practiceId } = await supabase.rpc("my_practice_id");
+  if (practiceId) {
+    redirect("/dashboard");
+  }
 
-  redirect(practiceId ? "/dashboard" : "/onboarding");
+  const { data: invitation } = await supabase.rpc("get_my_pending_invitation").maybeSingle();
+  redirect(invitation ? "/accept-invite" : "/onboarding");
 }
