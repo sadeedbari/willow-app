@@ -57,6 +57,18 @@ const NAV = [
       </>
     ),
   },
+  {
+    href: "/billing",
+    label: "Billing",
+    color: "bg-brand-ink",
+    adminOnly: true,
+    icon: (
+      <>
+        <rect x="2.5" y="5.5" width="19" height="14" rx="2.5" />
+        <path d="M2.5 10h19M6 15h4" />
+      </>
+    ),
+  },
 ];
 
 function initialsOf(name: string) {
@@ -104,7 +116,7 @@ export default async function AppLayout({
         </div>
 
         <div className="flex flex-1 flex-col gap-1">
-          {NAV.map((item) => (
+          {NAV.filter((item) => !item.adminOnly || staff.role === "practice_admin").map((item) => (
             <Link
               key={item.href}
               href={item.href}
