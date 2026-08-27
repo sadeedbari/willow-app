@@ -58,6 +58,17 @@ const NAV = [
     ),
   },
   {
+    href: "/invoices",
+    label: "Invoices",
+    color: "bg-warn",
+    icon: (
+      <>
+        <path d="M7 3h10a1 1 0 0 1 1 1v16l-3-2-2 2-2-2-2 2-3-2V4a1 1 0 0 1 1-1Z" />
+        <path d="M9 8h6M9 12h6" />
+      </>
+    ),
+  },
+  {
     href: "/billing",
     label: "Billing",
     color: "bg-brand-ink",

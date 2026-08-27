@@ -37,6 +37,7 @@ export default async function ClientDetailPage({
 
   const isOwnClient = client.assigned_staff_id === staff.id;
   const canSeeNotes = staff.role === "clinician" && isOwnClient;
+  const canManageInvoices = staff.role === "practice_admin" || staff.role === "billing_admin";
 
   const { data: notes } = canSeeNotes
     ? await supabase
@@ -45,6 +46,13 @@ export default async function ClientDetailPage({
         .eq("client_id", id)
         .order("session_date", { ascending: false })
     : { data: null };
+
+  const { data: invoices } = await supabase
+    .from("invoices")
+    .select("id, invoice_number, status, total_cents, amount_paid_cents")
+    .eq("client_id", id)
+    .order("issue_date", { ascending: false })
+    .limit(5);
 
   return (
     <div>
@@ -132,6 +140,53 @@ export default async function ClientDetailPage({
             <p className="text-[13px] text-text-3">No upcoming appointments.</p>
           )}
         </div>
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="text-[13px] font-bold text-foreground">Invoices</div>
+          <div className="flex items-center gap-3">
+            {invoices?.length ? (
+              <Link href="/invoices" className="text-[12px] font-semibold text-brand-ink">
+                View all
+              </Link>
+            ) : null}
+            {canManageInvoices && (
+              <Link
+                href={`/invoices/new?clientId=${client.id}`}
+                className="text-[12px] font-semibold text-brand-ink"
+              >
+                + New invoice
+              </Link>
+            )}
+          </div>
+        </div>
+        {invoices?.length ? (
+          <ul className="space-y-2 text-[13.4px]">
+            {invoices.map((inv) => (
+              <li key={inv.id}>
+                <Link
+                  href={`/invoices/${inv.id}`}
+                  className="flex items-center justify-between border-b border-border pb-2 last:border-0"
+                >
+                  <span className="text-foreground">
+                    INV-{String(inv.invoice_number).padStart(4, "0")}
+                  </span>
+                  <span className="text-text-2">
+                    ${(inv.total_cents / 100).toFixed(2)}
+                    {inv.status !== "draft" && inv.status !== "void" && inv.total_cents > inv.amount_paid_cents && (
+                      <span className="ml-2 text-warn">
+                        (${((inv.total_cents - inv.amount_paid_cents) / 100).toFixed(2)} due)
+                      </span>
+                    )}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-[13px] text-text-3">No invoices yet.</p>
+        )}
       </div>
 
       {canSeeNotes && (
