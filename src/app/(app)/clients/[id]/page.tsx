@@ -3,6 +3,7 @@ import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { sendConsentForm } from "./consent-actions";
+import { inviteToPortal } from "./portal-actions";
 
 const STATUS_LABEL: Record<string, string> = {
   active: "Active",
@@ -37,7 +38,7 @@ export default async function ClientDetailPage({
 
   const { data: client } = await supabase
     .from("clients")
-    .select("id, full_name, date_of_birth, phone, email, presenting_concern, status, payer, balance_cents, assigned_staff_id")
+    .select("id, full_name, date_of_birth, phone, email, presenting_concern, status, payer, balance_cents, assigned_staff_id, portal_user_id")
     .eq("id", id)
     .single();
 
@@ -55,6 +56,8 @@ export default async function ClientDetailPage({
   const canSeeNotes = staff.role === "clinician" && isOwnClient;
   const canManageInvoices = staff.role === "practice_admin" || staff.role === "billing_admin";
   const canSendConsent = staff.role === "practice_admin" || staff.role === "front_desk";
+  const canInviteToPortal = staff.role === "practice_admin" || staff.role === "front_desk";
+  const canMessage = staff.role === "practice_admin" || (staff.role === "clinician" && isOwnClient);
 
   const { data: notes } = canSeeNotes
     ? await supabase
@@ -239,6 +242,45 @@ export default async function ClientDetailPage({
           <p className="text-[13px] text-text-3">No invoices yet.</p>
         )}
       </div>
+
+      {canMessage && (
+        <div className="mt-6 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-[13px] font-bold text-foreground">Messages</div>
+              <div className="mt-1 text-[12px] text-text-3">
+                Client portal:{" "}
+                {client.portal_user_id ? (
+                  <span className="font-semibold text-ok">Active</span>
+                ) : (
+                  <span className="text-text-3">Not invited yet</span>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {!client.portal_user_id && canInviteToPortal && (
+                <form action={inviteToPortal}>
+                  <input type="hidden" name="clientId" value={client.id} />
+                  <button
+                    type="submit"
+                    disabled={!client.email}
+                    title={client.email ? undefined : "Add an email address first"}
+                    className="rounded-lg border border-border px-3 py-1.5 text-[12px] font-semibold text-text-2 transition hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Invite to portal
+                  </button>
+                </form>
+              )}
+              <Link
+                href={`/messages/${client.id}`}
+                className="rounded-lg bg-brand px-3.5 py-1.5 text-[12px] font-semibold text-white transition hover:bg-brand-ink"
+              >
+                Open conversation
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="mt-6 rounded-2xl border border-border bg-surface p-5 shadow-sm">
         <div className="mb-3 text-[13px] font-bold text-foreground">Consent forms</div>
