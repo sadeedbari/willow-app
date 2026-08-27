@@ -2,6 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { sendConsentForm } from "./consent-actions";
 
 const STATUS_LABEL: Record<string, string> = {
   active: "Active",
@@ -10,12 +11,27 @@ const STATUS_LABEL: Record<string, string> = {
   waitlisted: "Waitlisted",
 };
 
+const CONSENT_STATUS_STYLE: Record<string, string> = {
+  pending: "bg-warn-tint text-warn",
+  signed: "bg-ok-tint text-ok",
+  expired: "bg-surface-2 text-text-3",
+};
+
+const CONSENT_STATUS_LABEL: Record<string, string> = {
+  pending: "Awaiting signature",
+  signed: "Signed",
+  expired: "Expired",
+};
+
 export default async function ClientDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string; consentToken?: string }>;
 }) {
   const { id } = await params;
+  const { error, consentToken } = await searchParams;
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
@@ -38,6 +54,7 @@ export default async function ClientDetailPage({
   const isOwnClient = client.assigned_staff_id === staff.id;
   const canSeeNotes = staff.role === "clinician" && isOwnClient;
   const canManageInvoices = staff.role === "practice_admin" || staff.role === "billing_admin";
+  const canSendConsent = staff.role === "practice_admin" || staff.role === "front_desk";
 
   const { data: notes } = canSeeNotes
     ? await supabase
@@ -54,11 +71,45 @@ export default async function ClientDetailPage({
     .order("issue_date", { ascending: false })
     .limit(5);
 
+  const { data: consentForms } = await supabase
+    .from("consent_forms")
+    .select("id, form_type, status, signed_at, access_token")
+    .eq("client_id", id)
+    .order("created_at", { ascending: false });
+
+  const { data: templates } = canSendConsent
+    ? await supabase
+        .from("consent_form_templates")
+        .select("id, title")
+        .eq("active", true)
+        .order("title")
+    : { data: null };
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const sentForm = consentToken ? consentForms?.find((f) => f.access_token === consentToken) : null;
+
   return (
     <div>
       <Link href="/clients" className="text-[13px] font-semibold text-brand-ink">
         ← Back to clients
       </Link>
+
+      {error && (
+        <p className="mt-4 rounded-lg bg-bad-tint px-3 py-2 text-[13px] text-bad">
+          {decodeURIComponent(error)}
+        </p>
+      )}
+
+      {sentForm && (
+        <div className="mt-4 rounded-lg bg-ok-tint px-3 py-2.5 text-[13px] text-ok">
+          <div className="font-semibold">
+            &ldquo;{sentForm.form_type}&rdquo; created. Share this link with the client to sign:
+          </div>
+          <div className="mt-1 select-all break-all rounded bg-surface px-2 py-1 font-mono text-[12px] text-foreground">
+            {siteUrl}/consent/{sentForm.access_token}
+          </div>
+        </div>
+      )}
 
       <div className="mt-3 flex items-start justify-between">
         <div>
@@ -186,6 +237,69 @@ export default async function ClientDetailPage({
           </ul>
         ) : (
           <p className="text-[13px] text-text-3">No invoices yet.</p>
+        )}
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+        <div className="mb-3 text-[13px] font-bold text-foreground">Consent forms</div>
+        {consentForms?.length ? (
+          <ul className="space-y-2 text-[13.4px]">
+            {consentForms.map((f) => (
+              <li key={f.id} className="flex items-center justify-between border-b border-border pb-2 last:border-0">
+                <span className="text-foreground">{f.form_type}</span>
+                <span className="flex items-center gap-2">
+                  {f.status === "pending" && (
+                    <span className="select-all font-mono text-[11px] text-text-3">
+                      {siteUrl}/consent/{f.access_token}
+                    </span>
+                  )}
+                  <span
+                    className={`inline-flex rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${CONSENT_STATUS_STYLE[f.status]}`}
+                  >
+                    {CONSENT_STATUS_LABEL[f.status]}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-[13px] text-text-3">No consent forms sent yet.</p>
+        )}
+
+        {canSendConsent && (
+          <form action={sendConsentForm} className="mt-4 flex items-end gap-2 border-t border-border pt-4">
+            <input type="hidden" name="clientId" value={client.id} />
+            <div className="flex-1">
+              <label className="block text-[12px] font-semibold text-text-2">Send a form</label>
+              <select
+                name="templateId"
+                required
+                defaultValue=""
+                className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              >
+                <option value="" disabled>
+                  {templates?.length ? "Select a template" : "No active templates — add one first"}
+                </option>
+                {templates?.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              type="submit"
+              disabled={!templates?.length}
+              className="rounded-lg bg-brand px-3.5 py-2 text-[13px] font-semibold text-white transition hover:bg-brand-ink disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Send
+            </button>
+          </form>
+        )}
+        {canSendConsent && (
+          <Link href="/consent-templates" className="mt-2 inline-block text-[11.5px] font-semibold text-brand-ink">
+            Manage templates
+          </Link>
         )}
       </div>
 

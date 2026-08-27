@@ -69,6 +69,18 @@ const NAV = [
     ),
   },
   {
+    href: "/consent-templates",
+    label: "Consent Forms",
+    color: "bg-ok",
+    adminOnly: true,
+    icon: (
+      <>
+        <path d="M9 12.5l2 2 4-4.5" />
+        <path d="M7 3h10a1 1 0 0 1 1 1v16l-3-2-2 2-2-2-2 2-3-2V4a1 1 0 0 1 1-1Z" />
+      </>
+    ),
+  },
+  {
     href: "/billing",
     label: "Billing",
     color: "bg-brand-ink",
