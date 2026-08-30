@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { getCurrentClient } from "@/utils/supabase/current-client";
+import { sendEmail } from "@/utils/resend/send";
 
 export async function portalLogout() {
   const supabase = await createClient();
@@ -50,6 +51,16 @@ export async function sendMessageAsClient(formData: FormData) {
     .from("message_threads")
     .update({ client_last_read_at: new Date().toISOString() })
     .eq("id", threadId);
+
+  const { data: recipientEmail } = await supabase.rpc("get_my_message_recipient_email");
+  if (recipientEmail) {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+    await sendEmail({
+      to: recipientEmail,
+      subject: `New secure message from ${client.fullName}`,
+      html: `<p>You have a new secure message from ${client.fullName}.</p><p><a href="${siteUrl}/messages/${client.id}">Log in to view and reply</a></p>`,
+    });
+  }
 
   redirect("/portal");
 }

@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
+import { sendEmail } from "@/utils/resend/send";
 
 async function findOrCreateThread(clientId: string, practiceId: string) {
   const supabase = await createClient();
@@ -54,6 +55,21 @@ export async function sendMessageAsStaff(formData: FormData) {
     .from("message_threads")
     .update({ staff_last_read_at: new Date().toISOString() })
     .eq("id", threadId);
+
+  const { data: clientRow } = await supabase
+    .from("clients")
+    .select("email, portal_user_id")
+    .eq("id", clientId)
+    .single();
+
+  if (clientRow?.email && clientRow.portal_user_id) {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+    await sendEmail({
+      to: clientRow.email,
+      subject: `New secure message from ${staff.practiceName}`,
+      html: `<p>You have a new secure message from ${staff.practiceName}.</p><p><a href="${siteUrl}/portal">Log in to view and reply</a></p>`,
+    });
+  }
 
   redirect(`/messages/${clientId}`);
 }
