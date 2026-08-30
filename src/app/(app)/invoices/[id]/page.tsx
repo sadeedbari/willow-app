@@ -58,6 +58,12 @@ export default async function InvoiceDetailPage({
     .eq("invoice_id", id)
     .order("service_date");
 
+  const { data: serviceCodes } = await supabase
+    .from("service_codes")
+    .select("id, code, description, default_rate_cents")
+    .eq("active", true)
+    .order("code");
+
   const client = invoice.clients as unknown as { full_name: string; email: string | null } | null;
   const issuer = invoice.staff as unknown as {
     full_name: string;
@@ -93,11 +99,21 @@ export default async function InvoiceDetailPage({
             {invoice.due_date ? ` · Due ${invoice.due_date}` : ""}
           </p>
         </div>
-        <span
-          className={`inline-flex rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold ${STATUS_STYLE[invoice.status]}`}
-        >
-          {STATUS_LABEL[invoice.status]}
-        </span>
+        <div className="flex flex-col items-end gap-2">
+          <span
+            className={`inline-flex rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold ${STATUS_STYLE[invoice.status]}`}
+          >
+            {STATUS_LABEL[invoice.status]}
+          </span>
+          {!isDraft && invoice.status !== "void" && (
+            <a
+              href={`/invoices/${invoice.id}/pdf`}
+              className="rounded-lg border border-border px-3 py-1.5 text-[12.5px] font-semibold text-text-2 transition hover:border-brand hover:text-brand-ink"
+            >
+              Download PDF
+            </a>
+          )}
+        </div>
       </div>
 
       {issuer && (
@@ -176,10 +192,34 @@ export default async function InvoiceDetailPage({
         </div>
       </div>
 
+      {isDraft && canManage && !!serviceCodes?.length && (
+        <div className="mt-5 rounded-2xl border border-border bg-surface p-4 shadow-sm">
+          <div className="mb-3 text-[13px] font-bold text-foreground">Quick add</div>
+          <div className="flex flex-wrap gap-2">
+            {serviceCodes.map((sc) => (
+              <form key={sc.id} action={addLineItem}>
+                <input type="hidden" name="invoiceId" value={invoice.id} />
+                <input type="hidden" name="serviceDate" value={today} />
+                <input type="hidden" name="serviceCode" value={sc.code} />
+                <input type="hidden" name="description" value={sc.description} />
+                <input type="hidden" name="quantity" value="1" />
+                <input type="hidden" name="unitAmount" value={(sc.default_rate_cents / 100).toFixed(2)} />
+                <button
+                  type="submit"
+                  className="rounded-lg border border-border px-3 py-2 text-[12.5px] font-semibold text-text-2 transition hover:border-brand hover:text-brand-ink"
+                >
+                  + {sc.code} · {sc.description} · {formatMoney(sc.default_rate_cents)}
+                </button>
+              </form>
+            ))}
+          </div>
+        </div>
+      )}
+
       {isDraft && canManage && (
         <form action={addLineItem} className="mt-5 rounded-2xl border border-border bg-surface p-4 shadow-sm">
           <input type="hidden" name="invoiceId" value={invoice.id} />
-          <div className="mb-3 text-[13px] font-bold text-foreground">Add line item</div>
+          <div className="mb-3 text-[13px] font-bold text-foreground">Custom line item</div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-[12px] font-semibold text-text-2">Service date</label>

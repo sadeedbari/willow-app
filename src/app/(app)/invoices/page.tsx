@@ -20,13 +20,35 @@ function formatMoney(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
+function StatCard({
+  label,
+  value,
+  detail,
+  valueClassName,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+  valueClassName?: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+      <div className="text-[12.5px] font-semibold text-text-2">{label}</div>
+      <div className={`mt-1 text-[22px] font-bold tracking-tight tabular-nums ${valueClassName ?? "text-foreground"}`}>
+        {value}
+      </div>
+      <div className="mt-1 text-[12px] text-text-3">{detail}</div>
+    </div>
+  );
+}
+
 export default async function InvoicesPage() {
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
   const { data } = await supabase
     .from("invoices")
-    .select("id, invoice_number, status, issue_date, due_date, total_cents, amount_paid_cents, clients(full_name)")
+    .select("id, invoice_number, status, issue_date, due_date, total_cents, amount_paid_cents, paid_at, clients(full_name)")
     .order("issue_date", { ascending: false })
     .order("invoice_number", { ascending: false });
 
@@ -38,9 +60,28 @@ export default async function InvoicesPage() {
     due_date: string | null;
     total_cents: number;
     amount_paid_cents: number;
+    paid_at: string | null;
     clients: { full_name: string } | null;
   };
   const invoices = (data ?? []) as unknown as Row[];
+
+  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+
+  const outstanding = invoices.filter((inv) => inv.status === "sent");
+  const outstandingCents = outstanding.reduce((sum, inv) => sum + (inv.total_cents - inv.amount_paid_cents), 0);
+
+  const overdue = outstanding.filter((inv) => inv.due_date && inv.due_date < today);
+  const overdueCents = overdue.reduce((sum, inv) => sum + (inv.total_cents - inv.amount_paid_cents), 0);
+
+  const paidThisMonth = invoices.filter(
+    (inv) =>
+      inv.status === "paid" &&
+      inv.paid_at &&
+      new Date(inv.paid_at).getMonth() === now.getMonth() &&
+      new Date(inv.paid_at).getFullYear() === now.getFullYear()
+  );
+  const collectedCents = paidThisMonth.reduce((sum, inv) => sum + inv.amount_paid_cents, 0);
 
   const canCreate = staff.role === "practice_admin" || staff.role === "billing_admin";
 
@@ -67,9 +108,31 @@ export default async function InvoicesPage() {
         )}
       </div>
 
+      <div className="mb-6 grid grid-cols-3 gap-4">
+        <StatCard
+          label="Outstanding"
+          value={formatMoney(outstandingCents)}
+          detail={`${outstanding.length} invoice${outstanding.length === 1 ? "" : "s"}`}
+          valueClassName="text-warn"
+        />
+        <StatCard
+          label="Collected this month"
+          value={formatMoney(collectedCents)}
+          detail={`${paidThisMonth.length} invoice${paidThisMonth.length === 1 ? "" : "s"}`}
+          valueClassName="text-ok"
+        />
+        <StatCard
+          label="Overdue"
+          value={formatMoney(overdueCents)}
+          detail={`${overdue.length} invoice${overdue.length === 1 ? "" : "s"}`}
+          valueClassName="text-bad"
+        />
+      </div>
+
       <div className="space-y-2">
         {invoices.map((inv) => {
           const balance = inv.total_cents - inv.amount_paid_cents;
+          const isOverdue = inv.status === "sent" && !!inv.due_date && inv.due_date < today;
           return (
             <Link
               key={inv.id}
@@ -100,9 +163,11 @@ export default async function InvoicesPage() {
                   )}
                 </div>
                 <span
-                  className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_STYLE[inv.status]}`}
+                  className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                    isOverdue ? "bg-bad-tint text-bad" : STATUS_STYLE[inv.status]
+                  }`}
                 >
-                  {STATUS_LABEL[inv.status]}
+                  {isOverdue ? "Overdue" : STATUS_LABEL[inv.status]}
                 </span>
               </div>
             </Link>

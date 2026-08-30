@@ -3,6 +3,7 @@ import Link from "next/link";
 const TABS = [
   { href: "/settings", label: "Practice Profile" },
   { href: "/settings/staff", label: "Staff" },
+  { href: "/settings/services", label: "Services" },
   { href: "/settings/billing", label: "Subscription" },
 ];
 
