@@ -35,6 +35,69 @@
   --warn-tint: #faf1df;
   --bad: #c0555a;
   --bad-tint: #fbeaea;
+
+  --sidebar-from: #f6f9f7;
+  --sidebar-to: #eef3f0;
+}
+
+/* Dark mode: redefine backgrounds/neutrals/tints only -- the solid brand
+   and hue colors stay the same vivid accents against a dark surface,
+   matching the practitionerv2 mockup's own dark-mode palette. Defined
+   twice: once for the OS-level preference (unless the user explicitly
+   chose light), once for an explicit user choice via data-theme, so the
+   toggle wins in both directions. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --background: #131417;
+    --foreground: #f1efea;
+    --surface: #1b1d22;
+    --surface-2: #212329;
+    --border: rgba(255, 255, 255, 0.08);
+    --text-2: #b9b6ac;
+    --text-3: #7c7a73;
+    --brand-tint: #1b322c;
+    --hue-cal-tint: #182838;
+    --hue-clients-tint: #32241c;
+    --hue-notes-tint: #282136;
+    --hue-consent-tint: #332a18;
+    --hue-bill-tint: #1a2c22;
+    --hue-msg-tint: #301f28;
+    --hue-admin-tint: #231f38;
+    --ok: #4fa97a;
+    --ok-tint: #16261e;
+    --warn: #d9ad5c;
+    --warn-tint: #2e2410;
+    --bad: #d9767a;
+    --bad-tint: #2c1a1b;
+    --sidebar-from: #1b1d22;
+    --sidebar-to: #131417;
+  }
+}
+
+:root[data-theme="dark"] {
+  --background: #131417;
+  --foreground: #f1efea;
+  --surface: #1b1d22;
+  --surface-2: #212329;
+  --border: rgba(255, 255, 255, 0.08);
+  --text-2: #b9b6ac;
+  --text-3: #7c7a73;
+  --brand-tint: #1b322c;
+  --hue-cal-tint: #182838;
+  --hue-clients-tint: #32241c;
+  --hue-notes-tint: #282136;
+  --hue-consent-tint: #332a18;
+  --hue-bill-tint: #1a2c22;
+  --hue-msg-tint: #301f28;
+  --hue-admin-tint: #231f38;
+  --ok: #4fa97a;
+  --ok-tint: #16261e;
+  --warn: #d9ad5c;
+  --warn-tint: #2e2410;
+  --bad: #d9767a;
+  --bad-tint: #2c1a1b;
+  --sidebar-from: #1b1d22;
+  --sidebar-to: #131417;
 }
 
 @theme inline {

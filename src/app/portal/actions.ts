@@ -52,6 +52,8 @@ export async function sendMessageAsClient(formData: FormData) {
     .update({ client_last_read_at: new Date().toISOString() })
     .eq("id", threadId);
 
+  await supabase.rpc("notify_message_recipient", { p_preview: body.slice(0, 140) });
+
   const { data: recipientEmail } = await supabase.rpc("get_my_message_recipient_email");
   if (recipientEmail) {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
