@@ -6,9 +6,9 @@ import Link from "next/link";
 export default async function NewAppointmentPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; clientId?: string }>;
+  searchParams: Promise<{ error?: string; clientId?: string; date?: string; time?: string; staffId?: string }>;
 }) {
-  const { error, clientId } = await searchParams;
+  const { error, clientId, date, time, staffId } = await searchParams;
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
@@ -16,10 +16,11 @@ export default async function NewAppointmentPage({
     supabase.from("clients").select("id, full_name").order("full_name"),
     staff.role === "clinician"
       ? Promise.resolve({ data: null })
-      : supabase.from("staff").select("id, full_name").eq("role", "clinician").order("full_name"),
+      : supabase.from("staff").select("id, full_name").in("role", ["clinician", "practice_admin"]).order("full_name"),
   ]);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = date ?? new Date().toISOString().slice(0, 10);
+  const defaultTime = time ?? "14:00";
 
   return (
     <div className="max-w-lg">
@@ -66,6 +67,7 @@ export default async function NewAppointmentPage({
             <select
               name="staffId"
               required
+              defaultValue={staffId ?? ""}
               className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             >
               {clinicians.map((c) => (
@@ -98,7 +100,7 @@ export default async function NewAppointmentPage({
               name="time"
               type="time"
               required
-              defaultValue="14:00"
+              defaultValue={defaultTime}
               className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             />
           </div>

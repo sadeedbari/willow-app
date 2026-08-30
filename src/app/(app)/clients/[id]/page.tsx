@@ -176,17 +176,19 @@ export default async function ClientDetailPage({
           {appointments?.length ? (
             <ul className="space-y-2 text-[13.4px]">
               {appointments.map((a) => (
-                <li key={a.id} className="flex justify-between border-b border-border pb-2 last:border-0">
-                  <span className="text-foreground">
-                    {new Date(a.starts_at).toLocaleString(undefined, {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                  <span className="text-text-3">{a.type}</span>
+                <li key={a.id} className="border-b border-border pb-2 last:border-0">
+                  <Link href={`/calendar/${a.id}`} className="flex justify-between hover:text-brand-ink">
+                    <span className="text-foreground">
+                      {new Date(a.starts_at).toLocaleString(undefined, {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                    <span className="text-text-3">{a.type}</span>
+                  </Link>
                 </li>
               ))}
             </ul>
