@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import { startCheckout, openBillingPortal } from "./actions";
+import { SettingsTabs } from "../tabs";
 
 const STATUS_LABEL: Record<string, string> = {
   trialing: "Trial",
@@ -42,12 +43,12 @@ export default async function BillingPage({
 
   return (
     <div className="max-w-lg">
-      <h1 className="text-[26px] font-bold tracking-tight text-foreground">
-        Billing
-      </h1>
-      <p className="mt-1 text-[13.5px] text-text-2">
-        Your practice&apos;s Willow subscription.
-      </p>
+      <div className="mb-6">
+        <h1 className="text-[26px] font-bold tracking-tight text-foreground">Settings</h1>
+        <p className="mt-1 text-[13.5px] text-text-2">Your practice&apos;s Willow subscription</p>
+      </div>
+
+      <SettingsTabs active="/settings/billing" />
 
       {error && (
         <p className="mt-4 rounded-lg bg-bad-tint px-3 py-2 text-[13px] text-bad">

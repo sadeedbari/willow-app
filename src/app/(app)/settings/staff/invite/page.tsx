@@ -12,12 +12,12 @@ export default async function InviteStaffPage({
   const staff = await getCurrentStaff();
 
   if (staff.role !== "practice_admin") {
-    redirect("/staff");
+    redirect("/settings/staff");
   }
 
   return (
     <div className="max-w-lg">
-      <Link href="/staff" className="text-[13px] font-semibold text-brand-ink">
+      <Link href="/settings/staff" className="text-[13px] font-semibold text-brand-ink">
         ← Back to staff
       </Link>
       <h1 className="mt-3 text-[22px] font-bold tracking-tight text-foreground">

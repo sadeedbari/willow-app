@@ -10,7 +10,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 export async function startCheckout() {
   const staff = await getCurrentStaff();
   if (staff.role !== "practice_admin") {
-    redirect("/billing?error=Only+practice+admins+can+manage+billing");
+    redirect("/settings/billing?error=Only+practice+admins+can+manage+billing");
   }
 
   const supabase = await createClient();
@@ -21,7 +21,7 @@ export async function startCheckout() {
     .single();
 
   if (!practice) {
-    redirect("/billing?error=Practice+not+found");
+    redirect("/settings/billing?error=Practice+not+found");
   }
 
   let customerId = practice.stripe_customer_id;
@@ -45,8 +45,8 @@ export async function startCheckout() {
     customer: customerId,
     line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }],
     subscription_data: { metadata: { practice_id: practice.id } },
-    success_url: `${SITE_URL}/billing?checkout=success`,
-    cancel_url: `${SITE_URL}/billing?checkout=cancelled`,
+    success_url: `${SITE_URL}/settings/billing?checkout=success`,
+    cancel_url: `${SITE_URL}/settings/billing?checkout=cancelled`,
   });
 
   redirect(session.url!);
@@ -55,7 +55,7 @@ export async function startCheckout() {
 export async function openBillingPortal() {
   const staff = await getCurrentStaff();
   if (staff.role !== "practice_admin") {
-    redirect("/billing?error=Only+practice+admins+can+manage+billing");
+    redirect("/settings/billing?error=Only+practice+admins+can+manage+billing");
   }
 
   const supabase = await createClient();
@@ -66,12 +66,12 @@ export async function openBillingPortal() {
     .single();
 
   if (!practice?.stripe_customer_id) {
-    redirect("/billing?error=No+billing+account+yet");
+    redirect("/settings/billing?error=No+billing+account+yet");
   }
 
   const session = await stripe.billingPortal.sessions.create({
     customer: practice.stripe_customer_id,
-    return_url: `${SITE_URL}/billing`,
+    return_url: `${SITE_URL}/settings/billing`,
   });
 
   redirect(session.url);

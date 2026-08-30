@@ -19,8 +19,8 @@ export async function inviteStaff(formData: FormData) {
   });
 
   if (error || data?.error) {
-    redirect(`/staff/invite?error=${encodeURIComponent(data?.error ?? error?.message ?? "Could not send invite")}`);
+    redirect(`/settings/staff/invite?error=${encodeURIComponent(data?.error ?? error?.message ?? "Could not send invite")}`);
   }
 
-  redirect("/staff");
+  redirect("/settings/staff");
 }

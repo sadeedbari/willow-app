@@ -90,31 +90,24 @@ const NAV = [
     ],
   },
   {
-    group: "My Account",
+    group: "Practice Admin",
     items: [
       {
-        href: "/staff",
-        label: "Staff",
+        href: "/practice-overview",
+        label: "Practice Overview",
         color: "bg-hue-admin",
-        icon: (
-          <>
-            <circle cx="12" cy="8" r="3.6" />
-            <path d="M5 20c0-3.9 3.1-6.5 7-6.5s7 2.6 7 6.5" />
-          </>
-        ),
-      },
-      {
-        href: "/billing",
-        label: "Subscription",
-        color: "bg-brand-ink",
         adminOnly: true,
         icon: (
           <>
-            <rect x="2.5" y="5.5" width="19" height="14" rx="2.5" />
-            <path d="M2.5 10h19M6 15h4" />
+            <path d="M4 20V10M11 20V4M18 20v-7" />
           </>
         ),
       },
+    ],
+  },
+  {
+    group: "My Account",
+    items: [
       {
         href: "/profile",
         label: "Therapist Profile",
@@ -130,7 +123,6 @@ const NAV = [
         href: "/settings",
         label: "Settings",
         color: "bg-[#8C948E]",
-        adminOnly: true,
         icon: (
           <>
             <circle cx="12" cy="12" r="3" />

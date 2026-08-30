@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import { revokeInvitation } from "./actions";
+import { SettingsTabs } from "../tabs";
 import Link from "next/link";
 
 const ROLE_LABEL: Record<string, string> = {
@@ -34,18 +35,17 @@ export default async function StaffPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-end justify-between">
-        <div>
-          <h1 className="text-[26px] font-bold tracking-tight text-foreground">
-            Staff
-          </h1>
-          <p className="mt-1 text-[13.5px] text-text-2">
-            {team?.length ?? 0} team members
-          </p>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-[26px] font-bold tracking-tight text-foreground">Settings</h1>
+        <p className="mt-1 text-[13.5px] text-text-2">{team?.length ?? 0} team members</p>
+      </div>
+
+      <SettingsTabs active="/settings/staff" />
+
+      <div className="mb-6 flex justify-end">
         {staff.role === "practice_admin" && (
           <Link
-            href="/staff/invite"
+            href="/settings/staff/invite"
             className="rounded-lg bg-brand px-3.5 py-2 text-[13.4px] font-semibold text-white transition hover:bg-brand-ink"
           >
             + Invite team member

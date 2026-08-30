@@ -9,5 +9,5 @@ export async function revokeInvitation(invitationId: string) {
     .from("staff_invitations")
     .update({ status: "revoked" })
     .eq("id", invitationId);
-  revalidatePath("/staff");
+  revalidatePath("/settings/staff");
 }
