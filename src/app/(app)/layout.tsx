@@ -286,9 +286,25 @@ export default async function AppLayout({
         </div>
       </nav>
 
-      <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-5xl px-8 py-8">{children}</div>
-      </main>
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <header className="flex flex-none items-center border-b border-border bg-surface/70 px-6 py-3 backdrop-blur">
+          <form action="/search" method="GET" className="flex w-70 items-center gap-2 rounded-[10px] border border-border bg-surface-2 px-3 py-1.5 text-text-3 transition focus-within:border-brand focus-within:ring-1 focus-within:ring-brand">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="h-3.5 w-3.5 flex-none">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+            <input
+              name="q"
+              placeholder="Search clients, notes, invoices…"
+              className="w-full bg-transparent text-[13px] text-foreground outline-none placeholder:text-text-3"
+            />
+          </form>
+        </header>
+
+        <main className="flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-5xl px-8 py-8">{children}</div>
+        </main>
+      </div>
     </div>
   );
 }
