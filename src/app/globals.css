@@ -20,8 +20,14 @@
   --hue-clients-tint: #fbeee8;
   --hue-notes: #9e8fd6;
   --hue-notes-tint: #f1edfa;
-  --hue-staff: #5fa97b;
-  --hue-staff-tint: #e9f4ec;
+  --hue-consent: #d9ad5c;
+  --hue-consent-tint: #faf1df;
+  --hue-bill: #5fa97b;
+  --hue-bill-tint: #e9f4ec;
+  --hue-msg: #d98baa;
+  --hue-msg-tint: #faedf2;
+  --hue-admin: #8f86d6;
+  --hue-admin-tint: #eeecfa;
 
   --ok: #2f8f63;
   --ok-tint: #e7f5ec;
@@ -52,8 +58,14 @@
   --color-hue-clients-tint: var(--hue-clients-tint);
   --color-hue-notes: var(--hue-notes);
   --color-hue-notes-tint: var(--hue-notes-tint);
-  --color-hue-staff: var(--hue-staff);
-  --color-hue-staff-tint: var(--hue-staff-tint);
+  --color-hue-consent: var(--hue-consent);
+  --color-hue-consent-tint: var(--hue-consent-tint);
+  --color-hue-bill: var(--hue-bill);
+  --color-hue-bill-tint: var(--hue-bill-tint);
+  --color-hue-msg: var(--hue-msg);
+  --color-hue-msg-tint: var(--hue-msg-tint);
+  --color-hue-admin: var(--hue-admin);
+  --color-hue-admin-tint: var(--hue-admin-tint);
 
   --color-ok: var(--ok);
   --color-ok-tint: var(--ok-tint);
