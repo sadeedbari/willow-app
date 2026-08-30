@@ -114,6 +114,29 @@ const NAV = [
           </>
         ),
       },
+      {
+        href: "/profile",
+        label: "Therapist Profile",
+        color: "bg-[#8C948E]",
+        icon: (
+          <>
+            <circle cx="12" cy="8" r="3.6" />
+            <path d="M5 20c0-3.9 3.1-6.5 7-6.5s7 2.6 7 6.5" />
+          </>
+        ),
+      },
+      {
+        href: "/settings",
+        label: "Settings",
+        color: "bg-[#8C948E]",
+        adminOnly: true,
+        icon: (
+          <>
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 13a7.9 7.9 0 0 0 0-2l2-1.5-2-3.4-2.3.9a8 8 0 0 0-1.7-1L15 3h-4l-.4 2.4a8 8 0 0 0-1.7 1l-2.3-.9-2 3.4L6.6 11a7.9 7.9 0 0 0 0 2l-2 1.5 2 3.4 2.3-.9c.5.4 1.1.8 1.7 1L11 21h4l.4-2.4c.6-.2 1.2-.6 1.7-1l2.3.9 2-3.4-2-1.5Z" />
+          </>
+        ),
+      },
     ],
   },
 ];
