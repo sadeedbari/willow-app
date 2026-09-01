@@ -4,14 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 const PUBLIC_PATHS = ["/login", "/signup", "/auth", "/consent", "/portal/login", "/portal/accept-invite"];
 
 export async function updateSession(request: NextRequest) {
-  // Exposed to Server Components via headers() -- lets the (app) layout
-  // know the current route for active-nav-item highlighting without any
-  // client component.
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-pathname", request.nextUrl.pathname);
-  const requestWithPathname = { headers: requestHeaders };
-
-  let supabaseResponse = NextResponse.next({ request: requestWithPathname });
+  let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,7 +18,7 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
-          supabaseResponse = NextResponse.next({ request: requestWithPathname });
+          supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options),
           );
