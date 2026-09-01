@@ -56,6 +56,11 @@ export async function AppointmentModal({
   // job hasn't caught up yet -- or already auto-marked "completed").
   const canManageUpcoming = isScheduled && !isPast;
   const canMarkNoShow = isPast && (appt.status === "scheduled" || appt.status === "completed");
+  // Cancelling (a soft status change, not a hard delete) removes it from the
+  // calendar grid either way -- available any time the appointment isn't
+  // already in a terminal state, including past "Completed" sessions the
+  // practitioner wants to remove.
+  const canCancel = appt.status === "scheduled" || appt.status === "completed";
   // Actions (reschedule, status change) should reopen this same modal with
   // the updated data -- only the close button/backdrop should fully close it.
   const returnTo = `${closeHref}&event=${appt.id}`;
@@ -152,54 +157,56 @@ export async function AppointmentModal({
           </div>
 
           {canManageUpcoming && (
-            <>
-              <form action={rescheduleAppointment} className="mt-5 rounded-2xl border border-border bg-surface p-4 shadow-sm">
-                <input type="hidden" name="appointmentId" value={appt.id} />
-                <input type="hidden" name="returnTo" value={returnTo} />
-                <div className="mb-3 text-[13px] font-bold text-foreground">Reschedule</div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-[12px] font-semibold text-text-2">Date</label>
-                    <input
-                      name="date"
-                      type="date"
-                      required
-                      defaultValue={start.toISOString().slice(0, 10)}
-                      className="mt-1 w-full rounded-lg border border-border bg-surface px-2.5 py-2 text-[13px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-semibold text-text-2">Time</label>
-                    <input
-                      name="time"
-                      type="time"
-                      required
-                      defaultValue={start.toTimeString().slice(0, 5)}
-                      className="mt-1 w-full rounded-lg border border-border bg-surface px-2.5 py-2 text-[13px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-semibold text-text-2">Duration</label>
-                    <select
-                      name="duration"
-                      defaultValue={String(durationMinutes)}
-                      className="mt-1 w-full rounded-lg border border-border bg-surface px-2.5 py-2 text-[13px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-                    >
-                      <option value="30">30 min</option>
-                      <option value="50">50 min</option>
-                      <option value="80">80 min</option>
-                    </select>
-                  </div>
+            <form action={rescheduleAppointment} className="mt-5 rounded-2xl border border-border bg-surface p-4 shadow-sm">
+              <input type="hidden" name="appointmentId" value={appt.id} />
+              <input type="hidden" name="returnTo" value={returnTo} />
+              <div className="mb-3 text-[13px] font-bold text-foreground">Reschedule</div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[12px] font-semibold text-text-2">Date</label>
+                  <input
+                    name="date"
+                    type="date"
+                    required
+                    defaultValue={start.toISOString().slice(0, 10)}
+                    className="mt-1 w-full rounded-lg border border-border bg-surface px-2.5 py-2 text-[13px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                  />
                 </div>
-                <button
-                  type="submit"
-                  className="mt-3 rounded-lg bg-brand px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-brand-ink"
-                >
-                  Save new time
-                </button>
-              </form>
+                <div>
+                  <label className="block text-[12px] font-semibold text-text-2">Time</label>
+                  <input
+                    name="time"
+                    type="time"
+                    required
+                    defaultValue={start.toTimeString().slice(0, 5)}
+                    className="mt-1 w-full rounded-lg border border-border bg-surface px-2.5 py-2 text-[13px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[12px] font-semibold text-text-2">Duration</label>
+                  <select
+                    name="duration"
+                    defaultValue={String(durationMinutes)}
+                    className="mt-1 w-full rounded-lg border border-border bg-surface px-2.5 py-2 text-[13px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                  >
+                    <option value="30">30 min</option>
+                    <option value="50">50 min</option>
+                    <option value="80">80 min</option>
+                  </select>
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="mt-3 rounded-lg bg-brand px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-brand-ink"
+              >
+                Save new time
+              </button>
+            </form>
+          )}
 
-              <div className="mt-5 flex flex-wrap gap-3">
+          {(canManageUpcoming || canMarkNoShow || canCancel) && (
+            <div className="mt-5 flex flex-wrap gap-3">
+              {canManageUpcoming && (
                 <form action={setAppointmentStatus}>
                   <input type="hidden" name="appointmentId" value={appt.id} />
                   <input type="hidden" name="returnTo" value={returnTo} />
@@ -211,6 +218,21 @@ export async function AppointmentModal({
                     Mark completed
                   </button>
                 </form>
+              )}
+              {canMarkNoShow && (
+                <form action={setAppointmentStatus}>
+                  <input type="hidden" name="appointmentId" value={appt.id} />
+                  <input type="hidden" name="returnTo" value={returnTo} />
+                  <input type="hidden" name="status" value="no_show" />
+                  <button
+                    type="submit"
+                    className="rounded-lg border border-border px-4 py-2 text-[13.4px] font-semibold text-warn transition hover:bg-warn-tint"
+                  >
+                    Mark no-show
+                  </button>
+                </form>
+              )}
+              {canCancel && (
                 <form action={setAppointmentStatus}>
                   <input type="hidden" name="appointmentId" value={appt.id} />
                   <input type="hidden" name="returnTo" value={returnTo} />
@@ -222,23 +244,7 @@ export async function AppointmentModal({
                     Cancel appointment
                   </button>
                 </form>
-              </div>
-            </>
-          )}
-
-          {canMarkNoShow && (
-            <div className="mt-5">
-              <form action={setAppointmentStatus}>
-                <input type="hidden" name="appointmentId" value={appt.id} />
-                <input type="hidden" name="returnTo" value={returnTo} />
-                <input type="hidden" name="status" value="no_show" />
-                <button
-                  type="submit"
-                  className="rounded-lg border border-border px-4 py-2 text-[13.4px] font-semibold text-warn transition hover:bg-warn-tint"
-                >
-                  Mark no-show
-                </button>
-              </form>
+              )}
             </div>
           )}
         </div>

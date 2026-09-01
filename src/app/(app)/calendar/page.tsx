@@ -33,17 +33,22 @@ const TYPE_COLOR: Record<string, { text: string; bg: string; border: string }> =
 };
 
 const LEGEND = [
-  { label: "Individual", dot: "bg-hue-cal" },
-  { label: "Couples/Family", dot: "bg-hue-notes" },
-  { label: "Intake", dot: "bg-warn" },
-  { label: "Telehealth", dot: "bg-text-3" },
+  { label: "Individual", dot: "bg-hue-cal", bg: "bg-hue-cal-tint", text: "text-hue-cal" },
+  { label: "Couples/Family", dot: "bg-hue-notes", bg: "bg-hue-notes-tint", text: "text-hue-notes" },
+  { label: "Intake", dot: "bg-warn", bg: "bg-warn-tint", text: "text-warn" },
+  { label: "Telehealth", dot: "bg-text-2", bg: "bg-surface-3", text: "text-text-2" },
 ];
 
 const START_HOUR = 7;
 const END_HOUR = 20;
-const SLOT_MINUTES = 30;
-const SLOT_COUNT = ((END_HOUR - START_HOUR) * 60) / SLOT_MINUTES;
-const SLOT_PX = 36;
+const HOUR_COUNT = END_HOUR - START_HOUR;
+// Appointments are positioned on a fine-grained row unit for accurate,
+// proportional block heights, but the visible gridlines and click-to-book
+// cells only appear once per hour -- the calendar's "blocks" are hourly.
+const FINE_SLOT_MINUTES = 10;
+const FINE_ROWS_PER_HOUR = 60 / FINE_SLOT_MINUTES;
+const TOTAL_FINE_ROWS = HOUR_COUNT * FINE_ROWS_PER_HOUR;
+const FINE_ROW_PX = 8;
 
 function mondayOf(date: Date) {
   const d = new Date(date);
@@ -106,12 +111,10 @@ export default async function CalendarPage({
 
   const hourLabels = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
 
-  function bookLink(dayIndex: number, slotIndex: number) {
+  function bookLink(dayIndex: number, hourIndex: number) {
     const d = days[dayIndex];
-    const minutes = START_HOUR * 60 + slotIndex * SLOT_MINUTES;
-    const hh = String(Math.floor(minutes / 60)).padStart(2, "0");
-    const mm = String(minutes % 60).padStart(2, "0");
-    const params = new URLSearchParams({ date: toDateParam(d), time: `${hh}:${mm}` });
+    const hh = String(START_HOUR + hourIndex).padStart(2, "0");
+    const params = new URLSearchParams({ date: toDateParam(d), time: `${hh}:00` });
     if (staffId) params.set("staffId", staffId);
     return `/calendar/new?${params.toString()}`;
   }
@@ -189,7 +192,7 @@ export default async function CalendarPage({
         {LEGEND.map((item) => (
           <span
             key={item.label}
-            className="inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-2.5 py-1 text-[11.5px] font-semibold text-text-2"
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold ${item.bg} ${item.text}`}
           >
             <span className={`h-2 w-2 rounded-full ${item.dot}`} />
             {item.label}
@@ -202,7 +205,7 @@ export default async function CalendarPage({
           className="grid min-w-[820px]"
           style={{
             gridTemplateColumns: `56px repeat(7, minmax(0,1fr))`,
-            gridTemplateRows: `48px repeat(${SLOT_COUNT}, ${SLOT_PX}px)`,
+            gridTemplateRows: `48px repeat(${TOTAL_FINE_ROWS}, ${FINE_ROW_PX}px)`,
           }}
         >
           {/* Header row */}
@@ -227,21 +230,21 @@ export default async function CalendarPage({
           {hourLabels.map((h, i) => (
             <div
               key={h}
-              className="border-t border-border px-1.5 pt-0.5 text-right text-[11px] text-text-3"
-              style={{ gridColumn: 1, gridRow: `${2 + i * 2} / span 2` }}
+              className="border-t border-border px-1.5 pt-0.5 text-right text-[10px] text-text-3"
+              style={{ gridColumn: 1, gridRow: `${2 + i * FINE_ROWS_PER_HOUR} / span ${FINE_ROWS_PER_HOUR}` }}
             >
               {h === 12 ? "12pm" : h > 12 ? `${h - 12}pm` : `${h}am`}
             </div>
           ))}
 
-          {/* Background slot grid (click to book) */}
+          {/* Background slot grid (click to book), one hour-tall cell per hour */}
           {days.map((_, dayIndex) =>
-            Array.from({ length: SLOT_COUNT }, (_, slotIndex) => (
+            hourLabels.map((_, hourIndex) => (
               <Link
-                key={`${dayIndex}-${slotIndex}`}
-                href={bookLink(dayIndex, slotIndex)}
-                className={`border-l border-border transition hover:bg-surface-2 ${slotIndex % 2 === 0 ? "border-t" : "border-t border-t-border/40"}`}
-                style={{ gridColumn: 2 + dayIndex, gridRow: 2 + slotIndex }}
+                key={`${dayIndex}-${hourIndex}`}
+                href={bookLink(dayIndex, hourIndex)}
+                className="border-t border-l border-border transition hover:bg-surface-2"
+                style={{ gridColumn: 2 + dayIndex, gridRow: `${2 + hourIndex * FINE_ROWS_PER_HOUR} / span ${FINE_ROWS_PER_HOUR}` }}
               />
             ))
           )}
@@ -254,9 +257,9 @@ export default async function CalendarPage({
             if (dayIndex === -1) return null;
 
             const startMinutes = start.getHours() * 60 + start.getMinutes() - START_HOUR * 60;
-            const durationMinutes = Math.max(SLOT_MINUTES, (end.getTime() - start.getTime()) / 60000);
-            const rowStart = 2 + Math.max(0, Math.floor(startMinutes / SLOT_MINUTES));
-            const rowSpan = Math.max(1, Math.round(durationMinutes / SLOT_MINUTES));
+            const durationMinutes = Math.max(FINE_SLOT_MINUTES, (end.getTime() - start.getTime()) / 60000);
+            const rowStart = 2 + Math.max(0, Math.round(startMinutes / FINE_SLOT_MINUTES));
+            const rowSpan = Math.max(1, Math.round(durationMinutes / FINE_SLOT_MINUTES));
             const isPast = a.status === "completed" || a.status === "no_show";
             const color = TYPE_COLOR[a.type] ?? TYPE_COLOR.individual;
 
@@ -264,14 +267,13 @@ export default async function CalendarPage({
               <Link
                 key={a.id}
                 href={`${baseCalendarHref}&event=${a.id}`}
-                className={`m-0.5 overflow-hidden rounded-md border-l-[3px] px-1.5 py-1 text-[11px] leading-tight shadow-sm transition hover:shadow-md ${color.bg} ${color.text} ${color.border} ${isPast ? "opacity-50" : ""}`}
+                className={`m-0.5 overflow-hidden rounded-md border-l-[3px] px-1.5 py-0.5 text-[11px] leading-tight shadow-sm transition hover:shadow-md ${color.bg} ${color.text} ${color.border} ${isPast ? "opacity-50" : ""}`}
                 style={{ gridColumn: 2 + dayIndex, gridRow: `${rowStart} / span ${rowSpan}` }}
               >
-                <div className="truncate text-[10px] font-semibold opacity-80">
-                  {start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
-                </div>
                 <div className="truncate font-semibold">{a.clients?.full_name ?? "Unknown client"}</div>
-                <div className="truncate opacity-80">{TYPE_LABEL[a.type] ?? a.type}</div>
+                <div className="truncate opacity-80">
+                  {start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} · {TYPE_LABEL[a.type] ?? a.type}
+                </div>
               </Link>
             );
           })}
