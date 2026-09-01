@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentClient } from "@/utils/supabase/current-client";
 import { sendMessageAsClient, portalLogout } from "./actions";
+import { PortalTabs } from "./tabs";
 
 export default async function PortalPage() {
   const client = await getCurrentClient();
@@ -42,7 +43,9 @@ export default async function PortalPage() {
       </header>
 
       <div className="mx-auto flex w-full max-w-lg flex-1 flex-col px-4 py-6">
-        <h1 className="text-[18px] font-bold tracking-tight text-foreground">Messages</h1>
+        <PortalTabs active="/portal" />
+
+        <h1 className="mt-4 text-[18px] font-bold tracking-tight text-foreground">Messages</h1>
         <p className="mt-1 text-[12.5px] text-text-3">Secure messaging with your practice.</p>
 
         <div className="mt-4 flex-1 space-y-3 overflow-y-auto">

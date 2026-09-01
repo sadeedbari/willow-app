@@ -4,6 +4,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { sendConsentForm } from "./consent-actions";
 import { inviteToPortal } from "./portal-actions";
+import { updateDefaultAppointmentType } from "./booking-actions";
+import { APPOINTMENT_TYPE_LABEL, SELF_BOOKABLE_TYPES } from "@/utils/appointment-types";
 
 const STATUS_LABEL: Record<string, string> = {
   active: "Active",
@@ -38,7 +40,7 @@ export default async function ClientDetailPage({
 
   const { data: client } = await supabase
     .from("clients")
-    .select("id, full_name, date_of_birth, phone, email, presenting_concern, status, payer, balance_cents, assigned_staff_id, portal_user_id")
+    .select("id, full_name, date_of_birth, phone, email, presenting_concern, status, payer, balance_cents, assigned_staff_id, portal_user_id, default_appointment_type")
     .eq("id", id)
     .single();
 
@@ -58,6 +60,7 @@ export default async function ClientDetailPage({
   const canSendConsent = staff.role === "practice_admin" || staff.role === "front_desk";
   const canInviteToPortal = staff.role === "practice_admin" || staff.role === "front_desk";
   const canMessage = staff.role === "practice_admin" || (staff.role === "clinician" && isOwnClient);
+  const canEditBookingType = staff.role === "practice_admin" || staff.role === "front_desk";
 
   const { data: notes } = canSeeNotes
     ? await supabase
@@ -159,6 +162,46 @@ export default async function ClientDetailPage({
               </dd>
             </div>
           </dl>
+
+          <div className="mt-4 border-t border-border pt-3">
+            {canEditBookingType ? (
+              <form action={updateDefaultAppointmentType} className="flex items-end gap-2">
+                <input type="hidden" name="clientId" value={client.id} />
+                <div className="flex-1">
+                  <label className="block text-[12px] font-semibold text-text-2">
+                    Default self-booking type
+                  </label>
+                  <select
+                    name="defaultAppointmentType"
+                    defaultValue={client.default_appointment_type ?? ""}
+                    className="mt-1 w-full rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[13px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                  >
+                    <option value="">Not set — client will choose on first booking</option>
+                    {SELF_BOOKABLE_TYPES.map((t) => (
+                      <option key={t} value={t}>
+                        {APPOINTMENT_TYPE_LABEL[t]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  type="submit"
+                  className="rounded-lg bg-brand px-3 py-1.5 text-[12.5px] font-semibold text-white transition hover:bg-brand-ink"
+                >
+                  Save
+                </button>
+              </form>
+            ) : (
+              <div className="flex justify-between text-[13.4px]">
+                <span className="text-text-3">Default self-booking type</span>
+                <span className="text-foreground">
+                  {client.default_appointment_type
+                    ? APPOINTMENT_TYPE_LABEL[client.default_appointment_type as keyof typeof APPOINTMENT_TYPE_LABEL]
+                    : "Not set"}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">

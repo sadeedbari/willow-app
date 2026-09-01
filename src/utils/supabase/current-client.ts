@@ -6,6 +6,7 @@ export type CurrentClient = {
   fullName: string;
   practiceId: string;
   practiceName: string;
+  defaultAppointmentType: string | null;
 };
 
 // Mirrors getCurrentStaff() for the client portal side. Redirects rather
@@ -24,7 +25,7 @@ export async function getCurrentClient(): Promise<CurrentClient> {
 
   const { data } = await supabase
     .from("clients")
-    .select("id, full_name, practice_id, practices(name)")
+    .select("id, full_name, practice_id, default_appointment_type, practices(name)")
     .eq("portal_user_id", user.id)
     .single();
 
@@ -39,5 +40,6 @@ export async function getCurrentClient(): Promise<CurrentClient> {
     fullName: data.full_name,
     practiceId: data.practice_id,
     practiceName: practice?.name ?? "Your practice",
+    defaultAppointmentType: data.default_appointment_type,
   };
 }
