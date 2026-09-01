@@ -18,6 +18,8 @@ export async function createAppointment(formData: FormData) {
   const type = formData.get("type") as string;
   const locationType = formData.get("locationType") as string;
   const clientId = formData.get("clientId") as string;
+  const returnTo = (formData.get("returnTo") as string) || "/calendar";
+  const reopenHref = (formData.get("reopenHref") as string) || "/calendar/new";
 
   const staffId =
     staff.role === "clinician" ? staff.id : (formData.get("staffId") as string);
@@ -33,7 +35,7 @@ export async function createAppointment(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/calendar/new?error=${encodeURIComponent(friendlyErrorMessage(error))}`);
+    redirect(`${reopenHref}&error=${encodeURIComponent(friendlyErrorMessage(error))}`);
   }
 
   const [{ data: client }, { data: clinician }] = await Promise.all([
@@ -53,5 +55,5 @@ export async function createAppointment(formData: FormData) {
     });
   }
 
-  redirect("/calendar");
+  redirect(returnTo);
 }

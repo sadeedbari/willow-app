@@ -2,6 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import Link from "next/link";
 import { AppointmentModal } from "./appointment-modal";
+import { NewAppointmentModal } from "./new-appointment-modal";
 
 type ApptRow = {
   id: string;
@@ -66,9 +67,18 @@ function toDateParam(d: Date) {
 export default async function CalendarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ week?: string; staffId?: string; event?: string; error?: string }>;
+  searchParams: Promise<{
+    week?: string;
+    staffId?: string;
+    event?: string;
+    error?: string;
+    new?: string;
+    date?: string;
+    time?: string;
+    clientId?: string;
+  }>;
 }) {
-  const { week, staffId, event, error } = await searchParams;
+  const { week, staffId, event, error, new: isNew, date: newDate, time: newTime, clientId } = await searchParams;
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
@@ -114,9 +124,7 @@ export default async function CalendarPage({
   function bookLink(dayIndex: number, hourIndex: number) {
     const d = days[dayIndex];
     const hh = String(START_HOUR + hourIndex).padStart(2, "0");
-    const params = new URLSearchParams({ date: toDateParam(d), time: `${hh}:00` });
-    if (staffId) params.set("staffId", staffId);
-    return `/calendar/new?${params.toString()}`;
+    return `${baseCalendarHref}&new=1&date=${toDateParam(d)}&time=${hh}:00`;
   }
 
   return (
@@ -180,7 +188,7 @@ export default async function CalendarPage({
             Today
           </Link>
           <Link
-            href="/calendar/new"
+            href={`${baseCalendarHref}&new=1&date=${toDateParam(new Date())}&time=14:00`}
             className="rounded-lg bg-brand px-3.5 py-2 text-[13.4px] font-semibold text-white transition hover:bg-brand-ink"
           >
             + New
@@ -281,6 +289,17 @@ export default async function CalendarPage({
       </div>
 
       {event && <AppointmentModal appointmentId={event} closeHref={baseCalendarHref} error={error} />}
+      {!event && isNew && (
+        <NewAppointmentModal
+          closeHref={baseCalendarHref}
+          reopenHref={`${baseCalendarHref}&new=1&date=${newDate ?? toDateParam(new Date())}&time=${newTime ?? "14:00"}${clientId ? `&clientId=${clientId}` : ""}`}
+          date={newDate}
+          time={newTime}
+          clientId={clientId}
+          staffId={staffId}
+          error={error}
+        />
+      )}
     </div>
   );
 }
