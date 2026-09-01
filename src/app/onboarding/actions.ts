@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
+import { friendlyErrorMessage } from "@/utils/friendly-error";
 
 export async function createPractice(formData: FormData) {
   const practiceName = formData.get("practiceName") as string;
@@ -22,7 +23,7 @@ export async function createPractice(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/onboarding?error=${encodeURIComponent(error.message)}`);
+    redirect(`/onboarding?error=${encodeURIComponent(friendlyErrorMessage(error))}`);
   }
 
   redirect("/dashboard");

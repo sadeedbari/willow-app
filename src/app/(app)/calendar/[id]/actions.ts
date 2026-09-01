@@ -3,10 +3,12 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
+import { friendlyErrorMessage } from "@/utils/friendly-error";
 
 export async function rescheduleAppointment(formData: FormData) {
   await getCurrentStaff();
   const appointmentId = formData.get("appointmentId") as string;
+  const returnTo = formData.get("returnTo") as string;
   const date = formData.get("date") as string;
   const time = formData.get("time") as string;
   const durationMinutes = Number(formData.get("duration"));
@@ -21,23 +23,24 @@ export async function rescheduleAppointment(formData: FormData) {
     .eq("id", appointmentId);
 
   if (error) {
-    redirect(`/calendar/${appointmentId}?error=${encodeURIComponent(error.message)}`);
+    redirect(`${returnTo}&error=${encodeURIComponent(friendlyErrorMessage(error))}`);
   }
 
-  redirect(`/calendar/${appointmentId}`);
+  redirect(returnTo);
 }
 
 export async function setAppointmentStatus(formData: FormData) {
   await getCurrentStaff();
   const appointmentId = formData.get("appointmentId") as string;
+  const returnTo = formData.get("returnTo") as string;
   const status = formData.get("status") as string;
 
   const supabase = await createClient();
   const { error } = await supabase.from("appointments").update({ status }).eq("id", appointmentId);
 
   if (error) {
-    redirect(`/calendar/${appointmentId}?error=${encodeURIComponent(error.message)}`);
+    redirect(`${returnTo}&error=${encodeURIComponent(friendlyErrorMessage(error))}`);
   }
 
-  redirect(`/calendar/${appointmentId}`);
+  redirect(returnTo);
 }

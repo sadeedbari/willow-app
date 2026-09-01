@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
+import { friendlyErrorMessage } from "@/utils/friendly-error";
 
 export async function addAvailabilityBlock(formData: FormData) {
   const staff = await getCurrentStaff();
@@ -18,7 +19,7 @@ export async function addAvailabilityBlock(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/profile?error=${encodeURIComponent(error.message)}`);
+    redirect(`/profile?error=${encodeURIComponent(friendlyErrorMessage(error))}`);
   }
 
   revalidatePath("/profile");

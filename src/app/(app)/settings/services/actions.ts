@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import { STARTER_SERVICE_CODES } from "./starter-codes";
+import { friendlyErrorMessage } from "@/utils/friendly-error";
 
 function dollarsToCents(value: FormDataEntryValue | null) {
   const n = parseFloat((value as string) ?? "0");
@@ -46,7 +47,7 @@ export async function addServiceCode(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/settings/services?error=${encodeURIComponent(error.message)}`);
+    redirect(`/settings/services?error=${encodeURIComponent(friendlyErrorMessage(error))}`);
   }
 
   revalidatePath("/settings/services");

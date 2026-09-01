@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
+import { friendlyErrorMessage } from "@/utils/friendly-error";
 
 export async function sendConsentForm(formData: FormData) {
   const staff = await getCurrentStaff();
@@ -39,7 +40,7 @@ export async function sendConsentForm(formData: FormData) {
     .single();
 
   if (error || !data) {
-    redirect(`/clients/${clientId}?error=${encodeURIComponent(error?.message ?? "Could not create consent form")}`);
+    redirect(`/clients/${clientId}?error=${encodeURIComponent(friendlyErrorMessage(error, "Could not create consent form"))}`);
   }
 
   redirect(`/clients/${clientId}?consentToken=${data.access_token}`);

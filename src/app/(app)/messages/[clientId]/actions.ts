@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import { sendEmail } from "@/utils/resend/send";
+import { friendlyErrorMessage } from "@/utils/friendly-error";
 
 async function findOrCreateThread(clientId: string, practiceId: string) {
   const supabase = await createClient();
@@ -22,7 +23,7 @@ async function findOrCreateThread(clientId: string, practiceId: string) {
     .select("id")
     .single();
 
-  if (error || !created) throw new Error(error?.message ?? "Could not start conversation");
+  if (error || !created) throw new Error(friendlyErrorMessage(error, "Could not start conversation"));
   return created.id;
 }
 
@@ -48,7 +49,7 @@ export async function sendMessageAsStaff(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/messages/${clientId}?error=${encodeURIComponent(error.message)}`);
+    redirect(`/messages/${clientId}?error=${encodeURIComponent(friendlyErrorMessage(error))}`);
   }
 
   await supabase

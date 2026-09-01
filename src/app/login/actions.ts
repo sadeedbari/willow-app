@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
+import { friendlyErrorMessage } from "@/utils/friendly-error";
 
 export async function login(formData: FormData) {
   const email = formData.get("email") as string;
@@ -11,7 +12,7 @@ export async function login(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    redirect(`/login?error=${encodeURIComponent(error.message)}`);
+    redirect(`/login?error=${encodeURIComponent(friendlyErrorMessage(error))}`);
   }
 
   // Route based on account state, not just whether they're authenticated:

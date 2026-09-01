@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
+import { friendlyErrorMessage } from "@/utils/friendly-error";
 
 export async function createNote(formData: FormData) {
   const staff = await getCurrentStaff();
@@ -24,7 +25,7 @@ export async function createNote(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/notes/new?error=${encodeURIComponent(error.message)}`);
+    redirect(`/notes/new?error=${encodeURIComponent(friendlyErrorMessage(error))}`);
   }
 
   redirect("/notes");

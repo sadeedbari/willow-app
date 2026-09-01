@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
+import { friendlyErrorMessage } from "@/utils/friendly-error";
 
 export async function updatePracticeSettings(formData: FormData) {
   const staff = await getCurrentStaff();
@@ -22,7 +23,7 @@ export async function updatePracticeSettings(formData: FormData) {
     .eq("id", staff.practiceId);
 
   if (error) {
-    redirect(`/settings?error=${encodeURIComponent(error.message)}`);
+    redirect(`/settings?error=${encodeURIComponent(friendlyErrorMessage(error))}`);
   }
 
   redirect("/settings?saved=1");

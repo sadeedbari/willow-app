@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
+import { friendlyErrorMessage } from "@/utils/friendly-error";
 
 export async function updateProfile(formData: FormData) {
   const staff = await getCurrentStaff();
@@ -25,7 +26,7 @@ export async function updateProfile(formData: FormData) {
     .eq("id", staff.id);
 
   if (error) {
-    redirect(`/profile?error=${encodeURIComponent(error.message)}`);
+    redirect(`/profile?error=${encodeURIComponent(friendlyErrorMessage(error))}`);
   }
 
   redirect("/profile?saved=1");

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
+import { friendlyErrorMessage } from "@/utils/friendly-error";
 
 export async function acceptPortalInvite(formData: FormData) {
   const password = formData.get("password") as string;
@@ -17,7 +18,7 @@ export async function acceptPortalInvite(formData: FormData) {
 
   const { error } = await supabase.auth.updateUser({ password });
   if (error) {
-    redirect(`/portal/accept-invite?error=${encodeURIComponent(error.message)}`);
+    redirect(`/portal/accept-invite?error=${encodeURIComponent(friendlyErrorMessage(error))}`);
   }
 
   redirect("/portal");

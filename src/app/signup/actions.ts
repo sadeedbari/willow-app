@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
+import { friendlyErrorMessage } from "@/utils/friendly-error";
 
 export async function signup(formData: FormData) {
   const email = formData.get("email") as string;
@@ -17,7 +18,7 @@ export async function signup(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/signup?error=${encodeURIComponent(error.message)}`);
+    redirect(`/signup?error=${encodeURIComponent(friendlyErrorMessage(error))}`);
   }
 
   // If email confirmation is required, there's no session yet — send them

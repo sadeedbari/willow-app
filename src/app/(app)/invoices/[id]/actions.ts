@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
+import { friendlyErrorMessage } from "@/utils/friendly-error";
 
 function requireBillingRole(role: string, invoiceId: string) {
   if (role !== "practice_admin" && role !== "billing_admin") {
@@ -32,7 +33,7 @@ export async function addLineItem(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/invoices/${invoiceId}?error=${encodeURIComponent(error.message)}`);
+    redirect(`/invoices/${invoiceId}?error=${encodeURIComponent(friendlyErrorMessage(error))}`);
   }
 
   revalidatePath(`/invoices/${invoiceId}`);

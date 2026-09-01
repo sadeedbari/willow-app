@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
+import { friendlyErrorMessage } from "@/utils/friendly-error";
 
 function slugify(title: string) {
   return title
@@ -33,7 +34,7 @@ export async function createTemplate(formData: FormData) {
     .single();
 
   if (error || !data) {
-    redirect(`/consent-templates/new?error=${encodeURIComponent(error?.message ?? "Could not create template")}`);
+    redirect(`/consent-templates/new?error=${encodeURIComponent(friendlyErrorMessage(error, "Could not create template"))}`);
   }
 
   redirect(`/consent-templates/${data.id}`);

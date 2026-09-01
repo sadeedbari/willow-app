@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
+import { friendlyErrorMessage } from "@/utils/friendly-error";
 
 export async function portalLogin(formData: FormData) {
   const email = formData.get("email") as string;
@@ -11,7 +12,7 @@ export async function portalLogin(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    redirect(`/portal/login?error=${encodeURIComponent(error.message)}`);
+    redirect(`/portal/login?error=${encodeURIComponent(friendlyErrorMessage(error))}`);
   }
 
   const { data: clientId } = await supabase.rpc("my_client_id");

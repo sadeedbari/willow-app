@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { friendlyErrorMessage } from "@/utils/friendly-error";
 
 export async function inviteStaff(formData: FormData) {
   const supabase = await createClient();
@@ -19,7 +20,7 @@ export async function inviteStaff(formData: FormData) {
   });
 
   if (error || data?.error) {
-    redirect(`/settings/staff/invite?error=${encodeURIComponent(data?.error ?? error?.message ?? "Could not send invite")}`);
+    redirect(`/settings/staff/invite?error=${encodeURIComponent(data?.error ?? friendlyErrorMessage(error, "Could not send invite"))}`);
   }
 
   redirect("/settings/staff");

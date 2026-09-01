@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import Link from "next/link";
+import { AppointmentModal } from "./appointment-modal";
 
 type ApptRow = {
   id: string;
@@ -21,13 +22,22 @@ const TYPE_LABEL: Record<string, string> = {
   group: "Group",
 };
 
-const TYPE_COLOR: Record<string, string> = {
-  individual: "bg-hue-cal",
-  couples: "bg-hue-notes",
-  family: "bg-hue-clients",
-  intake: "bg-warn",
-  group: "bg-ok",
+// Couples and family share one color, matching the practice's own visual
+// convention of treating them as a single "Couples/Family" category.
+const TYPE_COLOR: Record<string, { text: string; bg: string; border: string }> = {
+  individual: { text: "text-hue-cal", bg: "bg-hue-cal-tint", border: "border-l-hue-cal" },
+  couples: { text: "text-hue-notes", bg: "bg-hue-notes-tint", border: "border-l-hue-notes" },
+  family: { text: "text-hue-notes", bg: "bg-hue-notes-tint", border: "border-l-hue-notes" },
+  intake: { text: "text-warn", bg: "bg-warn-tint", border: "border-l-warn" },
+  group: { text: "text-ok", bg: "bg-ok-tint", border: "border-l-ok" },
 };
+
+const LEGEND = [
+  { label: "Individual", dot: "bg-hue-cal" },
+  { label: "Couples/Family", dot: "bg-hue-notes" },
+  { label: "Intake", dot: "bg-warn" },
+  { label: "Telehealth", dot: "bg-text-3" },
+];
 
 const START_HOUR = 7;
 const END_HOUR = 20;
@@ -51,9 +61,9 @@ function toDateParam(d: Date) {
 export default async function CalendarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ week?: string; staffId?: string }>;
+  searchParams: Promise<{ week?: string; staffId?: string; event?: string; error?: string }>;
 }) {
-  const { week, staffId } = await searchParams;
+  const { week, staffId, event, error } = await searchParams;
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
@@ -64,10 +74,18 @@ export default async function CalendarPage({
   const todayParam = toDateParam(mondayOf(new Date()));
 
   const canFilterByClinician = staff.role === "practice_admin" || staff.role === "front_desk";
+  const staffIdParam = staffId ? `&staffId=${staffId}` : "";
+  const baseCalendarHref = `/calendar?week=${week ?? todayParam}${staffIdParam}`;
 
   const { data: clinicians } = canFilterByClinician
     ? await supabase.from("staff").select("id, full_name").in("role", ["clinician", "practice_admin"]).order("full_name")
     : { data: null };
+
+  const selectedClinicianName = staffId
+    ? clinicians?.find((c) => c.id === staffId)?.full_name
+    : staff.role === "clinician"
+      ? staff.fullName
+      : undefined;
 
   let query = supabase
     .from("appointments")
@@ -106,8 +124,9 @@ export default async function CalendarPage({
             Calendar
           </h1>
           <p className="mt-1 text-[13.5px] text-text-2">
-            {weekStart.toLocaleDateString(undefined, { month: "long", day: "numeric" })} –{" "}
-            {new Date(weekEnd.getTime() - 86400000).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}
+            Week of {weekStart.toLocaleDateString(undefined, { month: "long", day: "numeric" })}–
+            {new Date(weekEnd.getTime() - 86400000).toLocaleDateString(undefined, { day: "numeric" })}
+            {selectedClinicianName ? ` · ${selectedClinicianName}` : ""}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -131,31 +150,51 @@ export default async function CalendarPage({
               </button>
             </form>
           )}
+          <div className="flex items-center gap-1">
+            <Link
+              href={`/calendar?week=${prevWeek}${staffIdParam}`}
+              aria-label="Previous week"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-text-2 transition hover:bg-surface-2"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 6l-6 6 6 6" />
+              </svg>
+            </Link>
+            <Link
+              href={`/calendar?week=${nextWeek}${staffIdParam}`}
+              aria-label="Next week"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-text-2 transition hover:bg-surface-2"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 6l6 6-6 6" />
+              </svg>
+            </Link>
+          </div>
           <Link
-            href={`/calendar?week=${prevWeek}${staffId ? `&staffId=${staffId}` : ""}`}
-            className="rounded-lg border border-border px-3 py-1.5 text-[12.5px] font-semibold text-text-2 transition hover:bg-surface-2"
-          >
-            ← Prev
-          </Link>
-          <Link
-            href={`/calendar?week=${todayParam}${staffId ? `&staffId=${staffId}` : ""}`}
+            href={`/calendar?week=${todayParam}${staffIdParam}`}
             className="rounded-lg border border-border px-3 py-1.5 text-[12.5px] font-semibold text-text-2 transition hover:bg-surface-2"
           >
             Today
           </Link>
           <Link
-            href={`/calendar?week=${nextWeek}${staffId ? `&staffId=${staffId}` : ""}`}
-            className="rounded-lg border border-border px-3 py-1.5 text-[12.5px] font-semibold text-text-2 transition hover:bg-surface-2"
-          >
-            Next →
-          </Link>
-          <Link
             href="/calendar/new"
             className="rounded-lg bg-brand px-3.5 py-2 text-[13.4px] font-semibold text-white transition hover:bg-brand-ink"
           >
-            + New appointment
+            + New
           </Link>
         </div>
+      </div>
+
+      <div className="mb-3.5 flex flex-wrap gap-2">
+        {LEGEND.map((item) => (
+          <span
+            key={item.label}
+            className="inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-2.5 py-1 text-[11.5px] font-semibold text-text-2"
+          >
+            <span className={`h-2 w-2 rounded-full ${item.dot}`} />
+            {item.label}
+          </span>
+        ))}
       </div>
 
       <div className="overflow-x-auto rounded-2xl border border-border bg-surface shadow-sm">
@@ -163,7 +202,7 @@ export default async function CalendarPage({
           className="grid min-w-[820px]"
           style={{
             gridTemplateColumns: `56px repeat(7, minmax(0,1fr))`,
-            gridTemplateRows: `40px repeat(${SLOT_COUNT}, ${SLOT_PX}px)`,
+            gridTemplateRows: `48px repeat(${SLOT_COUNT}, ${SLOT_PX}px)`,
           }}
         >
           {/* Header row */}
@@ -173,11 +212,13 @@ export default async function CalendarPage({
             return (
               <div
                 key={i}
-                className={`sticky top-0 z-10 flex flex-col items-center justify-center border-b border-l border-border bg-surface text-[12px] ${isToday ? "text-brand" : "text-text-2"}`}
+                className={`sticky top-0 z-10 flex flex-col items-center justify-center border-b border-l border-border text-[12px] ${
+                  isToday ? "bg-brand-tint text-brand-ink" : "bg-surface text-text-2"
+                }`}
                 style={{ gridColumn: 2 + i, gridRow: 1 }}
               >
                 <span className="font-semibold">{d.toLocaleDateString(undefined, { weekday: "short" })}</span>
-                <span className={isToday ? "font-bold" : ""}>{d.getDate()}</span>
+                <span className={`text-[15px] ${isToday ? "font-bold" : "font-semibold text-foreground"}`}>{d.getDate()}</span>
               </div>
             );
           })}
@@ -186,12 +227,10 @@ export default async function CalendarPage({
           {hourLabels.map((h, i) => (
             <div
               key={h}
-              className="border-t border-border pr-2 text-right text-[11px] text-text-3"
+              className="border-t border-border px-1.5 pt-0.5 text-right text-[11px] text-text-3"
               style={{ gridColumn: 1, gridRow: `${2 + i * 2} / span 2` }}
             >
-              <span className="-translate-y-1/2 relative inline-block">
-                {h === 12 ? "12 PM" : h > 12 ? `${h - 12} PM` : `${h} AM`}
-              </span>
+              {h === 12 ? "12pm" : h > 12 ? `${h - 12}pm` : `${h}am`}
             </div>
           ))}
 
@@ -219,32 +258,27 @@ export default async function CalendarPage({
             const rowStart = 2 + Math.max(0, Math.floor(startMinutes / SLOT_MINUTES));
             const rowSpan = Math.max(1, Math.round(durationMinutes / SLOT_MINUTES));
             const isPast = a.status === "completed" || a.status === "no_show";
+            const color = TYPE_COLOR[a.type] ?? TYPE_COLOR.individual;
 
             return (
               <Link
                 key={a.id}
-                href={`/calendar/${a.id}`}
-                className={`m-0.5 overflow-hidden rounded-md px-1.5 py-1 text-[11px] leading-tight text-white shadow-sm transition hover:brightness-95 ${TYPE_COLOR[a.type] ?? "bg-brand"} ${isPast ? "opacity-50" : ""}`}
+                href={`${baseCalendarHref}&event=${a.id}`}
+                className={`m-0.5 overflow-hidden rounded-md border-l-[3px] px-1.5 py-1 text-[11px] leading-tight shadow-sm transition hover:shadow-md ${color.bg} ${color.text} ${color.border} ${isPast ? "opacity-50" : ""}`}
                 style={{ gridColumn: 2 + dayIndex, gridRow: `${rowStart} / span ${rowSpan}` }}
               >
-                <div className="truncate font-semibold">{a.clients?.full_name ?? "Unknown client"}</div>
-                <div className="truncate opacity-90">
-                  {start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} · {TYPE_LABEL[a.type] ?? a.type}
+                <div className="truncate text-[10px] font-semibold opacity-80">
+                  {start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
                 </div>
+                <div className="truncate font-semibold">{a.clients?.full_name ?? "Unknown client"}</div>
+                <div className="truncate opacity-80">{TYPE_LABEL[a.type] ?? a.type}</div>
               </Link>
             );
           })}
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-3 text-[11.5px] text-text-3">
-        {Object.entries(TYPE_LABEL).map(([key, label]) => (
-          <span key={key} className="flex items-center gap-1.5">
-            <span className={`h-2.5 w-2.5 rounded-full ${TYPE_COLOR[key]}`} />
-            {label}
-          </span>
-        ))}
-      </div>
+      {event && <AppointmentModal appointmentId={event} closeHref={baseCalendarHref} error={error} />}
     </div>
   );
 }

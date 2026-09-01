@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
+import { friendlyErrorMessage } from "@/utils/friendly-error";
 
 export async function signConsentForm(formData: FormData) {
   const token = formData.get("token") as string;
@@ -18,7 +19,7 @@ export async function signConsentForm(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/consent/${token}?error=${encodeURIComponent(error.message)}`);
+    redirect(`/consent/${token}?error=${encodeURIComponent(friendlyErrorMessage(error))}`);
   }
 
   redirect(`/consent/${token}`);

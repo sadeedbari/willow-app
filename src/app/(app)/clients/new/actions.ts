@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
+import { friendlyErrorMessage } from "@/utils/friendly-error";
 
 export async function createClientRecord(formData: FormData) {
   const staff = await getCurrentStaff();
@@ -25,7 +26,7 @@ export async function createClientRecord(formData: FormData) {
     .single();
 
   if (error || !data) {
-    redirect(`/clients/new?error=${encodeURIComponent(error?.message ?? "Could not create client")}`);
+    redirect(`/clients/new?error=${encodeURIComponent(friendlyErrorMessage(error, "Could not create client"))}`);
   }
 
   redirect(`/clients/${data.id}`);
