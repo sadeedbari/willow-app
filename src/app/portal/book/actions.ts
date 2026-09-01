@@ -35,7 +35,7 @@ export async function bookAppointment(formData: FormData) {
   const video = await createDailyRoomWithAccessLinks({
     apiKey,
     name: data.appointmentId,
-    expiresAt: new Date(new Date(data.endsAt).getTime() + 24 * 60 * 60 * 1000),
+    endsAt: new Date(data.endsAt),
   });
   if (video) {
     await supabase.rpc("attach_video_room_to_my_appointment", {

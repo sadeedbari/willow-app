@@ -50,7 +50,7 @@ export async function createAppointment(formData: FormData) {
     const video = await createDailyRoomWithAccessLinks({
       apiKey,
       name: appointment.id,
-      expiresAt: new Date(endsAt.getTime() + 24 * 60 * 60 * 1000),
+      endsAt,
     });
     if (video) {
       videoClientUrl = video.clientUrl;

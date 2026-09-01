@@ -3,19 +3,24 @@
 //
 // Rooms are private with "knocking" enabled: the client's link only lets
 // them request entry and wait in a lobby screen until the practitioner
-// (who joins with an owner token) is in the call to admit them.
+// (who joins with an owner token) is in the call to admit them. The room
+// also force-ends for everyone (eject_at_room_exp) a grace period after the
+// appointment's scheduled end, regardless of whether anyone remembers to
+// hang up.
+const GRACE_PERIOD_MINUTES = 15;
+
 export async function createDailyRoomWithAccessLinks({
   apiKey,
   name,
-  expiresAt,
+  endsAt,
 }: {
   apiKey: string | null;
   name: string;
-  expiresAt: Date;
+  endsAt: Date;
 }): Promise<{ roomUrl: string; practitionerUrl: string; clientUrl: string } | null> {
   if (!apiKey) return null;
 
-  const exp = Math.floor(expiresAt.getTime() / 1000);
+  const exp = Math.floor((endsAt.getTime() + GRACE_PERIOD_MINUTES * 60 * 1000) / 1000);
   const headers = {
     Authorization: `Bearer ${apiKey}`,
     "Content-Type": "application/json",
@@ -28,7 +33,7 @@ export async function createDailyRoomWithAccessLinks({
       body: JSON.stringify({
         name,
         privacy: "private",
-        properties: { exp, enable_knocking: true },
+        properties: { exp, eject_at_room_exp: true, enable_knocking: true },
       }),
     });
 
