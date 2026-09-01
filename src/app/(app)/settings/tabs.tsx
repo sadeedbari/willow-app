@@ -4,6 +4,7 @@ const TABS = [
   { href: "/settings", label: "Practice Profile" },
   { href: "/settings/staff", label: "Staff" },
   { href: "/settings/services", label: "Services" },
+  { href: "/settings/telehealth", label: "Telehealth" },
   { href: "/settings/billing", label: "Subscription" },
 ];
 

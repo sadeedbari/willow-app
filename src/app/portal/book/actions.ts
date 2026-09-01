@@ -6,6 +6,7 @@ import { getCurrentClient } from "@/utils/supabase/current-client";
 import { SELF_BOOKABLE_TYPES, type SelfBookableType } from "@/utils/appointment-types";
 import { friendlyErrorMessage } from "@/utils/friendly-error";
 import { sendAppointmentConfirmationEmail } from "@/utils/appointment-email";
+import { createDailyRoom } from "@/utils/daily/create-room";
 
 export async function bookAppointment(formData: FormData) {
   const client = await getCurrentClient();
@@ -27,6 +28,20 @@ export async function bookAppointment(formData: FormData) {
 
   if (error) {
     redirect(`/portal/book?${backParams}&error=${encodeURIComponent(friendlyErrorMessage(error))}`);
+  }
+
+  // Self-booked appointments are always telehealth.
+  const { data: apiKey } = await supabase.rpc("get_my_practice_daily_api_key");
+  const roomUrl = await createDailyRoom({
+    apiKey,
+    name: data.appointmentId,
+    expiresAt: new Date(new Date(data.endsAt).getTime() + 24 * 60 * 60 * 1000),
+  });
+  if (roomUrl) {
+    await supabase.rpc("attach_video_room_to_my_appointment", {
+      p_appointment_id: data.appointmentId,
+      p_room_url: roomUrl,
+    });
   }
 
   await sendAppointmentConfirmationEmail({

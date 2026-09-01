@@ -37,7 +37,7 @@ export async function AppointmentModal({
 
   const { data: appt } = await supabase
     .from("appointments")
-    .select("id, starts_at, ends_at, type, location_type, status, client_id, clients(full_name), staff(full_name)")
+    .select("id, starts_at, ends_at, type, location_type, status, client_id, video_room_url, clients(full_name), staff(full_name)")
     .eq("id", appointmentId)
     .single();
 
@@ -103,18 +103,33 @@ export async function AppointmentModal({
           </div>
 
           {appt.location_type === "telehealth" && (
-            <button
-              type="button"
-              disabled
-              title="Video calling isn't connected yet — coming soon"
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-[13.6px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15 10l5-3v10l-5-3" />
-                <rect x="3" y="6" width="12" height="12" rx="2" />
-              </svg>
-              Join Video Call
-            </button>
+            appt.video_room_url ? (
+              <a
+                href={appt.video_room_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-[13.6px] font-semibold text-white transition hover:bg-brand-ink"
+              >
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 10l5-3v10l-5-3" />
+                  <rect x="3" y="6" width="12" height="12" rx="2" />
+                </svg>
+                Join Video Call
+              </a>
+            ) : (
+              <button
+                type="button"
+                disabled
+                title="No video link on file for this appointment — check that this practice's Daily.co account is configured under Settings"
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-[13.6px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 10l5-3v10l-5-3" />
+                  <rect x="3" y="6" width="12" height="12" rx="2" />
+                </svg>
+                Join Video Call
+              </button>
+            )
           )}
 
           <div className="mt-4 rounded-2xl border border-border bg-surface-2 p-5">
