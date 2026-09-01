@@ -1,8 +1,10 @@
 // Best-effort, like sendEmail() -- a failed or unconfigured Daily account
-// must never block appointment creation, so this never throws. Returns the
-// room URL on success, null if the practice hasn't configured Daily yet or
-// the request failed.
-export async function createDailyRoom({
+// must never block appointment creation, so this never throws.
+//
+// Rooms are private with "knocking" enabled: the client's link only lets
+// them request entry and wait in a lobby screen until the practitioner
+// (who joins with an owner token) is in the call to admit them.
+export async function createDailyRoomWithAccessLinks({
   apiKey,
   name,
   expiresAt,
@@ -10,33 +12,75 @@ export async function createDailyRoom({
   apiKey: string | null;
   name: string;
   expiresAt: Date;
-}): Promise<string | null> {
+}): Promise<{ roomUrl: string; practitionerUrl: string; clientUrl: string } | null> {
   if (!apiKey) return null;
 
+  const exp = Math.floor(expiresAt.getTime() / 1000);
+  const headers = {
+    Authorization: `Bearer ${apiKey}`,
+    "Content-Type": "application/json",
+  };
+
   try {
-    const res = await fetch("https://api.daily.co/v1/rooms", {
+    const roomRes = await fetch("https://api.daily.co/v1/rooms", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify({
         name,
-        properties: {
-          exp: Math.floor(expiresAt.getTime() / 1000),
-        },
+        privacy: "private",
+        properties: { exp, enable_knocking: true },
       }),
     });
 
+    if (!roomRes.ok) {
+      console.error("Daily room creation failed:", roomRes.status, await roomRes.text());
+      return null;
+    }
+
+    const room = await roomRes.json();
+    const roomUrl: string | undefined = room.url;
+    if (!roomUrl) return null;
+
+    const [practitionerToken, clientToken] = await Promise.all([
+      createMeetingToken(headers, name, true, exp),
+      createMeetingToken(headers, name, false, exp),
+    ]);
+
+    if (!practitionerToken || !clientToken) return null;
+
+    return {
+      roomUrl,
+      practitionerUrl: `${roomUrl}?t=${practitionerToken}`,
+      clientUrl: `${roomUrl}?t=${clientToken}`,
+    };
+  } catch (err) {
+    console.error("Daily room creation threw:", err);
+    return null;
+  }
+}
+
+async function createMeetingToken(
+  headers: Record<string, string>,
+  roomName: string,
+  isOwner: boolean,
+  exp: number
+): Promise<string | null> {
+  try {
+    const res = await fetch("https://api.daily.co/v1/meeting-tokens", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ properties: { room_name: roomName, is_owner: isOwner, exp } }),
+    });
+
     if (!res.ok) {
-      console.error("Daily room creation failed:", res.status, await res.text());
+      console.error("Daily meeting-token creation failed:", res.status, await res.text());
       return null;
     }
 
     const data = await res.json();
-    return data.url ?? null;
+    return data.token ?? null;
   } catch (err) {
-    console.error("Daily room creation threw:", err);
+    console.error("Daily meeting-token creation threw:", err);
     return null;
   }
 }

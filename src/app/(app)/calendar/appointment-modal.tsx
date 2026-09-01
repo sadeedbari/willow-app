@@ -37,7 +37,7 @@ export async function AppointmentModal({
 
   const { data: appt } = await supabase
     .from("appointments")
-    .select("id, starts_at, ends_at, type, location_type, status, client_id, video_room_url, clients(full_name), staff(full_name)")
+    .select("id, starts_at, ends_at, type, location_type, status, client_id, video_practitioner_url, clients(full_name), staff(full_name)")
     .eq("id", appointmentId)
     .single();
 
@@ -103,9 +103,9 @@ export async function AppointmentModal({
           </div>
 
           {appt.location_type === "telehealth" && (
-            appt.video_room_url ? (
+            appt.video_practitioner_url ? (
               <a
-                href={appt.video_room_url}
+                href={appt.video_practitioner_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-[13.6px] font-semibold text-white transition hover:bg-brand-ink"

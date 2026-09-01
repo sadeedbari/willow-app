@@ -16,6 +16,7 @@ export type AppointmentEmailDetails = {
   startsAt: string;
   type: string;
   locationType: string;
+  videoClientUrl?: string | null;
 };
 
 // Best-effort -- sendEmail() itself never throws, and a missing client email
@@ -47,6 +48,11 @@ export async function sendAppointmentConfirmationEmail(details: AppointmentEmail
         <li><strong>Location:</strong> ${locationLabel}</li>
         ${details.staffName ? `<li><strong>With:</strong> ${details.staffName}</li>` : ""}
       </ul>
+      ${
+        details.videoClientUrl
+          ? `<p><a href="${details.videoClientUrl}">Join the video call</a> at your appointment time. You'll wait in a virtual lobby until your clinician starts the session.</p>`
+          : ""
+      }
       <p>If you need to reschedule or cancel, please contact your practice directly.</p>
     `,
   });

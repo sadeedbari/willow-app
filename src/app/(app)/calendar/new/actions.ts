@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import { friendlyErrorMessage } from "@/utils/friendly-error";
 import { sendAppointmentConfirmationEmail } from "@/utils/appointment-email";
-import { createDailyRoom } from "@/utils/daily/create-room";
+import { createDailyRoomWithAccessLinks } from "@/utils/daily/create-room";
 
 export async function createAppointment(formData: FormData) {
   const staff = await getCurrentStaff();
@@ -43,15 +43,25 @@ export async function createAppointment(formData: FormData) {
     redirect(`${reopenHref}&error=${encodeURIComponent(friendlyErrorMessage(error, "Could not create appointment"))}`);
   }
 
+  let videoClientUrl: string | null = null;
+
   if (locationType === "telehealth") {
     const { data: apiKey } = await supabase.rpc("get_my_practice_daily_api_key");
-    const roomUrl = await createDailyRoom({
+    const video = await createDailyRoomWithAccessLinks({
       apiKey,
       name: appointment.id,
       expiresAt: new Date(endsAt.getTime() + 24 * 60 * 60 * 1000),
     });
-    if (roomUrl) {
-      await supabase.from("appointments").update({ video_room_url: roomUrl }).eq("id", appointment.id);
+    if (video) {
+      videoClientUrl = video.clientUrl;
+      await supabase
+        .from("appointments")
+        .update({
+          video_room_url: video.roomUrl,
+          video_practitioner_url: video.practitionerUrl,
+          video_client_url: video.clientUrl,
+        })
+        .eq("id", appointment.id);
     }
   }
 
@@ -69,6 +79,7 @@ export async function createAppointment(formData: FormData) {
       startsAt: startsAt.toISOString(),
       type,
       locationType,
+      videoClientUrl,
     });
   }
 
