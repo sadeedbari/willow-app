@@ -95,7 +95,7 @@ export default async function ClientDetailPage({
   const sentForm = consentToken ? consentForms?.find((f) => f.access_token === consentToken) : null;
 
   return (
-    <div>
+    <div className="mx-auto max-w-5xl">
       <Link href="/clients" className="text-[13px] font-semibold text-brand-ink">
         ← Back to clients
       </Link>

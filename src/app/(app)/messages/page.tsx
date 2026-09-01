@@ -33,7 +33,7 @@ export default async function MessagesInboxPage() {
   const rows = (threads ?? []) as unknown as Row[];
 
   return (
-    <div>
+    <div className="mx-auto max-w-5xl">
       <h1 className="text-[26px] font-bold tracking-tight text-foreground">Messages</h1>
       <p className="mt-1 text-[13.5px] text-text-2">Secure messaging with clients.</p>
 

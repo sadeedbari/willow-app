@@ -46,7 +46,7 @@ export default async function NotesPage() {
   const notes = (data ?? []) as unknown as Row[];
 
   return (
-    <div>
+    <div className="mx-auto max-w-5xl">
       <div className="mb-6 flex items-end justify-between">
         <div>
           <h1 className="text-[26px] font-bold tracking-tight text-foreground">

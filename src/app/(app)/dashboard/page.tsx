@@ -43,7 +43,7 @@ export default async function DashboardPage() {
   const firstName = staff.fullName.split(" ")[0];
 
   return (
-    <div>
+    <div className="mx-auto max-w-5xl">
       <div className="mb-7">
         <h1 className="text-[26px] font-bold tracking-tight text-foreground">
           Good to see you, {firstName}

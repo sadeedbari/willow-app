@@ -128,7 +128,7 @@ export default async function SearchPage({
   const hasResults = clients.length > 0 || notes.length > 0 || invoices.length > 0;
 
   return (
-    <div>
+    <div className="mx-auto max-w-5xl">
       <h1 className="text-[26px] font-bold tracking-tight text-foreground">Search</h1>
       <p className="mt-1 text-[13.5px] text-text-2">
         Results for &ldquo;{query}&rdquo;

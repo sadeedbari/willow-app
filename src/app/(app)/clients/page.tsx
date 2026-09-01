@@ -28,7 +28,7 @@ export default async function ClientsPage() {
   const canAdd = staff.role === "practice_admin" || staff.role === "front_desk";
 
   return (
-    <div>
+    <div className="mx-auto max-w-5xl">
       <div className="mb-6 flex items-end justify-between">
         <div>
           <h1 className="text-[26px] font-bold tracking-tight text-foreground">

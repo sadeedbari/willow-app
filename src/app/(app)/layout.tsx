@@ -298,7 +298,7 @@ export default async function AppLayout({
         </header>
 
         <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-5xl px-8 py-8">{children}</div>
+          <div className="px-8 py-8">{children}</div>
         </main>
       </div>
     </div>

@@ -45,10 +45,17 @@ export async function AppointmentModal({
 
   const client = appt.clients as unknown as { full_name: string } | null;
   const clinician = appt.staff as unknown as { full_name: string } | null;
-  const isScheduled = appt.status === "scheduled";
   const start = new Date(appt.starts_at);
   const end = new Date(appt.ends_at);
   const durationMinutes = Math.round((end.getTime() - start.getTime()) / 60000);
+  const isPast = end.getTime() < Date.now();
+  const isScheduled = appt.status === "scheduled";
+  // Reschedule/mark-completed/cancel only make sense for an appointment that
+  // hasn't happened yet. No-show correction is the opposite: only useful once
+  // it's in the past (whether still "scheduled" -- the hourly auto-complete
+  // job hasn't caught up yet -- or already auto-marked "completed").
+  const canManageUpcoming = isScheduled && !isPast;
+  const canMarkNoShow = isPast && (appt.status === "scheduled" || appt.status === "completed");
   // Actions (reschedule, status change) should reopen this same modal with
   // the updated data -- only the close button/backdrop should fully close it.
   const returnTo = `${closeHref}&event=${appt.id}`;
@@ -100,7 +107,22 @@ export async function AppointmentModal({
             </div>
           </div>
 
-          <div className="mt-5 rounded-2xl border border-border bg-surface-2 p-5">
+          {appt.location_type === "telehealth" && (
+            <button
+              type="button"
+              disabled
+              title="Video calling isn't connected yet — coming soon"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-[13.6px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 10l5-3v10l-5-3" />
+                <rect x="3" y="6" width="12" height="12" rx="2" />
+              </svg>
+              Join Video Call
+            </button>
+          )}
+
+          <div className="mt-4 rounded-2xl border border-border bg-surface-2 p-5">
             <dl className="space-y-2 text-[13.4px]">
               <div className="flex justify-between">
                 <dt className="text-text-3">Type</dt>
@@ -116,9 +138,12 @@ export async function AppointmentModal({
               </div>
             </dl>
 
-            <div className="mt-4 flex gap-3 border-t border-border pt-4">
+            <div className="mt-4 flex flex-wrap gap-3 border-t border-border pt-4">
               <Link href={`/clients/${appt.client_id}`} className="text-[12.5px] font-semibold text-brand-ink">
                 View client
+              </Link>
+              <Link href={`/messages/${appt.client_id}`} className="text-[12.5px] font-semibold text-brand-ink">
+                Message client
               </Link>
               <Link href={`/notes/new?clientId=${appt.client_id}`} className="text-[12.5px] font-semibold text-brand-ink">
                 + Session note
@@ -126,7 +151,7 @@ export async function AppointmentModal({
             </div>
           </div>
 
-          {isScheduled && (
+          {canManageUpcoming && (
             <>
               <form action={rescheduleAppointment} className="mt-5 rounded-2xl border border-border bg-surface p-4 shadow-sm">
                 <input type="hidden" name="appointmentId" value={appt.id} />
@@ -189,17 +214,6 @@ export async function AppointmentModal({
                 <form action={setAppointmentStatus}>
                   <input type="hidden" name="appointmentId" value={appt.id} />
                   <input type="hidden" name="returnTo" value={returnTo} />
-                  <input type="hidden" name="status" value="no_show" />
-                  <button
-                    type="submit"
-                    className="rounded-lg border border-border px-4 py-2 text-[13.4px] font-semibold text-warn transition hover:bg-warn-tint"
-                  >
-                    Mark no-show
-                  </button>
-                </form>
-                <form action={setAppointmentStatus}>
-                  <input type="hidden" name="appointmentId" value={appt.id} />
-                  <input type="hidden" name="returnTo" value={returnTo} />
                   <input type="hidden" name="status" value="cancelled" />
                   <button
                     type="submit"
@@ -210,6 +224,22 @@ export async function AppointmentModal({
                 </form>
               </div>
             </>
+          )}
+
+          {canMarkNoShow && (
+            <div className="mt-5">
+              <form action={setAppointmentStatus}>
+                <input type="hidden" name="appointmentId" value={appt.id} />
+                <input type="hidden" name="returnTo" value={returnTo} />
+                <input type="hidden" name="status" value="no_show" />
+                <button
+                  type="submit"
+                  className="rounded-lg border border-border px-4 py-2 text-[13.4px] font-semibold text-warn transition hover:bg-warn-tint"
+                >
+                  Mark no-show
+                </button>
+              </form>
+            </div>
           )}
         </div>
       </div>

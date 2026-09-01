@@ -86,7 +86,7 @@ export default async function InvoicesPage() {
   const canCreate = staff.role === "practice_admin" || staff.role === "billing_admin";
 
   return (
-    <div>
+    <div className="mx-auto max-w-5xl">
       <div className="mb-6 flex items-end justify-between">
         <div>
           <h1 className="text-[26px] font-bold tracking-tight text-foreground">

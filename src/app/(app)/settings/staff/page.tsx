@@ -34,7 +34,7 @@ export default async function StaffPage() {
       : { data: null };
 
   return (
-    <div>
+    <div className="max-w-2xl">
       <div className="mb-6">
         <h1 className="text-[26px] font-bold tracking-tight text-foreground">Settings</h1>
         <p className="mt-1 text-[13.5px] text-text-2">{team?.length ?? 0} team members</p>
