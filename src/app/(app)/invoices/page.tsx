@@ -42,7 +42,21 @@ function StatCard({
   );
 }
 
-export default async function InvoicesPage() {
+const STATUS_FILTERS = [
+  { key: "all", label: "All" },
+  { key: "draft", label: "Draft" },
+  { key: "sent", label: "Sent" },
+  { key: "paid", label: "Paid" },
+  { key: "void", label: "Void" },
+];
+
+export default async function InvoicesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
+}) {
+  const { status } = await searchParams;
+  const activeStatus = STATUS_FILTERS.some((s) => s.key === status) ? status! : "all";
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
@@ -84,6 +98,7 @@ export default async function InvoicesPage() {
   const collectedCents = paidThisMonth.reduce((sum, inv) => sum + inv.amount_paid_cents, 0);
 
   const canCreate = staff.role === "practice_admin" || staff.role === "billing_admin";
+  const filteredInvoices = activeStatus === "all" ? invoices : invoices.filter((inv) => inv.status === activeStatus);
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -129,8 +144,24 @@ export default async function InvoicesPage() {
         />
       </div>
 
+      <div className="mb-5 flex gap-1 border-b border-border">
+        {STATUS_FILTERS.map((s) => (
+          <Link
+            key={s.key}
+            href={s.key === "all" ? "/invoices" : `/invoices?status=${s.key}`}
+            className={`-mb-px border-b-2 px-2.5 pb-2 text-[13.4px] font-semibold transition ${
+              activeStatus === s.key
+                ? "border-brand text-foreground"
+                : "border-transparent text-text-3 hover:text-foreground"
+            }`}
+          >
+            {s.label}
+          </Link>
+        ))}
+      </div>
+
       <div className="space-y-2">
-        {invoices.map((inv) => {
+        {filteredInvoices.map((inv) => {
           const balance = inv.total_cents - inv.amount_paid_cents;
           const isOverdue = inv.status === "sent" && !!inv.due_date && inv.due_date < today;
           return (
@@ -173,9 +204,9 @@ export default async function InvoicesPage() {
             </Link>
           );
         })}
-        {!invoices.length && (
+        {!filteredInvoices.length && (
           <p className="rounded-2xl border border-border bg-surface p-8 text-center text-[13px] text-text-3">
-            No invoices yet.
+            {activeStatus === "all" ? "No invoices yet." : `No ${activeStatus} invoices.`}
           </p>
         )}
       </div>

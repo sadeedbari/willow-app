@@ -2,7 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { addLineItem, removeLineItem, markSent, recordPayment, voidInvoice } from "./actions";
+import { addLineItem, removeLineItem, markSent, recordPayment, voidInvoice, resendInvoice } from "./actions";
 
 const STATUS_STYLE: Record<string, string> = {
   draft: "bg-surface-2 text-text-3",
@@ -35,10 +35,10 @@ export default async function InvoiceDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; resent?: string }>;
 }) {
   const { id } = await params;
-  const { error } = await searchParams;
+  const { error, resent } = await searchParams;
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
@@ -86,6 +86,11 @@ export default async function InvoiceDetailPage({
       {error && (
         <p className="mt-4 rounded-lg bg-bad-tint px-3 py-2 text-[13px] text-bad">
           {decodeURIComponent(error)}
+        </p>
+      )}
+      {resent && (
+        <p className="mt-4 rounded-lg bg-ok-tint px-3 py-2 text-[13px] text-ok">
+          Invoice emailed to the client.
         </p>
       )}
 
@@ -285,6 +290,18 @@ export default async function InvoiceDetailPage({
 
       {canManage && (
         <div className="mt-5 flex flex-wrap gap-3">
+          <form action={resendInvoice}>
+            <input type="hidden" name="invoiceId" value={invoice.id} />
+            <button
+              type="submit"
+              disabled={!client?.email}
+              title={client?.email ? undefined : "This client has no email on file"}
+              className="rounded-lg border border-border px-4 py-2 text-[13.4px] font-semibold text-text-2 transition hover:border-brand hover:text-brand-ink disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Resend invoice
+            </button>
+          </form>
+
           {isDraft && (
             <form action={markSent}>
               <input type="hidden" name="invoiceId" value={invoice.id} />
