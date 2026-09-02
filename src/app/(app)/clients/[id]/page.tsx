@@ -4,8 +4,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { sendConsentForm } from "./consent-actions";
 import { inviteToPortal } from "./portal-actions";
-import { updateDefaultAppointmentType } from "./booking-actions";
-import { APPOINTMENT_TYPE_LABEL, SELF_BOOKABLE_TYPES } from "@/utils/appointment-types";
+import { avatarColorFor, initialsOf } from "@/utils/avatar-color";
+import { EditClientModal } from "./edit-client-modal";
 
 const STATUS_LABEL: Record<string, string> = {
   active: "Active",
@@ -14,10 +14,17 @@ const STATUS_LABEL: Record<string, string> = {
   waitlisted: "Waitlisted",
 };
 
+const STATUS_STYLE: Record<string, string> = {
+  active: "bg-ok-tint text-ok",
+  on_hold: "bg-warn-tint text-warn",
+  discharged: "bg-surface-2 text-text-2",
+  waitlisted: "bg-hue-cal-tint text-hue-cal",
+};
+
 const CONSENT_STATUS_STYLE: Record<string, string> = {
   pending: "bg-warn-tint text-warn",
   signed: "bg-ok-tint text-ok",
-  expired: "bg-surface-2 text-text-3",
+  expired: "bg-bad-tint text-bad",
 };
 
 const CONSENT_STATUS_LABEL: Record<string, string> = {
@@ -26,33 +33,43 @@ const CONSENT_STATUS_LABEL: Record<string, string> = {
   expired: "Expired",
 };
 
+const TABS = [
+  { key: "overview", label: "Overview" },
+  { key: "notes", label: "Session Notes" },
+  { key: "consent", label: "Consent Forms" },
+  { key: "billing", label: "Billing" },
+  { key: "documents", label: "Documents" },
+];
+
 export default async function ClientDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string; consentToken?: string }>;
+  searchParams: Promise<{ tab?: string; error?: string; consentToken?: string; edit?: string }>;
 }) {
   const { id } = await params;
-  const { error, consentToken } = await searchParams;
+  const { tab, error, consentToken, edit } = await searchParams;
   const staff = await getCurrentStaff();
   const supabase = await createClient();
+  const activeTab = TABS.some((t) => t.key === tab) ? tab! : "overview";
+
+  const { data: allClients } = await supabase
+    .from("clients")
+    .select("id, full_name, presenting_concern")
+    .order("full_name");
 
   const { data: client } = await supabase
     .from("clients")
-    .select("id, full_name, date_of_birth, phone, email, presenting_concern, status, payer, balance_cents, assigned_staff_id, portal_user_id, default_appointment_type")
+    .select(
+      "id, full_name, date_of_birth, phone, email, presenting_concern, status, payer, balance_cents, assigned_staff_id, portal_user_id, default_appointment_type, session_frequency, created_at, staff:assigned_staff_id(full_name)"
+    )
     .eq("id", id)
     .single();
 
   if (!client) notFound();
 
-  const { data: appointments } = await supabase
-    .from("appointments")
-    .select("id, starts_at, type, status")
-    .eq("client_id", id)
-    .gte("starts_at", new Date().toISOString())
-    .order("starts_at")
-    .limit(5);
+  const clinician = client.staff as unknown as { full_name: string } | null;
 
   const isOwnClient = client.assigned_staff_id === staff.id;
   const canSeeNotes = staff.role === "clinician" && isOwnClient;
@@ -60,50 +77,53 @@ export default async function ClientDetailPage({
   const canSendConsent = staff.role === "practice_admin" || staff.role === "front_desk";
   const canInviteToPortal = staff.role === "practice_admin" || staff.role === "front_desk";
   const canMessage = staff.role === "practice_admin" || (staff.role === "clinician" && isOwnClient);
-  const canEditBookingType = staff.role === "practice_admin" || staff.role === "front_desk";
+  const canEdit = staff.role === "practice_admin" || staff.role === "front_desk";
 
-  const { data: notes } = canSeeNotes
-    ? await supabase
-        .from("session_notes")
-        .select("id, session_date, status, subjective")
+  const [{ data: notes }, { data: invoices }, { data: consentForms }, { data: templates }, { data: upcoming }] =
+    await Promise.all([
+      canSeeNotes
+        ? supabase
+            .from("session_notes")
+            .select("id, session_date, status, subjective")
+            .eq("client_id", id)
+            .order("session_date", { ascending: false })
+        : Promise.resolve({ data: null }),
+      supabase
+        .from("invoices")
+        .select("id, invoice_number, status, total_cents, amount_paid_cents, issue_date")
         .eq("client_id", id)
-        .order("session_date", { ascending: false })
-    : { data: null };
-
-  const { data: invoices } = await supabase
-    .from("invoices")
-    .select("id, invoice_number, status, total_cents, amount_paid_cents")
-    .eq("client_id", id)
-    .order("issue_date", { ascending: false })
-    .limit(5);
-
-  const { data: consentForms } = await supabase
-    .from("consent_forms")
-    .select("id, form_type, status, signed_at, access_token")
-    .eq("client_id", id)
-    .order("created_at", { ascending: false });
-
-  const { data: templates } = canSendConsent
-    ? await supabase
-        .from("consent_form_templates")
-        .select("id, title")
-        .eq("active", true)
-        .order("title")
-    : { data: null };
+        .order("issue_date", { ascending: false }),
+      supabase
+        .from("consent_forms")
+        .select("id, form_type, status, signed_at, access_token")
+        .eq("client_id", id)
+        .order("created_at", { ascending: false }),
+      canSendConsent
+        ? supabase.from("consent_form_templates").select("id, title").eq("active", true).order("title")
+        : Promise.resolve({ data: null }),
+      supabase
+        .from("appointments")
+        .select("id, starts_at, type")
+        .eq("client_id", id)
+        .eq("status", "scheduled")
+        .gte("starts_at", new Date().toISOString())
+        .order("starts_at")
+        .limit(5),
+    ]);
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   const sentForm = consentToken ? consentForms?.find((f) => f.access_token === consentToken) : null;
+  const color = avatarColorFor(client.id);
+  const tabHref = (key: string) => `/clients/${id}${key === "overview" ? "" : `?tab=${key}`}`;
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-6xl">
       <Link href="/clients" className="text-[13px] font-semibold text-brand-ink">
-        ← Back to clients
+        ← Back to Clients
       </Link>
 
       {error && (
-        <p className="mt-4 rounded-lg bg-bad-tint px-3 py-2 text-[13px] text-bad">
-          {decodeURIComponent(error)}
-        </p>
+        <p className="mt-4 rounded-lg bg-bad-tint px-3 py-2 text-[13px] text-bad">{decodeURIComponent(error)}</p>
       )}
 
       {sentForm && (
@@ -117,318 +137,398 @@ export default async function ClientDetailPage({
         </div>
       )}
 
-      <div className="mt-3 flex items-start justify-between">
-        <div>
-          <h1 className="text-[22px] font-bold tracking-tight text-foreground">
-            {client.full_name}
-          </h1>
-          <p className="mt-1 text-[13.5px] text-text-2">
-            {client.presenting_concern ?? "No presenting concern on file"}
-          </p>
-        </div>
-        <span className="inline-flex rounded-full bg-ok-tint px-2.5 py-0.5 text-[11.5px] font-semibold text-ok">
-          {STATUS_LABEL[client.status]}
-        </span>
-      </div>
-
-      <div className="mt-6 grid grid-cols-2 gap-6">
-        <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
-          <div className="mb-3 text-[13px] font-bold text-foreground">
-            Client details
-          </div>
-          <dl className="space-y-2 text-[13.4px]">
-            <div className="flex justify-between">
-              <dt className="text-text-3">Date of birth</dt>
-              <dd className="text-foreground">{client.date_of_birth ?? "—"}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-text-3">Phone</dt>
-              <dd className="text-foreground">{client.phone ?? "—"}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-text-3">Email</dt>
-              <dd className="text-foreground">{client.email ?? "—"}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-text-3">Payer</dt>
-              <dd className="text-foreground">{client.payer ?? "—"}</dd>
-            </div>
-            <div className="flex justify-between border-t border-border pt-2">
-              <dt className="font-semibold text-text-2">Balance</dt>
-              <dd
-                className={`font-semibold ${client.balance_cents > 0 ? "text-warn" : "text-ok"}`}
+      <div className="mt-4 grid grid-cols-[260px_1fr] gap-6">
+        {/* Left: client list */}
+        <div className="space-y-1.5">
+          {allClients?.map((c) => {
+            const isSelected = c.id === id;
+            const cColor = avatarColorFor(c.id);
+            return (
+              <Link
+                key={c.id}
+                href={`/clients/${c.id}`}
+                className={`flex items-center gap-2.5 rounded-xl border-l-[3px] px-3 py-2.5 transition ${
+                  isSelected
+                    ? "border-l-brand bg-brand-tint"
+                    : "border-l-transparent hover:bg-surface-2"
+                }`}
               >
-                ${(client.balance_cents / 100).toFixed(2)}
-              </dd>
-            </div>
-          </dl>
+                <span
+                  className={`flex h-8 w-8 flex-none items-center justify-center rounded-full text-[11px] font-bold ${cColor.bg} ${cColor.text}`}
+                >
+                  {initialsOf(c.full_name)}
+                </span>
+                <span className="min-w-0">
+                  <span className={`block truncate text-[13.4px] font-semibold ${isSelected ? "text-brand-ink" : "text-foreground"}`}>
+                    {c.full_name}
+                  </span>
+                  <span className="block truncate text-[11.5px] text-text-3">{c.presenting_concern ?? "—"}</span>
+                </span>
+              </Link>
+            );
+          })}
+        </div>
 
-          <div className="mt-4 border-t border-border pt-3">
-            {canEditBookingType ? (
-              <form action={updateDefaultAppointmentType} className="flex items-end gap-2">
-                <input type="hidden" name="clientId" value={client.id} />
-                <div className="flex-1">
-                  <label className="block text-[12px] font-semibold text-text-2">
-                    Default self-booking type
-                  </label>
-                  <select
-                    name="defaultAppointmentType"
-                    defaultValue={client.default_appointment_type ?? ""}
-                    className="mt-1 w-full rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[13px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-                  >
-                    <option value="">Not set — client will choose on first booking</option>
-                    {SELF_BOOKABLE_TYPES.map((t) => (
-                      <option key={t} value={t}>
-                        {APPOINTMENT_TYPE_LABEL[t]}
-                      </option>
-                    ))}
-                  </select>
+        {/* Right: detail panel */}
+        <div>
+          <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <span
+                  className={`flex h-16 w-16 flex-none items-center justify-center rounded-full text-[20px] font-bold ${color.bg} ${color.text}`}
+                >
+                  {initialsOf(client.full_name)}
+                </span>
+                <div>
+                  <div className="flex items-center gap-2.5">
+                    <h1 className="text-[22px] font-bold tracking-tight text-foreground">{client.full_name}</h1>
+                    <span
+                      className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${STATUS_STYLE[client.status]}`}
+                    >
+                      {STATUS_LABEL[client.status]}
+                    </span>
+                  </div>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] text-text-2">
+                    {client.date_of_birth && <span>🎂 {client.date_of_birth}</span>}
+                    {client.phone && <span>📞 {client.phone}</span>}
+                    {client.email && <span>✉️ {client.email}</span>}
+                    {client.session_frequency && <span>📋 {client.session_frequency}</span>}
+                  </div>
                 </div>
+              </div>
+              <div className="flex flex-none items-center gap-2">
+                {canEdit && (
+                  <Link
+                    href={`/clients/${id}?edit=1${activeTab !== "overview" ? `&tab=${activeTab}` : ""}`}
+                    className="rounded-lg border border-border px-3.5 py-2 text-[13px] font-semibold text-text-2 transition hover:bg-surface-2"
+                  >
+                    Edit
+                  </Link>
+                )}
+                {canMessage && (
+                  <Link
+                    href={`/messages/${client.id}`}
+                    className="rounded-lg border border-border px-3.5 py-2 text-[13px] font-semibold text-text-2 transition hover:bg-surface-2"
+                  >
+                    Message
+                  </Link>
+                )}
+                <Link
+                  href={`/calendar/new?clientId=${client.id}`}
+                  className="rounded-lg bg-brand px-3.5 py-2 text-[13px] font-semibold text-white transition hover:bg-brand-ink"
+                >
+                  Schedule
+                </Link>
+              </div>
+            </div>
+
+            {canInviteToPortal && !client.portal_user_id && (
+              <form action={inviteToPortal} className="mt-3 border-t border-border pt-3">
+                <input type="hidden" name="clientId" value={client.id} />
                 <button
                   type="submit"
-                  className="rounded-lg bg-brand px-3 py-1.5 text-[12.5px] font-semibold text-white transition hover:bg-brand-ink"
+                  disabled={!client.email}
+                  title={client.email ? undefined : "Add an email address first"}
+                  className="text-[12px] font-semibold text-brand-ink disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  Save
+                  Invite to client portal
                 </button>
               </form>
-            ) : (
-              <div className="flex justify-between text-[13.4px]">
-                <span className="text-text-3">Default self-booking type</span>
-                <span className="text-foreground">
-                  {client.default_appointment_type
-                    ? APPOINTMENT_TYPE_LABEL[client.default_appointment_type as keyof typeof APPOINTMENT_TYPE_LABEL]
-                    : "Not set"}
-                </span>
-              </div>
             )}
-          </div>
-        </div>
 
-        <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="text-[13px] font-bold text-foreground">
-              Upcoming appointments
-            </div>
-            <Link
-              href={`/calendar/new?clientId=${client.id}`}
-              className="text-[12px] font-semibold text-brand-ink"
-            >
-              + Schedule
-            </Link>
-          </div>
-          {appointments?.length ? (
-            <ul className="space-y-2 text-[13.4px]">
-              {appointments.map((a) => (
-                <li key={a.id} className="border-b border-border pb-2 last:border-0">
-                  <Link href={`/calendar/${a.id}`} className="flex justify-between hover:text-brand-ink">
-                    <span className="text-foreground">
-                      {new Date(a.starts_at).toLocaleString(undefined, {
-                        weekday: "short",
-                        month: "short",
-                        day: "numeric",
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                    <span className="text-text-3">{a.type}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-[13px] text-text-3">No upcoming appointments.</p>
-          )}
-        </div>
-      </div>
-
-      <div className="mt-6 rounded-2xl border border-border bg-surface p-5 shadow-sm">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="text-[13px] font-bold text-foreground">Invoices</div>
-          <div className="flex items-center gap-3">
-            {invoices?.length ? (
-              <Link href="/invoices" className="text-[12px] font-semibold text-brand-ink">
-                View all
-              </Link>
-            ) : null}
-            {canManageInvoices && (
-              <Link
-                href={`/invoices/new?clientId=${client.id}`}
-                className="text-[12px] font-semibold text-brand-ink"
-              >
-                + New invoice
-              </Link>
-            )}
-          </div>
-        </div>
-        {invoices?.length ? (
-          <ul className="space-y-2 text-[13.4px]">
-            {invoices.map((inv) => (
-              <li key={inv.id}>
+            <div className="mt-4 flex gap-1 border-t border-border pt-4">
+              {TABS.map((t) => (
                 <Link
-                  href={`/invoices/${inv.id}`}
-                  className="flex items-center justify-between border-b border-border pb-2 last:border-0"
+                  key={t.key}
+                  href={tabHref(t.key)}
+                  className={`-mb-px border-b-2 px-2.5 pb-2 text-[13.4px] font-semibold transition ${
+                    activeTab === t.key
+                      ? "border-brand text-foreground"
+                      : "border-transparent text-text-3 hover:text-foreground"
+                  }`}
                 >
-                  <span className="text-foreground">
-                    INV-{String(inv.invoice_number).padStart(4, "0")}
-                  </span>
-                  <span className="text-text-2">
-                    ${(inv.total_cents / 100).toFixed(2)}
-                    {inv.status !== "draft" && inv.status !== "void" && inv.total_cents > inv.amount_paid_cents && (
-                      <span className="ml-2 text-warn">
-                        (${((inv.total_cents - inv.amount_paid_cents) / 100).toFixed(2)} due)
-                      </span>
-                    )}
-                  </span>
+                  {t.label}
                 </Link>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-[13px] text-text-3">No invoices yet.</p>
-        )}
-      </div>
+              ))}
+            </div>
+          </div>
 
-      {canMessage && (
-        <div className="mt-6 rounded-2xl border border-border bg-surface p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-[13px] font-bold text-foreground">Messages</div>
-              <div className="mt-1 text-[12px] text-text-3">
-                Client portal:{" "}
-                {client.portal_user_id ? (
-                  <span className="font-semibold text-ok">Active</span>
-                ) : (
-                  <span className="text-text-3">Not invited yet</span>
+          {/* Overview tab */}
+          {activeTab === "overview" && (
+            <div className="mt-4 grid grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+                  <div className="mb-2 text-[13px] font-bold text-foreground">Clinical summary</div>
+                  <p className="text-[13.4px] leading-relaxed text-text-2">
+                    Presenting concern: <span className="font-semibold text-foreground">{client.presenting_concern ?? "Not on file"}</span>.{" "}
+                    {clinician ? (
+                      <>Treating clinician: {clinician.full_name}. </>
+                    ) : (
+                      "No clinician assigned. "
+                    )}
+                    In treatment since {new Date(client.created_at).toLocaleDateString(undefined, { month: "long", year: "numeric" })}
+                    {client.session_frequency ? `, meeting ${client.session_frequency.toLowerCase()}.` : "."}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+                  <div className="mb-2 text-[13px] font-bold text-foreground">Consent status</div>
+                  {consentForms?.length ? (
+                    <ul className="space-y-2 text-[13.4px]">
+                      {consentForms.map((f) => (
+                        <li key={f.id} className="flex items-center justify-between">
+                          <span className="text-foreground">{f.form_type}</span>
+                          <span
+                            className={`inline-flex rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${CONSENT_STATUS_STYLE[f.status]}`}
+                          >
+                            {CONSENT_STATUS_LABEL[f.status]}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-[13px] text-text-3">No consent forms sent yet.</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+                  <div className="mb-2 text-[13px] font-bold text-foreground">Billing snapshot</div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-xl border border-border bg-surface-2 p-3">
+                      <div className="text-[11.5px] font-semibold text-text-3">Balance</div>
+                      <div className={`mt-1 text-[19px] font-bold ${client.balance_cents > 0 ? "text-warn" : "text-foreground"}`}>
+                        ${(client.balance_cents / 100).toFixed(2)}
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-border bg-surface-2 p-3">
+                      <div className="text-[11.5px] font-semibold text-text-3">Invoices</div>
+                      <div className="mt-1 text-[19px] font-bold text-foreground">{invoices?.length ?? 0}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+                  <div className="mb-2 text-[13px] font-bold text-foreground">Recent notes</div>
+                  {canSeeNotes ? (
+                    notes?.length ? (
+                      <ul className="space-y-2 text-[13.4px]">
+                        {notes.slice(0, 5).map((n) => (
+                          <li key={n.id} className="flex items-center justify-between">
+                            <span className="text-foreground">{n.session_date}</span>
+                            <span className={`font-semibold ${n.status === "signed" ? "text-ok" : "text-warn"}`}>
+                              {n.status === "signed" ? "Signed" : "Unsigned"}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-[13px] text-text-3">No session notes yet.</p>
+                    )
+                  ) : (
+                    <p className="text-[13px] text-text-3">Not visible to your role.</p>
+                  )}
+                </div>
+
+                <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="text-[13px] font-bold text-foreground">Upcoming appointments</div>
+                    <Link href={`/calendar/new?clientId=${client.id}`} className="text-[12px] font-semibold text-brand-ink">
+                      + Schedule
+                    </Link>
+                  </div>
+                  {upcoming?.length ? (
+                    <ul className="space-y-2 text-[13.4px]">
+                      {upcoming.map((a) => (
+                        <li key={a.id}>
+                          <Link href={`/calendar/${a.id}`} className="flex justify-between hover:text-brand-ink">
+                            <span className="text-foreground">
+                              {new Date(a.starts_at).toLocaleString(undefined, {
+                                weekday: "short",
+                                month: "short",
+                                day: "numeric",
+                                hour: "numeric",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                            <span className="text-text-3">{a.type}</span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-[13px] text-text-3">No upcoming appointments.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Session Notes tab */}
+          {activeTab === "notes" && (
+            <div className="mt-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+              <div className="mb-3 flex items-center justify-between">
+                <div className="text-[13px] font-bold text-foreground">Session notes</div>
+                {canSeeNotes && (
+                  <Link href={`/notes/new?clientId=${client.id}`} className="text-[12px] font-semibold text-brand-ink">
+                    + New note
+                  </Link>
                 )}
               </div>
+              {!canSeeNotes ? (
+                <p className="text-[13px] text-text-3">
+                  Session note content isn&apos;t visible to your role. This is enforced by the database.
+                </p>
+              ) : notes?.length ? (
+                <ul className="space-y-3">
+                  {notes.map((n) => (
+                    <li key={n.id} className="border-b border-border pb-3 last:border-0">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[13px] font-semibold text-foreground">{n.session_date}</span>
+                        <span
+                          className={`inline-flex rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${
+                            n.status === "signed" ? "bg-ok-tint text-ok" : "bg-warn-tint text-warn"
+                          }`}
+                        >
+                          {n.status === "signed" ? "Signed" : "Draft"}
+                        </span>
+                      </div>
+                      <p className="mt-1 truncate text-[12.5px] text-text-2">{n.subjective || "No subjective notes yet."}</p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[13px] text-text-3">No session notes yet.</p>
+              )}
             </div>
-            <div className="flex items-center gap-3">
-              {!client.portal_user_id && canInviteToPortal && (
-                <form action={inviteToPortal}>
+          )}
+
+          {/* Consent Forms tab */}
+          {activeTab === "consent" && (
+            <div className="mt-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+              <div className="mb-3 text-[13px] font-bold text-foreground">Consent forms</div>
+              {consentForms?.length ? (
+                <ul className="space-y-2 text-[13.4px]">
+                  {consentForms.map((f) => (
+                    <li key={f.id} className="flex items-center justify-between border-b border-border pb-2 last:border-0">
+                      <span className="text-foreground">{f.form_type}</span>
+                      <span className="flex items-center gap-2">
+                        {f.status === "pending" && (
+                          <span className="select-all font-mono text-[11px] text-text-3">
+                            {siteUrl}/consent/{f.access_token}
+                          </span>
+                        )}
+                        <span
+                          className={`inline-flex rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${CONSENT_STATUS_STYLE[f.status]}`}
+                        >
+                          {CONSENT_STATUS_LABEL[f.status]}
+                        </span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[13px] text-text-3">No consent forms sent yet.</p>
+              )}
+
+              {canSendConsent && (
+                <form action={sendConsentForm} className="mt-4 flex items-end gap-2 border-t border-border pt-4">
                   <input type="hidden" name="clientId" value={client.id} />
+                  <div className="flex-1">
+                    <label className="block text-[12px] font-semibold text-text-2">Send a form</label>
+                    <select
+                      name="templateId"
+                      required
+                      defaultValue=""
+                      className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                    >
+                      <option value="" disabled>
+                        {templates?.length ? "Select a template" : "No active templates — add one first"}
+                      </option>
+                      {templates?.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <button
                     type="submit"
-                    disabled={!client.email}
-                    title={client.email ? undefined : "Add an email address first"}
-                    className="rounded-lg border border-border px-3 py-1.5 text-[12px] font-semibold text-text-2 transition hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
+                    disabled={!templates?.length}
+                    className="rounded-lg bg-brand px-3.5 py-2 text-[13px] font-semibold text-white transition hover:bg-brand-ink disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    Invite to portal
+                    Send
                   </button>
                 </form>
               )}
-              <Link
-                href={`/messages/${client.id}`}
-                className="rounded-lg bg-brand px-3.5 py-1.5 text-[12px] font-semibold text-white transition hover:bg-brand-ink"
-              >
-                Open conversation
-              </Link>
+              {canSendConsent && (
+                <Link href="/consent-templates" className="mt-2 inline-block text-[11.5px] font-semibold text-brand-ink">
+                  Manage templates
+                </Link>
+              )}
             </div>
-          </div>
-        </div>
-      )}
+          )}
 
-      <div className="mt-6 rounded-2xl border border-border bg-surface p-5 shadow-sm">
-        <div className="mb-3 text-[13px] font-bold text-foreground">Consent forms</div>
-        {consentForms?.length ? (
-          <ul className="space-y-2 text-[13.4px]">
-            {consentForms.map((f) => (
-              <li key={f.id} className="flex items-center justify-between border-b border-border pb-2 last:border-0">
-                <span className="text-foreground">{f.form_type}</span>
-                <span className="flex items-center gap-2">
-                  {f.status === "pending" && (
-                    <span className="select-all font-mono text-[11px] text-text-3">
-                      {siteUrl}/consent/{f.access_token}
-                    </span>
-                  )}
-                  <span
-                    className={`inline-flex rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${CONSENT_STATUS_STYLE[f.status]}`}
-                  >
-                    {CONSENT_STATUS_LABEL[f.status]}
-                  </span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-[13px] text-text-3">No consent forms sent yet.</p>
-        )}
-
-        {canSendConsent && (
-          <form action={sendConsentForm} className="mt-4 flex items-end gap-2 border-t border-border pt-4">
-            <input type="hidden" name="clientId" value={client.id} />
-            <div className="flex-1">
-              <label className="block text-[12px] font-semibold text-text-2">Send a form</label>
-              <select
-                name="templateId"
-                required
-                defaultValue=""
-                className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-              >
-                <option value="" disabled>
-                  {templates?.length ? "Select a template" : "No active templates — add one first"}
-                </option>
-                {templates?.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.title}
-                  </option>
-                ))}
-              </select>
+          {/* Billing tab */}
+          {activeTab === "billing" && (
+            <div className="mt-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+              <div className="mb-3 flex items-center justify-between">
+                <div className="text-[13px] font-bold text-foreground">Invoices</div>
+                {canManageInvoices && (
+                  <Link href={`/invoices/new?clientId=${client.id}`} className="text-[12px] font-semibold text-brand-ink">
+                    + New invoice
+                  </Link>
+                )}
+              </div>
+              {invoices?.length ? (
+                <ul className="space-y-2 text-[13.4px]">
+                  {invoices.map((inv) => (
+                    <li key={inv.id}>
+                      <Link
+                        href={`/invoices/${inv.id}`}
+                        className="flex items-center justify-between border-b border-border pb-2 last:border-0"
+                      >
+                        <span className="text-foreground">
+                          INV-{String(inv.invoice_number).padStart(4, "0")}
+                          <span className="ml-2 text-text-3">{inv.issue_date}</span>
+                        </span>
+                        <span className="text-text-2">
+                          ${(inv.total_cents / 100).toFixed(2)}
+                          {inv.status !== "draft" && inv.status !== "void" && inv.total_cents > inv.amount_paid_cents && (
+                            <span className="ml-2 text-warn">
+                              (${((inv.total_cents - inv.amount_paid_cents) / 100).toFixed(2)} due)
+                            </span>
+                          )}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[13px] text-text-3">No invoices yet.</p>
+              )}
             </div>
-            <button
-              type="submit"
-              disabled={!templates?.length}
-              className="rounded-lg bg-brand px-3.5 py-2 text-[13px] font-semibold text-white transition hover:bg-brand-ink disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Send
-            </button>
-          </form>
-        )}
-        {canSendConsent && (
-          <Link href="/consent-templates" className="mt-2 inline-block text-[11.5px] font-semibold text-brand-ink">
-            Manage templates
-          </Link>
-        )}
-      </div>
+          )}
 
-      {canSeeNotes && (
-        <div className="mt-6 rounded-2xl border border-border bg-surface p-5 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="text-[13px] font-bold text-foreground">
-              Session notes
+          {/* Documents tab -- no file storage built yet, honest placeholder */}
+          {activeTab === "documents" && (
+            <div className="mt-4 rounded-2xl border border-border bg-surface p-8 text-center shadow-sm">
+              <div className="text-[15px] font-bold text-foreground">Coming soon</div>
+              <p className="mx-auto mt-2 max-w-sm text-[13px] text-text-2">
+                Client document uploads (intake forms, insurance cards, referral letters) aren&apos;t built yet.
+              </p>
             </div>
-            <Link
-              href={`/notes/new?clientId=${client.id}`}
-              className="text-[12px] font-semibold text-brand-ink"
-            >
-              + New note
-            </Link>
-          </div>
-          {notes?.length ? (
-            <ul className="space-y-3">
-              {notes.map((n) => (
-                <li key={n.id} className="border-b border-border pb-3 last:border-0">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[13px] font-semibold text-foreground">
-                      {n.session_date}
-                    </span>
-                    <span
-                      className={`inline-flex rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${
-                        n.status === "signed" ? "bg-ok-tint text-ok" : "bg-warn-tint text-warn"
-                      }`}
-                    >
-                      {n.status === "signed" ? "Signed" : "Draft"}
-                    </span>
-                  </div>
-                  <p className="mt-1 truncate text-[12.5px] text-text-2">
-                    {n.subjective || "No subjective notes yet."}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-[13px] text-text-3">No session notes yet.</p>
           )}
         </div>
+      </div>
+
+      {edit && canEdit && (
+        <EditClientModal
+          client={client}
+          closeHref={`/clients/${id}${activeTab !== "overview" ? `?tab=${activeTab}` : ""}`}
+          error={error}
+        />
       )}
     </div>
   );
