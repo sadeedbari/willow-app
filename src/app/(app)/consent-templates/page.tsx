@@ -21,17 +21,15 @@ export default async function ConsentTemplatesPage() {
       <div className="mb-6 flex items-end justify-between">
         <div>
           <h1 className="text-[26px] font-bold tracking-tight text-foreground">
-            Consent Form Templates
+            Forms
           </h1>
-          <p className="mt-1 text-[13.5px] text-text-2">
-            Edit these to match your practice&apos;s policies before sending them to clients.
-          </p>
+          <p className="mt-1 text-[13.5px] text-text-2">Manage Practice Forms</p>
         </div>
         <Link
           href="/consent-templates/new"
           className="rounded-lg bg-brand px-3.5 py-2 text-[13.4px] font-semibold text-white transition hover:bg-brand-ink"
         >
-          + New template
+          + New Form
         </Link>
       </div>
 
