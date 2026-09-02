@@ -18,10 +18,10 @@ export default async function NewConsentTemplatePage({
   return (
     <div className="max-w-2xl">
       <Link href="/forms" className="text-[13px] font-semibold text-brand-ink">
-        ← Back to templates
+        ← Back to forms
       </Link>
       <h1 className="mt-3 text-[22px] font-bold tracking-tight text-foreground">
-        New consent template
+        New Form Template
       </h1>
 
       {error && (
