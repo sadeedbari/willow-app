@@ -71,8 +71,12 @@ export default async function ClientDetailPage({
 
   const clinician = client.staff as unknown as { full_name: string } | null;
 
-  const isOwnClient = client.assigned_staff_id === staff.id;
-  const canSeeNotes = staff.role === "clinician" && isOwnClient;
+  // Unassigned counts as "own" too -- a solo practice's clients are often
+  // never explicitly assigned since there's only one possible clinician.
+  const isOwnClient = client.assigned_staff_id === staff.id || client.assigned_staff_id === null;
+  // "clinician" and "practice_admin" can both author notes -- see
+  // /notes/new for why this can't be clinician-only.
+  const canSeeNotes = (staff.role === "clinician" || staff.role === "practice_admin") && isOwnClient;
   const canManageInvoices = staff.role === "practice_admin" || staff.role === "billing_admin";
   const canSendConsent = staff.role === "practice_admin" || staff.role === "front_desk";
   const canInviteToPortal = staff.role === "practice_admin" || staff.role === "front_desk";

@@ -27,7 +27,10 @@ export default async function NewNotePage({
   const { error, clientId, appointmentId } = await searchParams;
   const staff = await getCurrentStaff();
 
-  if (staff.role !== "clinician") {
+  // "clinician" and "practice_admin" can both author notes -- for a solo
+  // practice the owner is always "practice_admin" and IS the treating
+  // clinician, so this can't be clinician-only.
+  if (staff.role !== "clinician" && staff.role !== "practice_admin") {
     redirect("/notes");
   }
 
@@ -51,12 +54,16 @@ export default async function NewNotePage({
       ? { id: appointment.client_id, name: (appointment.clients as unknown as { full_name: string } | null)?.full_name }
       : null;
 
+  // Includes unassigned clients, not just ones explicitly assigned to this
+  // staff member -- a solo practice's owner is always "practice_admin" and
+  // often never bothers assigning their own clients to themselves, since
+  // there's no one else it could be.
   const { data: clients } = lockedClient
     ? { data: null }
     : await supabase
         .from("clients")
         .select("id, full_name")
-        .eq("assigned_staff_id", staff.id)
+        .or(`assigned_staff_id.eq.${staff.id},assigned_staff_id.is.null`)
         .order("full_name");
 
   const today = new Date().toISOString().slice(0, 10);

@@ -22,18 +22,27 @@ export default async function EditNotePage({
   const { error } = await searchParams;
   const staff = await getCurrentStaff();
 
-  if (staff.role !== "clinician") {
+  // "clinician" and "practice_admin" can both author notes -- see /notes/new
+  // for why this can't be clinician-only.
+  if (staff.role !== "clinician" && staff.role !== "practice_admin") {
     redirect(`/notes/${id}`);
   }
 
   const supabase = await createClient();
   const { data: note } = await supabase
     .from("session_notes")
-    .select("id, session_date, status, subjective, objective, assessment, plan, risk_level, risk_notes, clients(full_name)")
+    .select("id, session_date, status, subjective, objective, assessment, plan, risk_level, risk_notes, staff_id, clients(full_name)")
     .eq("id", id)
     .single();
 
   if (!note) notFound();
+
+  // Only the authoring clinician can edit their own note -- an admin who can
+  // see another clinician's row via the practice-wide policy (multi-clinician
+  // practices, not in scope today) still can't open it for editing.
+  if (note.staff_id !== staff.id) {
+    redirect(`/notes/${id}`);
+  }
 
   // Signed notes are immutable at the database level (RLS blocks the
   // update outright) -- redirect here too so the form never renders

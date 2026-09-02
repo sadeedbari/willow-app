@@ -6,7 +6,13 @@ export default async function NotesPage() {
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
-  if (staff.role !== "clinician" && staff.role !== "practice_admin") {
+  // "clinician" and "practice_admin" can both author notes -- for a solo
+  // practice the owner is always "practice_admin" and IS the treating
+  // clinician, so this can't be clinician-only. front_desk/billing_admin
+  // never touch clinical content, full stop.
+  const canManageNotes = staff.role === "clinician" || staff.role === "practice_admin";
+
+  if (!canManageNotes) {
     return (
       <div>
         <h1 className="text-[26px] font-bold tracking-tight text-foreground">
@@ -21,18 +27,14 @@ export default async function NotesPage() {
     );
   }
 
-  // Admins intentionally only ever select metadata columns here — never
-  // subjective/objective/assessment/plan — to keep "minimum necessary
-  // access" even though the current RLS policy would technically allow
-  // an admin to read note content too. See migration 004 for the caveat.
-  const columns =
-    staff.role === "practice_admin"
-      ? "id, session_date, status, clients(full_name), staff(full_name)"
-      : "id, session_date, status, subjective, clients(full_name)";
-
+  // Content (subjective preview) is only ever rendered for notes this staff
+  // member authored themselves -- an admin who is also seeing another
+  // clinician's note (multi-clinician practices, not in scope today) still
+  // only gets metadata here, never clinical content, to keep "minimum
+  // necessary access" even though RLS would technically allow reading it.
   const { data } = await supabase
     .from("session_notes")
-    .select(columns)
+    .select("id, session_date, status, subjective, staff_id, clients(full_name), staff(full_name)")
     .order("session_date", { ascending: false });
 
   type Row = {
@@ -40,6 +42,7 @@ export default async function NotesPage() {
     session_date: string;
     status: string;
     subjective?: string;
+    staff_id: string;
     clients: { full_name: string } | null;
     staff?: { full_name: string } | null;
   };
@@ -52,54 +55,51 @@ export default async function NotesPage() {
           <h1 className="text-[26px] font-bold tracking-tight text-foreground">
             Session Notes
           </h1>
-          <p className="mt-1 text-[13.5px] text-text-2">
-            {staff.role === "practice_admin"
-              ? "Status only — note content stays with the authoring clinician"
-              : "Your notes across your caseload"}
-          </p>
+          <p className="mt-1 text-[13.5px] text-text-2">Your notes across your caseload</p>
         </div>
-        {staff.role === "clinician" && (
-          <Link
-            href="/notes/new"
-            className="rounded-lg bg-brand px-3.5 py-2 text-[13.4px] font-semibold text-white transition hover:bg-brand-ink"
-          >
-            + New note
-          </Link>
-        )}
+        <Link
+          href="/notes/new"
+          className="rounded-lg bg-brand px-3.5 py-2 text-[13.4px] font-semibold text-white transition hover:bg-brand-ink"
+        >
+          + New note
+        </Link>
       </div>
 
       <div className="space-y-3">
-        {notes.map((n) => (
-          <Link
-            key={n.id}
-            href={`/notes/${n.id}`}
-            className="block rounded-2xl border border-border bg-surface p-4 shadow-sm transition hover:bg-surface-2"
-          >
-            <div className="flex items-center justify-between">
-              <div className="text-[13.4px] font-semibold text-foreground">
-                {n.clients?.full_name ?? "Unknown client"}
-                {n.staff?.full_name && (
-                  <span className="ml-2 font-normal text-text-3">
-                    · {n.staff.full_name}
-                  </span>
-                )}
+        {notes.map((n) => {
+          const isOwn = n.staff_id === staff.id;
+          return (
+            <Link
+              key={n.id}
+              href={`/notes/${n.id}`}
+              className="block rounded-2xl border border-border bg-surface p-4 shadow-sm transition hover:bg-surface-2"
+            >
+              <div className="flex items-center justify-between">
+                <div className="text-[13.4px] font-semibold text-foreground">
+                  {n.clients?.full_name ?? "Unknown client"}
+                  {n.staff?.full_name && (
+                    <span className="ml-2 font-normal text-text-3">
+                      · {n.staff.full_name}
+                    </span>
+                  )}
+                </div>
+                <span
+                  className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                    n.status === "signed" ? "bg-ok-tint text-ok" : "bg-warn-tint text-warn"
+                  }`}
+                >
+                  {n.status === "signed" ? "Signed" : "Draft"}
+                </span>
               </div>
-              <span
-                className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                  n.status === "signed" ? "bg-ok-tint text-ok" : "bg-warn-tint text-warn"
-                }`}
-              >
-                {n.status === "signed" ? "Signed" : "Draft"}
-              </span>
-            </div>
-            <div className="mt-1 text-[12px] text-text-3">{n.session_date}</div>
-            {n.subjective && (
-              <p className="mt-2 line-clamp-2 text-[13px] text-text-2">
-                {n.subjective}
-              </p>
-            )}
-          </Link>
-        ))}
+              <div className="mt-1 text-[12px] text-text-3">{n.session_date}</div>
+              {isOwn && n.subjective && (
+                <p className="mt-2 line-clamp-2 text-[13px] text-text-2">
+                  {n.subjective}
+                </p>
+              )}
+            </Link>
+          );
+        })}
         {!notes.length && (
           <p className="rounded-2xl border border-border bg-surface p-8 text-center text-[13px] text-text-3">
             No session notes yet.

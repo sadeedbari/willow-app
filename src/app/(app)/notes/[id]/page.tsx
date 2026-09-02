@@ -38,14 +38,17 @@ export default async function NoteDetailPage({
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
-  // Admins only ever select metadata columns here -- never subjective/
-  // objective/assessment/plan/risk_notes -- to keep "minimum necessary
-  // access" even though RLS would technically allow an admin to read a
-  // note's content too. Matches the same rule already applied in
-  // /notes and the client profile's Session Notes tab.
-  const canSeeContent = staff.role === "clinician";
-  const columns = canSeeContent
-    ? "id, session_date, status, subjective, objective, assessment, plan, risk_level, risk_notes, signed_at, client_id, appointment_id, clients(full_name), appointments(type, starts_at, ends_at)"
+  // "clinician" and "practice_admin" can both author notes -- for a solo
+  // practice the owner is always "practice_admin" and IS the treating
+  // clinician. front_desk/billing_admin never touch clinical content, full
+  // stop, so they get metadata columns only. A clinician/admin viewing a
+  // note authored by someone else (multi-clinician practices, not in scope
+  // today) also only gets metadata -- content is gated by authorship below,
+  // not by role, to keep "minimum necessary access" even though RLS would
+  // technically allow an admin to read another clinician's note content.
+  const canManageNotes = staff.role === "clinician" || staff.role === "practice_admin";
+  const columns = canManageNotes
+    ? "id, session_date, status, subjective, objective, assessment, plan, risk_level, risk_notes, signed_at, client_id, staff_id, appointment_id, clients(full_name), staff(full_name), appointments(type, starts_at, ends_at)"
     : "id, session_date, status, client_id, clients(full_name), staff(full_name)";
 
   const { data } = await supabase.from("session_notes").select(columns).eq("id", id).single();
@@ -64,12 +67,14 @@ export default async function NoteDetailPage({
     risk_notes?: string | null;
     signed_at?: string | null;
     client_id: string;
+    staff_id?: string;
     appointment_id?: string | null;
     clients: { full_name: string } | null;
     staff?: { full_name: string } | null;
     appointments?: { type: string; starts_at: string; ends_at: string } | null;
   };
   const note = data as unknown as Note;
+  const canSeeContent = canManageNotes && note.staff_id === staff.id;
 
   const addenda = canSeeContent
     ? (

@@ -12,10 +12,13 @@ export default async function NewClientPage({
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
+  // Includes practice_admin -- a solo practice's owner is always
+  // "practice_admin" and IS the treating clinician, so a "clinician"-only
+  // query would leave this dropdown with no options but "Unassigned".
   const { data: clinicians } = await supabase
     .from("staff")
     .select("id, full_name")
-    .eq("role", "clinician")
+    .in("role", ["clinician", "practice_admin"])
     .order("full_name");
 
   return (
@@ -91,7 +94,7 @@ export default async function NewClientPage({
             </label>
             <select
               name="assignedStaffId"
-              defaultValue={staff.role === "clinician" ? staff.id : ""}
+              defaultValue={staff.role === "clinician" || staff.role === "practice_admin" ? staff.id : ""}
               className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             >
               <option value="">Unassigned</option>
