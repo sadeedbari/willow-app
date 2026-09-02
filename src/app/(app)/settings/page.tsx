@@ -1,6 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
-import { updatePracticeSettings } from "./actions";
+import { updatePracticeSettings, removePracticeLogo } from "./actions";
 import { SettingsTabs } from "./tabs";
 
 export default async function SettingsPage({
@@ -15,7 +15,7 @@ export default async function SettingsPage({
   const supabase = await createClient();
   const { data: practice } = await supabase
     .from("practices")
-    .select("name, business_number, primary_contact_email, primary_contact_phone")
+    .select("name, business_number, primary_contact_email, primary_contact_phone, logo_url")
     .eq("id", staff.practiceId)
     .single();
 
@@ -41,10 +41,43 @@ export default async function SettingsPage({
         </p>
       )}
 
-      {canEdit ? (
-        <form action={updatePracticeSettings} className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
+      {canEdit && (
+        <form
+          action={updatePracticeSettings}
+          className="rounded-2xl border border-border bg-surface p-6 shadow-sm"
+        >
           <div className="mb-3 text-[13px] font-bold text-foreground">Practice profile</div>
+
           <div>
+            <label className="block text-[12px] font-semibold text-text-2">Practice logo</label>
+            <div className="mt-1.5 flex items-center gap-4">
+              {practice.logo_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={practice.logo_url}
+                  alt="Practice logo"
+                  className="h-16 w-16 flex-none rounded-lg border border-border object-contain bg-surface-2 p-1"
+                />
+              ) : (
+                <div className="flex h-16 w-16 flex-none items-center justify-center rounded-lg border border-dashed border-border bg-surface-2 text-[10.5px] text-text-3">
+                  No logo
+                </div>
+              )}
+              <div className="flex-1">
+                <input
+                  type="file"
+                  name="logo"
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  className="block w-full text-[12.5px] text-text-2 file:mr-3 file:rounded-lg file:border file:border-border file:bg-surface file:px-3 file:py-1.5 file:text-[12.5px] file:font-semibold file:text-text-2 hover:file:bg-surface-2"
+                />
+                <p className="mt-1 text-[11.5px] text-text-3">
+                  PNG, JPEG, WEBP, or SVG — up to 1 MB. Shown on invoice PDFs and client-facing forms.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4">
             <label className="block text-[12px] font-semibold text-text-2">Practice name</label>
             <input
               name="name"
@@ -88,7 +121,17 @@ export default async function SettingsPage({
             Save changes
           </button>
         </form>
-      ) : (
+      )}
+
+      {canEdit && practice.logo_url && (
+        <form action={removePracticeLogo} className="mt-3">
+          <button type="submit" className="text-[12.5px] font-semibold text-bad">
+            Remove logo
+          </button>
+        </form>
+      )}
+
+      {!canEdit && (
         <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
           <div className="mb-3 text-[13px] font-bold text-foreground">Practice profile</div>
           <dl className="space-y-2 text-[13.4px]">

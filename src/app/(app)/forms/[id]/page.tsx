@@ -20,18 +20,17 @@ export default async function ConsentTemplateDetailPage({
   }
 
   const supabase = await createClient();
-  const { data: template } = await supabase
-    .from("consent_form_templates")
-    .select("id, title, body, active")
-    .eq("id", id)
-    .single();
+  const [{ data: template }, { data: practice }] = await Promise.all([
+    supabase.from("consent_form_templates").select("id, title, body, active").eq("id", id).single(),
+    supabase.from("practices").select("logo_url").eq("id", staff.practiceId).single(),
+  ]);
 
   if (!template) notFound();
 
   return (
     <div className="max-w-5xl">
       <Link href="/forms" className="text-[13px] font-semibold text-brand-ink">
-        ← Back to templates
+        ← Back to forms
       </Link>
       <h1 className="mt-3 text-[22px] font-bold tracking-tight text-foreground">
         Edit Form
@@ -111,6 +110,10 @@ export default async function ConsentTemplateDetailPage({
 
           <div className="mt-3 rounded-2xl border border-border bg-surface-2 p-4 sm:p-6">
             <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
+              {practice?.logo_url && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={practice.logo_url} alt="" className="mb-3 h-12 w-auto object-contain" />
+              )}
               <h2 className="text-[20px] font-bold text-foreground">{template.title || "Untitled form"}</h2>
               <p className="mt-1 text-[13px] text-text-3">
                 {staff.practiceName} · Prepared for [Client Name]

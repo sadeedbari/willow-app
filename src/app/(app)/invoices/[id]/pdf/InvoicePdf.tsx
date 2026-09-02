@@ -1,8 +1,10 @@
-import { Document, Page, Text, View, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
+import { Document, Page, Text, View, Image, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
 
 const styles = StyleSheet.create({
   page: { padding: 40, fontSize: 10, fontFamily: "Helvetica", color: "#1a1a1a" },
   headerRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 24 },
+  headerLeft: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
+  logo: { width: 40, height: 40, objectFit: "contain" },
   practiceName: { fontSize: 16, fontWeight: 700 },
   muted: { color: "#666", marginTop: 2 },
   invoiceTitle: { fontSize: 16, fontWeight: 700, textAlign: "right" },
@@ -53,6 +55,7 @@ export type InvoicePdfProps = {
     contactEmail: string | null;
     contactPhone: string | null;
     address: string | null;
+    logoUrl: string | null;
   };
   client: { fullName: string; email: string | null };
   issuer: {
@@ -100,17 +103,20 @@ function InvoicePdf({
     <Document>
       <Page size="LETTER" style={styles.page}>
         <View style={styles.headerRow}>
-          <View>
-            <Text style={styles.practiceName}>{practice.name}</Text>
-            {practice.address && <Text style={styles.muted}>{practice.address}</Text>}
-            {(practice.contactPhone || practice.contactEmail) && (
-              <Text style={styles.muted}>
-                {[practice.contactPhone, practice.contactEmail].filter(Boolean).join(" · ")}
-              </Text>
-            )}
-            {practice.businessNumber && (
-              <Text style={styles.muted}>Business #{practice.businessNumber}</Text>
-            )}
+          <View style={styles.headerLeft}>
+            {practice.logoUrl && <Image src={practice.logoUrl} style={styles.logo} />}
+            <View>
+              <Text style={styles.practiceName}>{practice.name}</Text>
+              {practice.address && <Text style={styles.muted}>{practice.address}</Text>}
+              {(practice.contactPhone || practice.contactEmail) && (
+                <Text style={styles.muted}>
+                  {[practice.contactPhone, practice.contactEmail].filter(Boolean).join(" · ")}
+                </Text>
+              )}
+              {practice.businessNumber && (
+                <Text style={styles.muted}>Business #{practice.businessNumber}</Text>
+              )}
+            </View>
           </View>
           <View>
             <Text style={styles.invoiceTitle}>

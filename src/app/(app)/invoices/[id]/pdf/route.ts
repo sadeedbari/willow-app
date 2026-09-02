@@ -29,7 +29,7 @@ export async function GET(
       .order("service_date"),
     supabase
       .from("practices")
-      .select("name, business_number, primary_contact_email, primary_contact_phone")
+      .select("name, business_number, primary_contact_email, primary_contact_phone, logo_url")
       .eq("id", invoice.practice_id)
       .single(),
     supabase
@@ -64,6 +64,7 @@ export async function GET(
       contactEmail: practice?.primary_contact_email ?? null,
       contactPhone: practice?.primary_contact_phone ?? null,
       address: location?.address ?? null,
+      logoUrl: practice?.logo_url ?? null,
     },
     client: { fullName: client?.full_name ?? "Unknown client", email: client?.email ?? null },
     issuer: issuer

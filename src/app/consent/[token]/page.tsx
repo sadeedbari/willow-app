@@ -21,6 +21,7 @@ export default async function ConsentSigningPage({
         status: string;
         client_full_name: string;
         practice_name: string;
+        practice_logo_url: string | null;
         signed_at: string | null;
       }
     | undefined;
@@ -37,6 +38,10 @@ export default async function ConsentSigningPage({
           </div>
         ) : form.status === "signed" ? (
           <div>
+            {form.practice_logo_url && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={form.practice_logo_url} alt="" className="mb-3 h-12 w-auto object-contain" />
+            )}
             <div className="mb-2 inline-flex rounded-full bg-ok-tint px-2.5 py-0.5 text-[11.5px] font-semibold text-ok">
               Signed
             </div>
@@ -56,6 +61,10 @@ export default async function ConsentSigningPage({
           </div>
         ) : (
           <div>
+            {form.practice_logo_url && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={form.practice_logo_url} alt="" className="mb-3 h-12 w-auto object-contain" />
+            )}
             <h1 className="text-[20px] font-bold text-foreground">{form.title}</h1>
             <p className="mt-1 text-[13px] text-text-3">
               {form.practice_name} · Prepared for {form.client_full_name}
