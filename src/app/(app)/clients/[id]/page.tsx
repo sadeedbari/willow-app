@@ -494,7 +494,7 @@ export default async function ClientDetailPage({
                 </form>
               )}
               {canSendConsent && (
-                <Link href="/consent-templates" className="mt-2 inline-block text-[11.5px] font-semibold text-brand-ink">
+                <Link href="/forms" className="mt-2 inline-block text-[11.5px] font-semibold text-brand-ink">
                   Manage templates
                 </Link>
               )}

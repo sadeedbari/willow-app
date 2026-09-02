@@ -12,12 +12,12 @@ export default async function NewConsentTemplatePage({
   const staff = await getCurrentStaff();
 
   if (staff.role !== "practice_admin") {
-    redirect("/consent-templates");
+    redirect("/forms");
   }
 
   return (
     <div className="max-w-2xl">
-      <Link href="/consent-templates" className="text-[13px] font-semibold text-brand-ink">
+      <Link href="/forms" className="text-[13px] font-semibold text-brand-ink">
         ← Back to templates
       </Link>
       <h1 className="mt-3 text-[22px] font-bold tracking-tight text-foreground">

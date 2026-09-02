@@ -8,7 +8,7 @@ export async function updateTemplate(formData: FormData) {
   const staff = await getCurrentStaff();
   const templateId = formData.get("templateId") as string;
   if (staff.role !== "practice_admin") {
-    redirect("/consent-templates");
+    redirect("/forms");
   }
 
   const supabase = await createClient();
@@ -21,14 +21,14 @@ export async function updateTemplate(formData: FormData) {
     })
     .eq("id", templateId);
 
-  redirect(`/consent-templates/${templateId}`);
+  redirect(`/forms/${templateId}`);
 }
 
 export async function deleteTemplate(formData: FormData) {
   const staff = await getCurrentStaff();
   const templateId = formData.get("templateId") as string;
   if (staff.role !== "practice_admin") {
-    redirect("/consent-templates");
+    redirect("/forms");
   }
 
   const supabase = await createClient();
@@ -36,11 +36,11 @@ export async function deleteTemplate(formData: FormData) {
 
   if (error) {
     redirect(
-      `/consent-templates/${templateId}?error=${encodeURIComponent(
+      `/forms/${templateId}?error=${encodeURIComponent(
         "Can't delete a template that's already been sent to a client — mark it inactive instead."
       )}`
     );
   }
 
-  redirect("/consent-templates");
+  redirect("/forms");
 }

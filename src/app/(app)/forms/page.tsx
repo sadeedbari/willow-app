@@ -26,7 +26,7 @@ export default async function ConsentTemplatesPage() {
           <p className="mt-1 text-[13.5px] text-text-2">Manage Practice Forms</p>
         </div>
         <Link
-          href="/consent-templates/new"
+          href="/forms/new"
           className="rounded-lg bg-brand px-3.5 py-2 text-[13.4px] font-semibold text-white transition hover:bg-brand-ink"
         >
           + New Form
@@ -54,7 +54,7 @@ export default async function ConsentTemplatesPage() {
         {templates?.map((t) => (
           <Link
             key={t.id}
-            href={`/consent-templates/${t.id}`}
+            href={`/forms/${t.id}`}
             className="flex items-center justify-between rounded-2xl border border-border bg-surface p-4 shadow-sm transition hover:border-brand"
           >
             <div className="text-[13.4px] font-semibold text-foreground">{t.title}</div>

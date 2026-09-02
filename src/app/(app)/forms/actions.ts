@@ -8,7 +8,7 @@ import { STARTER_TEMPLATES } from "./starter-templates";
 export async function loadStarterTemplates() {
   const staff = await getCurrentStaff();
   if (staff.role !== "practice_admin") {
-    redirect("/consent-templates");
+    redirect("/forms");
   }
 
   const supabase = await createClient();
@@ -19,5 +19,5 @@ export async function loadStarterTemplates() {
       { onConflict: "practice_id,slug", ignoreDuplicates: true }
     );
 
-  redirect("/consent-templates");
+  redirect("/forms");
 }

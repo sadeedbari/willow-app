@@ -55,7 +55,7 @@ const NAV = [
         ),
       },
       {
-        href: "/consent-templates",
+        href: "/forms",
         label: "Consent Forms",
         color: "bg-hue-consent",
         adminOnly: true,

@@ -16,7 +16,7 @@ function slugify(title: string) {
 export async function createTemplate(formData: FormData) {
   const staff = await getCurrentStaff();
   if (staff.role !== "practice_admin") {
-    redirect("/consent-templates");
+    redirect("/forms");
   }
 
   const title = formData.get("title") as string;
@@ -34,8 +34,8 @@ export async function createTemplate(formData: FormData) {
     .single();
 
   if (error || !data) {
-    redirect(`/consent-templates/new?error=${encodeURIComponent(friendlyErrorMessage(error, "Could not create template"))}`);
+    redirect(`/forms/new?error=${encodeURIComponent(friendlyErrorMessage(error, "Could not create template"))}`);
   }
 
-  redirect(`/consent-templates/${data.id}`);
+  redirect(`/forms/${data.id}`);
 }
