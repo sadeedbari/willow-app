@@ -2,7 +2,19 @@ import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import Link from "next/link";
 
-export default async function NotesPage() {
+const TABS = [
+  { key: "all", label: "All notes" },
+  { key: "unsigned", label: "Due / unsigned" },
+  { key: "signed", label: "Signed" },
+];
+
+export default async function NotesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const { tab } = await searchParams;
+  const activeTab = TABS.some((t) => t.key === tab) ? tab! : "all";
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
@@ -46,23 +58,52 @@ export default async function NotesPage() {
     clients: { full_name: string } | null;
     staff?: { full_name: string } | null;
   };
-  const notes = (data ?? []) as unknown as Row[];
+  const allNotes = (data ?? []) as unknown as Row[];
+  const notes =
+    activeTab === "unsigned"
+      ? allNotes.filter((n) => n.status === "draft")
+      : activeTab === "signed"
+        ? allNotes.filter((n) => n.status === "signed")
+        : allNotes;
+
+  const emptyMessage =
+    activeTab === "unsigned"
+      ? "No unsigned notes."
+      : activeTab === "signed"
+        ? "No signed notes."
+        : "No session notes yet.";
 
   return (
     <div className="mx-auto max-w-5xl">
-      <div className="mb-6 flex items-end justify-between">
+      <div className="mb-4 flex items-end justify-between">
         <div>
           <h1 className="text-[26px] font-bold tracking-tight text-foreground">
             Session Notes
           </h1>
-          <p className="mt-1 text-[13.5px] text-text-2">Your notes across your caseload</p>
+          <p className="mt-1 text-[13.5px] text-text-2">Across your caseload · SOAP format</p>
         </div>
         <Link
           href="/notes/new"
           className="rounded-lg bg-brand px-3.5 py-2 text-[13.4px] font-semibold text-white transition hover:bg-brand-ink"
         >
-          + New note
+          + New Note
         </Link>
+      </div>
+
+      <div className="mb-5 flex gap-1 border-b border-border">
+        {TABS.map((t) => (
+          <Link
+            key={t.key}
+            href={t.key === "all" ? "/notes" : `/notes?tab=${t.key}`}
+            className={`-mb-px border-b-2 px-2.5 pb-2 text-[13.4px] font-semibold transition ${
+              activeTab === t.key
+                ? "border-brand text-foreground"
+                : "border-transparent text-text-3 hover:text-foreground"
+            }`}
+          >
+            {t.label}
+          </Link>
+        ))}
       </div>
 
       <div className="space-y-3">
@@ -102,7 +143,7 @@ export default async function NotesPage() {
         })}
         {!notes.length && (
           <p className="rounded-2xl border border-border bg-surface p-8 text-center text-[13px] text-text-3">
-            No session notes yet.
+            {emptyMessage}
           </p>
         )}
       </div>
