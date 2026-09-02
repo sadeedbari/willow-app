@@ -6,7 +6,7 @@ import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import { friendlyErrorMessage } from "@/utils/friendly-error";
 import sharp from "sharp";
 
-const MAX_LOGO_BYTES = 1 * 1024 * 1024;
+const MAX_LOGO_BYTES = 2 * 1024 * 1024;
 const ALLOWED_LOGO_TYPES = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];
 
 export async function updatePracticeSettings(formData: FormData) {
@@ -22,7 +22,7 @@ export async function updatePracticeSettings(formData: FormData) {
 
   if (logo instanceof File && logo.size > 0) {
     if (logo.size > MAX_LOGO_BYTES) {
-      redirect(`/settings?error=${encodeURIComponent("Logo must be 1 MB or smaller.")}`);
+      redirect(`/settings?error=${encodeURIComponent("Logo must be 2 MB or smaller.")}`);
     }
     if (!ALLOWED_LOGO_TYPES.includes(logo.type)) {
       redirect(`/settings?error=${encodeURIComponent("Logo must be a PNG, JPEG, WEBP, or SVG image.")}`);

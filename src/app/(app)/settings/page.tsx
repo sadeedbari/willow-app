@@ -71,7 +71,7 @@ export default async function SettingsPage({
                   className="block w-full text-[12.5px] text-text-2 file:mr-3 file:rounded-lg file:border file:border-border file:bg-surface file:px-3 file:py-1.5 file:text-[12.5px] file:font-semibold file:text-text-2 hover:file:bg-surface-2"
                 />
                 <p className="mt-1 text-[11.5px] text-text-3">
-                  PNG, JPEG, WEBP, or SVG — up to 1 MB. Shown on invoice PDFs and client-facing forms.
+                  PNG, JPEG, WEBP, or SVG — up to 2 MB. Shown on invoice PDFs and client-facing forms.
                 </p>
               </div>
             </div>
