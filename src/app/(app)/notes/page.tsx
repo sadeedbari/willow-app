@@ -70,7 +70,11 @@ export default async function NotesPage() {
 
       <div className="space-y-3">
         {notes.map((n) => (
-          <div key={n.id} className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
+          <Link
+            key={n.id}
+            href={`/notes/${n.id}`}
+            className="block rounded-2xl border border-border bg-surface p-4 shadow-sm transition hover:bg-surface-2"
+          >
             <div className="flex items-center justify-between">
               <div className="text-[13.4px] font-semibold text-foreground">
                 {n.clients?.full_name ?? "Unknown client"}
@@ -94,7 +98,7 @@ export default async function NotesPage() {
                 {n.subjective}
               </p>
             )}
-          </div>
+          </Link>
         ))}
         {!notes.length && (
           <p className="rounded-2xl border border-border bg-surface p-8 text-center text-[13px] text-text-3">

@@ -4,12 +4,27 @@ import { createNote } from "./actions";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+const RISK_OPTIONS = [
+  { value: "none", label: "None identified" },
+  { value: "passive_ideation", label: "Passive ideation" },
+  { value: "active_ideation", label: "Active ideation" },
+  { value: "immediate_risk", label: "Immediate risk" },
+];
+
+const TYPE_LABEL: Record<string, string> = {
+  individual: "Individual",
+  couples: "Couples",
+  family: "Family",
+  intake: "Intake",
+  group: "Group",
+};
+
 export default async function NewNotePage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; clientId?: string }>;
+  searchParams: Promise<{ error?: string; clientId?: string; appointmentId?: string }>;
 }) {
-  const { error, clientId } = await searchParams;
+  const { error, clientId, appointmentId } = await searchParams;
   const staff = await getCurrentStaff();
 
   if (staff.role !== "clinician") {
@@ -17,13 +32,35 @@ export default async function NewNotePage({
   }
 
   const supabase = await createClient();
-  const { data: clients } = await supabase
-    .from("clients")
-    .select("id, full_name")
-    .eq("assigned_staff_id", staff.id)
-    .order("full_name");
+
+  const appointment = appointmentId
+    ? (
+        await supabase
+          .from("appointments")
+          .select("id, starts_at, type, client_id, staff_id, clients(full_name)")
+          .eq("id", appointmentId)
+          .single()
+      ).data
+    : null;
+
+  // An appointment link only pins the client/date if it's actually this
+  // clinician's own appointment -- otherwise fall through to the normal
+  // client picker rather than silently trusting an arbitrary query param.
+  const lockedClient =
+    appointment && appointment.staff_id === staff.id
+      ? { id: appointment.client_id, name: (appointment.clients as unknown as { full_name: string } | null)?.full_name }
+      : null;
+
+  const { data: clients } = lockedClient
+    ? { data: null }
+    : await supabase
+        .from("clients")
+        .select("id, full_name")
+        .eq("assigned_staff_id", staff.id)
+        .order("full_name");
 
   const today = new Date().toISOString().slice(0, 10);
+  const sessionDate = lockedClient ? appointment!.starts_at.slice(0, 10) : today;
 
   return (
     <div className="max-w-2xl">
@@ -33,6 +70,12 @@ export default async function NewNotePage({
       <h1 className="mt-3 text-[22px] font-bold tracking-tight text-foreground">
         New session note
       </h1>
+      {lockedClient && (
+        <p className="mt-1 text-[12.5px] text-text-2">
+          For the {TYPE_LABEL[appointment!.type] ?? appointment!.type} appointment on{" "}
+          {new Date(appointment!.starts_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+        </p>
+      )}
 
       {error && (
         <p className="mt-4 rounded-lg bg-bad-tint px-3 py-2 text-[13px] text-bad">
@@ -41,26 +84,34 @@ export default async function NewNotePage({
       )}
 
       <form action={createNote} className="mt-5 space-y-4">
+        {appointmentId && <input type="hidden" name="appointmentId" value={appointmentId} />}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-[12.5px] font-semibold text-text-2">
               Client
             </label>
-            <select
-              name="clientId"
-              required
-              defaultValue={clientId ?? ""}
-              className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-            >
-              <option value="" disabled>
-                Select a client
-              </option>
-              {clients?.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.full_name}
+            {lockedClient ? (
+              <div className="mt-1 flex items-center rounded-lg border border-border bg-surface-2 px-3 py-2 text-[13.6px] text-foreground">
+                <input type="hidden" name="clientId" value={lockedClient.id} />
+                {lockedClient.name ?? "Unknown client"}
+              </div>
+            ) : (
+              <select
+                name="clientId"
+                required
+                defaultValue={clientId ?? ""}
+                className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              >
+                <option value="" disabled>
+                  Select a client
                 </option>
-              ))}
-            </select>
+                {clients?.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.full_name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
           <div>
             <label className="block text-[12.5px] font-semibold text-text-2">
@@ -70,7 +121,7 @@ export default async function NewNotePage({
               name="sessionDate"
               type="date"
               required
-              defaultValue={today}
+              defaultValue={sessionDate}
               className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             />
           </div>
@@ -94,6 +145,32 @@ export default async function NewNotePage({
             />
           </div>
         ))}
+
+        <div className="rounded-lg border border-border bg-surface-2 p-3.5">
+          <label className="block text-[12.5px] font-semibold text-text-2">
+            Risk assessment
+          </label>
+          <select
+            name="riskLevel"
+            defaultValue="none"
+            className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+          >
+            {RISK_OPTIONS.map((r) => (
+              <option key={r.value} value={r.value}>
+                {r.label}
+              </option>
+            ))}
+          </select>
+          <label className="mt-3 block text-[12.5px] font-semibold text-text-2">
+            Risk details / safety plan
+          </label>
+          <textarea
+            name="riskNotes"
+            placeholder="Required unless risk assessment is “None identified” — describe what was assessed and any safety plan put in place."
+            rows={2}
+            className="mt-1 w-full resize-y rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+          />
+        </div>
 
         <div className="flex gap-3">
           <button

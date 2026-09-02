@@ -43,6 +43,14 @@ export async function AppointmentModal({
 
   if (!appt) return null;
 
+  const { data: existingNote } = await supabase
+    .from("session_notes")
+    .select("id, status")
+    .eq("appointment_id", appointmentId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   const client = appt.clients as unknown as { full_name: string } | null;
   const clinician = appt.staff as unknown as { full_name: string } | null;
   const start = new Date(appt.starts_at);
@@ -155,9 +163,18 @@ export async function AppointmentModal({
               <Link href={`/messages/${appt.client_id}`} className="text-[12.5px] font-semibold text-brand-ink">
                 Message client
               </Link>
-              <Link href={`/notes/new?clientId=${appt.client_id}`} className="text-[12.5px] font-semibold text-brand-ink">
-                + Session note
-              </Link>
+              {existingNote ? (
+                <Link href={`/notes/${existingNote.id}`} className="text-[12.5px] font-semibold text-brand-ink">
+                  {existingNote.status === "draft" ? "Continue draft note" : "View session note"}
+                </Link>
+              ) : (
+                <Link
+                  href={`/notes/new?appointmentId=${appt.id}&clientId=${appt.client_id}`}
+                  className="text-[12.5px] font-semibold text-brand-ink"
+                >
+                  + Session note
+                </Link>
+              )}
             </div>
           </div>
 

@@ -338,11 +338,13 @@ export default async function ClientDetailPage({
                     notes?.length ? (
                       <ul className="space-y-2 text-[13.4px]">
                         {notes.slice(0, 5).map((n) => (
-                          <li key={n.id} className="flex items-center justify-between">
-                            <span className="text-foreground">{n.session_date}</span>
-                            <span className={`font-semibold ${n.status === "signed" ? "text-ok" : "text-warn"}`}>
-                              {n.status === "signed" ? "Signed" : "Unsigned"}
-                            </span>
+                          <li key={n.id}>
+                            <Link href={`/notes/${n.id}`} className="flex items-center justify-between hover:text-brand-ink">
+                              <span className="text-foreground">{n.session_date}</span>
+                              <span className={`font-semibold ${n.status === "signed" ? "text-ok" : "text-warn"}`}>
+                                {n.status === "signed" ? "Signed" : "Unsigned"}
+                              </span>
+                            </Link>
                           </li>
                         ))}
                       </ul>
@@ -407,17 +409,19 @@ export default async function ClientDetailPage({
                 <ul className="space-y-3">
                   {notes.map((n) => (
                     <li key={n.id} className="border-b border-border pb-3 last:border-0">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[13px] font-semibold text-foreground">{n.session_date}</span>
-                        <span
-                          className={`inline-flex rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${
-                            n.status === "signed" ? "bg-ok-tint text-ok" : "bg-warn-tint text-warn"
-                          }`}
-                        >
-                          {n.status === "signed" ? "Signed" : "Draft"}
-                        </span>
-                      </div>
-                      <p className="mt-1 truncate text-[12.5px] text-text-2">{n.subjective || "No subjective notes yet."}</p>
+                      <Link href={`/notes/${n.id}`} className="block hover:opacity-80">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[13px] font-semibold text-foreground">{n.session_date}</span>
+                          <span
+                            className={`inline-flex rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${
+                              n.status === "signed" ? "bg-ok-tint text-ok" : "bg-warn-tint text-warn"
+                            }`}
+                          >
+                            {n.status === "signed" ? "Signed" : "Draft"}
+                          </span>
+                        </div>
+                        <p className="mt-1 truncate text-[12.5px] text-text-2">{n.subjective || "No subjective notes yet."}</p>
+                      </Link>
                     </li>
                   ))}
                 </ul>
