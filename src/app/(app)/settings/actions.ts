@@ -33,12 +33,20 @@ export async function updatePracticeSettings(formData: FormData) {
     // can't display) and strips ICC/gamma metadata that some encoders
     // (e.g. exports from design tools) include and that the PDF renderer's
     // PNG decoder can choke on with a generic "corrupt PNG" error.
+    //
+    // 300x300 is deliberately small -- the logo is only ever displayed at
+    // 40-64px (invoice header, consent page, settings preview). This also
+    // doubles as a hard size cap: a 300x300 RGBA bitmap is at most
+    // 300*300*4 = 352,800 bytes raw, and PNG compression never expands
+    // that, so the stored file mathematically can't exceed ~350 KB
+    // regardless of what gets uploaded -- no separate "shrink if still too
+    // big" pass is needed.
     let pngBuffer: Buffer;
     try {
       const isVector = logo.type === "image/svg+xml";
       pngBuffer = await sharp(Buffer.from(await logo.arrayBuffer()), isVector ? { density: 300 } : {})
-        .resize(400, 400, { fit: "inside", withoutEnlargement: true })
-        .png()
+        .resize(300, 300, { fit: "inside", withoutEnlargement: true })
+        .png({ compressionLevel: 9 })
         .toBuffer();
     } catch {
       redirect(`/settings?error=${encodeURIComponent("Could not read that image — please try a different file.")}`);
