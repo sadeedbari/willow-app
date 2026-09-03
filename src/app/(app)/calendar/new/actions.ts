@@ -35,6 +35,7 @@ export async function createAppointment(formData: FormData) {
       ends_at: endsAt.toISOString(),
       type,
       location_type: locationType,
+      auto_send_invoice: formData.get("autoSendInvoice") === "on",
     })
     .select("id")
     .single();

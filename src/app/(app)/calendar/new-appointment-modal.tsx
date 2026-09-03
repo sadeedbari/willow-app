@@ -23,11 +23,12 @@ export async function NewAppointmentModal({
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
-  const [{ data: clients }, { data: clinicians }] = await Promise.all([
+  const [{ data: clients }, { data: clinicians }, { data: practice }] = await Promise.all([
     supabase.from("clients").select("id, full_name").order("full_name"),
     staff.role === "clinician"
       ? Promise.resolve({ data: null })
       : supabase.from("staff").select("id, full_name").in("role", ["clinician", "practice_admin"]).order("full_name"),
+    supabase.from("practices").select("auto_send_invoice_default").eq("id", staff.practiceId).single(),
   ]);
 
   const today = date ?? new Date().toISOString().slice(0, 10);
@@ -158,6 +159,16 @@ export async function NewAppointmentModal({
                 <option value="office">Office</option>
               </select>
             </div>
+
+            <label className="flex items-center gap-2.5 rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-[13px] text-foreground">
+              <input
+                type="checkbox"
+                name="autoSendInvoice"
+                defaultChecked={!!practice?.auto_send_invoice_default}
+                className="h-4 w-4 flex-none accent-brand"
+              />
+              Automatically send invoice at the end of the appointment
+            </label>
 
             <button
               type="submit"

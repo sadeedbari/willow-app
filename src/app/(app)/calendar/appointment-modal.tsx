@@ -1,6 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
-import { rescheduleAppointment, setAppointmentStatus } from "./[id]/actions";
+import { rescheduleAppointment, setAppointmentStatus, updateAutoSendInvoice } from "./[id]/actions";
 
 const TYPE_LABEL: Record<string, string> = {
   individual: "Individual",
@@ -37,7 +37,9 @@ export async function AppointmentModal({
 
   const { data: appt } = await supabase
     .from("appointments")
-    .select("id, starts_at, ends_at, type, location_type, status, client_id, video_practitioner_url, clients(full_name), staff(full_name)")
+    .select(
+      "id, starts_at, ends_at, type, location_type, status, client_id, video_practitioner_url, auto_send_invoice, clients(full_name), staff(full_name)"
+    )
     .eq("id", appointmentId)
     .single();
 
@@ -155,6 +157,40 @@ export async function AppointmentModal({
                 <dd className="text-foreground">{appt.location_type === "telehealth" ? "Telehealth" : "Office"}</dd>
               </div>
             </dl>
+
+            <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
+              <span className="text-[12.5px] text-text-2">Auto-send invoice at end of appointment</span>
+              {end < new Date() ? (
+                <span
+                  title="This appointment has already ended — the setting can no longer be changed"
+                  className={`relative h-5.5 w-10 flex-none rounded-full opacity-40 ${appt.auto_send_invoice ? "bg-brand" : "bg-surface-3"}`}
+                >
+                  <span
+                    className={`absolute top-0.5 h-4.5 w-4.5 rounded-full bg-white shadow ${appt.auto_send_invoice ? "left-[19px]" : "left-0.5"}`}
+                  />
+                </span>
+              ) : (
+                <form action={updateAutoSendInvoice}>
+                  <input type="hidden" name="appointmentId" value={appt.id} />
+                  <input type="hidden" name="returnTo" value={returnTo} />
+                  <input type="hidden" name="enabled" value={(!appt.auto_send_invoice).toString()} />
+                  <button
+                    type="submit"
+                    aria-pressed={appt.auto_send_invoice}
+                    aria-label="Automatically send invoice at the end of the appointment"
+                    className={`relative h-5.5 w-10 flex-none rounded-full transition ${
+                      appt.auto_send_invoice ? "bg-brand" : "bg-surface-3"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 h-4.5 w-4.5 rounded-full bg-white shadow transition ${
+                        appt.auto_send_invoice ? "left-[19px]" : "left-0.5"
+                      }`}
+                    />
+                  </button>
+                </form>
+              )}
+            </div>
 
             <div className="mt-4 flex flex-wrap gap-3 border-t border-border pt-4">
               <Link href={`/clients/${appt.client_id}`} className="text-[12.5px] font-semibold text-brand-ink">

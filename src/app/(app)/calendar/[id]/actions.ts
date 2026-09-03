@@ -29,6 +29,28 @@ export async function rescheduleAppointment(formData: FormData) {
   redirect(returnTo);
 }
 
+export async function updateAutoSendInvoice(formData: FormData) {
+  await getCurrentStaff();
+  const appointmentId = formData.get("appointmentId") as string;
+  const returnTo = formData.get("returnTo") as string;
+  const enabled = formData.get("enabled") === "true";
+
+  const supabase = await createClient();
+
+  const { data: appt } = await supabase.from("appointments").select("ends_at").eq("id", appointmentId).single();
+  if (appt && new Date(appt.ends_at) < new Date()) {
+    redirect(`${returnTo}&error=${encodeURIComponent("This appointment has already ended — the setting can no longer be changed.")}`);
+  }
+
+  const { error } = await supabase.from("appointments").update({ auto_send_invoice: enabled }).eq("id", appointmentId);
+
+  if (error) {
+    redirect(`${returnTo}&error=${encodeURIComponent(friendlyErrorMessage(error))}`);
+  }
+
+  redirect(returnTo);
+}
+
 export async function setAppointmentStatus(formData: FormData) {
   await getCurrentStaff();
   const appointmentId = formData.get("appointmentId") as string;

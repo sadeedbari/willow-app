@@ -5,8 +5,13 @@ import {
   addServiceCode,
   loadStarterServiceCodes,
   toggleServiceCodeActive,
+  toggleAutoSendInvoiceDefault,
+  updateDefaultServicesForTypes,
   updateServiceCodeRate,
 } from "./actions";
+import { APPOINTMENT_TYPE_SHORT_LABEL } from "@/utils/appointment-type-label";
+
+const APPOINTMENT_TYPES = ["individual", "couples", "family", "intake", "group"] as const;
 
 function formatMoney(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
@@ -22,11 +27,17 @@ export default async function ServiceCodesPage({
   const canEdit = staff.role === "practice_admin";
 
   const supabase = await createClient();
-  const { data: codes } = await supabase
-    .from("service_codes")
-    .select("id, code, description, default_rate_cents, active")
-    .order("active", { ascending: false })
-    .order("code");
+  const [{ data: codes }, { data: practice }] = await Promise.all([
+    supabase
+      .from("service_codes")
+      .select("id, code, description, default_rate_cents, active, default_for_type")
+      .order("active", { ascending: false })
+      .order("code"),
+    supabase.from("practices").select("auto_send_invoice_default").eq("id", staff.practiceId).single(),
+  ]);
+
+  const activeCodes = codes?.filter((c) => c.active) ?? [];
+  const defaultForType = new Map(activeCodes.filter((c) => c.default_for_type).map((c) => [c.default_for_type, c.id]));
 
   return (
     <div className="max-w-2xl">
@@ -47,6 +58,76 @@ export default async function ServiceCodesPage({
         These CPT/service codes and their default rates show up as quick-add buttons when adding line
         items to an invoice.
       </p>
+
+      <div className="mb-5 rounded-2xl border border-border bg-surface p-4 shadow-sm">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div className="text-[13px] font-bold text-foreground">
+              Automatically send invoice at the end of the appointment
+            </div>
+            <p className="mt-1 text-[12px] text-text-2">
+              New appointments will default to this. It can still be overridden per appointment.
+            </p>
+          </div>
+          {canEdit && (
+            <form action={toggleAutoSendInvoiceDefault}>
+              <input type="hidden" name="nextEnabled" value={(!practice?.auto_send_invoice_default).toString()} />
+              <button
+                type="submit"
+                className={`relative h-6 w-11 flex-none rounded-full transition ${
+                  practice?.auto_send_invoice_default ? "bg-brand" : "bg-surface-3"
+                }`}
+                aria-pressed={!!practice?.auto_send_invoice_default}
+                aria-label="Automatically send invoice at the end of the appointment"
+              >
+                <span
+                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${
+                    practice?.auto_send_invoice_default ? "left-[22px]" : "left-0.5"
+                  }`}
+                />
+              </button>
+            </form>
+          )}
+        </div>
+
+        {!!activeCodes.length && (
+          <form action={updateDefaultServicesForTypes} className="mt-4 border-t border-border pt-4">
+            <div className="mb-2 text-[12.5px] font-semibold text-text-2">
+              Default service per session type
+            </div>
+            <div className="grid grid-cols-2 gap-2.5">
+              {APPOINTMENT_TYPES.map((type) => (
+                <div key={type}>
+                  <label className="block text-[11px] font-semibold text-text-3">
+                    {APPOINTMENT_TYPE_SHORT_LABEL[type]}
+                  </label>
+                  <select
+                    name={`default_${type}`}
+                    defaultValue={defaultForType.get(type) ?? ""}
+                    disabled={!canEdit}
+                    className="mt-1 w-full rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[13px] outline-none focus:border-brand focus:ring-1 focus:ring-brand disabled:opacity-60"
+                  >
+                    <option value="">None</option>
+                    {activeCodes.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.code} · {c.description}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+            {canEdit && (
+              <button
+                type="submit"
+                className="mt-3 rounded-lg bg-brand px-3.5 py-1.5 text-[12.5px] font-semibold text-white transition hover:bg-brand-ink"
+              >
+                Save defaults
+              </button>
+            )}
+          </form>
+        )}
+      </div>
 
       {!codes?.length && canEdit && (
         <form action={loadStarterServiceCodes} className="mb-5 rounded-2xl border border-border bg-surface p-4 shadow-sm">

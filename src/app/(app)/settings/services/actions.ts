@@ -84,3 +84,44 @@ export async function toggleServiceCodeActive(formData: FormData) {
   revalidatePath("/settings/services");
   redirect("/settings/services");
 }
+
+export async function toggleAutoSendInvoiceDefault(formData: FormData) {
+  const staff = await getCurrentStaff();
+  requireAdmin(staff.role);
+
+  const supabase = await createClient();
+  await supabase
+    .from("practices")
+    .update({ auto_send_invoice_default: formData.get("nextEnabled") === "true" })
+    .eq("id", staff.practiceId);
+
+  revalidatePath("/settings/services");
+  redirect("/settings/services");
+}
+
+const APPOINTMENT_TYPES = ["individual", "couples", "family", "intake", "group"] as const;
+
+export async function updateDefaultServicesForTypes(formData: FormData) {
+  const staff = await getCurrentStaff();
+  requireAdmin(staff.role);
+
+  const supabase = await createClient();
+
+  // Clear every existing default first -- the partial unique index only
+  // allows one service code per type per practice, so a straight update
+  // could collide with whichever code currently holds that slot.
+  await supabase
+    .from("service_codes")
+    .update({ default_for_type: null })
+    .eq("practice_id", staff.practiceId)
+    .not("default_for_type", "is", null);
+
+  for (const type of APPOINTMENT_TYPES) {
+    const serviceCodeId = formData.get(`default_${type}`) as string;
+    if (!serviceCodeId) continue;
+    await supabase.from("service_codes").update({ default_for_type: type }).eq("id", serviceCodeId);
+  }
+
+  revalidatePath("/settings/services");
+  redirect("/settings/services");
+}
