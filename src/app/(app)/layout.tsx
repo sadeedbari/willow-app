@@ -6,6 +6,7 @@ import { logout } from "./actions";
 import { toggleTheme } from "./theme-actions";
 import { NavLink } from "./nav-link";
 import { ThemeToggleForm } from "./theme-toggle-form";
+import { isThreadUnread } from "@/utils/messaging";
 
 const NAV = [
   {
@@ -165,8 +166,8 @@ export default async function AppLayout({
     supabase.from("notifications").select("id", { count: "exact", head: true }).eq("staff_id", staff.id).is("read_at", null),
   ]);
 
-  const unreadMessages = (threads ?? []).filter(
-    (t) => !t.staff_last_read_at || new Date(t.updated_at) > new Date(t.staff_last_read_at)
+  const unreadMessages = (threads ?? []).filter((t) =>
+    isThreadUnread(t.staff_last_read_at, t.updated_at)
   ).length;
 
   // Pending-signature nudges now live inside the Forms page itself (a

@@ -3,6 +3,7 @@ import { getCurrentClient } from "@/utils/supabase/current-client";
 import Link from "next/link";
 import { PortalTabs } from "../tabs";
 import { bookAppointment } from "./actions";
+import { isThreadUnread } from "@/utils/messaging";
 import {
   APPOINTMENT_TYPE_DURATION_MINUTES,
   APPOINTMENT_TYPE_LABEL,
@@ -69,6 +70,13 @@ export default async function BookAppointmentPage({
   const today = new Date().toISOString().slice(0, 10);
   const selectedDate = date ?? today;
 
+  const { data: thread } = await supabase
+    .from("message_threads")
+    .select("client_last_read_at, updated_at")
+    .eq("client_id", client.id)
+    .maybeSingle();
+  const unreadMessages = !!thread && isThreadUnread(thread.client_last_read_at, thread.updated_at);
+
   return (
     <div className="flex min-h-screen flex-col bg-surface-2">
       <header className="flex items-center justify-between border-b border-border bg-surface px-5 py-3.5">
@@ -79,7 +87,7 @@ export default async function BookAppointmentPage({
       </header>
 
       <div className="mx-auto flex w-full max-w-lg flex-1 flex-col px-4 py-6">
-        <PortalTabs active="/portal/book" />
+        <PortalTabs active="/portal/book" unreadMessages={unreadMessages} />
 
         <h1 className="mt-4 text-[18px] font-bold tracking-tight text-foreground">Book Appointment</h1>
         <p className="mt-1 text-[12.5px] text-text-3">Pick an open time with your clinician.</p>

@@ -2,6 +2,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { sendEmail } from "@/utils/resend/send";
 import { friendlyErrorMessage } from "@/utils/friendly-error";
 
+// A thread is unread from one side the moment the other side has posted
+// since that side's last visit -- same rule for staff (staff_last_read_at)
+// and for the client portal (client_last_read_at), so one function covers
+// both directions rather than each caller re-deriving the comparison.
+export function isThreadUnread(lastReadAt: string | null, updatedAt: string): boolean {
+  return !lastReadAt || new Date(updatedAt) > new Date(lastReadAt);
+}
+
 // Shared by the staff-side ("/messages/[clientId]") and client-portal
 // ("/portal") send actions -- both need the same "one thread per client"
 // lookup-or-create, and the inbound-email webhook needs the resulting
