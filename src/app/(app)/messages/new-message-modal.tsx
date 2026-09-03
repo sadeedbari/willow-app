@@ -5,9 +5,11 @@ import { startConversation } from "./actions";
 export async function NewMessageModal({
   staffId,
   seesAllClients,
+  closeHref = "/messages",
 }: {
   staffId: string;
   seesAllClients: boolean;
+  closeHref?: string;
 }) {
   const supabase = await createClient();
 
@@ -17,13 +19,13 @@ export async function NewMessageModal({
 
   return (
     <>
-      <Link href="/messages" aria-label="Close" className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]" />
+      <Link href={closeHref} aria-label="Close" className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]" />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-lg">
           <div className="flex items-start justify-between">
             <h2 className="text-[19px] font-bold tracking-tight text-foreground">New Message</h2>
             <Link
-              href="/messages"
+              href={closeHref}
               aria-label="Close"
               className="flex h-7 w-7 items-center justify-center rounded-full bg-surface-2 text-text-2 transition hover:bg-surface-3 hover:text-foreground"
             >
