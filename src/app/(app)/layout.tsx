@@ -56,7 +56,7 @@ const NAV = [
       },
       {
         href: "/forms",
-        label: "Consent Forms",
+        label: "Forms",
         color: "bg-hue-consent",
         adminOnly: true,
         badge: "consent",

@@ -2,6 +2,11 @@ import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import Link from "next/link";
 
+function formatSessionDate(dateStr: string) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
 const TABS = [
   { key: "all", label: "All notes" },
   { key: "unsigned", label: "Due / unsigned" },
@@ -80,7 +85,7 @@ export default async function NotesPage({
           <h1 className="text-[26px] font-bold tracking-tight text-foreground">
             Session Notes
           </h1>
-          <p className="mt-1 text-[13.5px] text-text-2">Across your caseload · SOAP format</p>
+          <p className="mt-1 text-[13.5px] text-text-2">Write, sign, and track your clients&apos; session notes</p>
         </div>
         <Link
           href="/notes/new"
@@ -109,15 +114,12 @@ export default async function NotesPage({
       <div className="space-y-3">
         {notes.map((n) => {
           const isOwn = n.staff_id === staff.id;
+          const isUnsigned = n.status === "draft";
           return (
-            <Link
-              key={n.id}
-              href={`/notes/${n.id}`}
-              className="block rounded-2xl border border-border bg-surface p-4 shadow-sm transition hover:bg-surface-2"
-            >
-              <div className="flex items-center justify-between">
+            <div key={n.id} className="rounded-2xl border border-border bg-surface p-4 shadow-sm transition hover:bg-surface-2">
+              <Link href={`/notes/${n.id}`} className="flex items-center justify-between">
                 <div className="text-[13.4px] font-semibold text-foreground">
-                  {n.clients?.full_name ?? "Unknown client"}
+                  {n.clients?.full_name ?? "Unknown client"} — {formatSessionDate(n.session_date)}
                   {n.staff?.full_name && (
                     <span className="ml-2 font-normal text-text-3">
                       · {n.staff.full_name}
@@ -125,20 +127,34 @@ export default async function NotesPage({
                   )}
                 </div>
                 <span
-                  className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                    n.status === "signed" ? "bg-ok-tint text-ok" : "bg-warn-tint text-warn"
+                  className={`inline-flex flex-none rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                    isUnsigned ? "bg-bad-tint text-bad" : "bg-ok-tint text-ok"
                   }`}
                 >
-                  {n.status === "signed" ? "Signed" : "Draft"}
+                  {isUnsigned ? "Unsigned" : "Signed"}
                 </span>
-              </div>
-              <div className="mt-1 text-[12px] text-text-3">{n.session_date}</div>
-              {isOwn && n.subjective && (
+              </Link>
+
+              {isUnsigned && isOwn && (
+                <>
+                  <p className="mt-2 text-[13px] text-text-2">
+                    This session note is still in draft — sign to lock it into the record.
+                  </p>
+                  <Link
+                    href={`/notes/${n.id}/edit`}
+                    className="mt-3 inline-flex rounded-lg bg-brand px-3.5 py-2 text-[13px] font-semibold text-white transition hover:bg-brand-ink"
+                  >
+                    Complete note
+                  </Link>
+                </>
+              )}
+
+              {!isUnsigned && isOwn && n.subjective && (
                 <p className="mt-2 line-clamp-2 text-[13px] text-text-2">
                   {n.subjective}
                 </p>
               )}
-            </Link>
+            </div>
           );
         })}
         {!notes.length && (
