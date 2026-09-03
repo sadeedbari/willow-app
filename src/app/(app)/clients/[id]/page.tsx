@@ -6,6 +6,7 @@ import { sendConsentForm } from "./consent-actions";
 import { inviteToPortal } from "./portal-actions";
 import { avatarColorFor, initialsOf } from "@/utils/avatar-color";
 import { EditClientModal } from "./edit-client-modal";
+import { uploadClientDocument, deleteClientDocument } from "./documents-actions";
 
 const STATUS_LABEL: Record<string, string> = {
   active: "Active",
@@ -32,6 +33,12 @@ const CONSENT_STATUS_LABEL: Record<string, string> = {
   signed: "Signed",
   expired: "Expired",
 };
+
+function formatFileSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 const TABS = [
   { key: "overview", label: "Overview" },
@@ -82,8 +89,11 @@ export default async function ClientDetailPage({
   const canInviteToPortal = staff.role === "practice_admin" || staff.role === "front_desk";
   const canMessage = staff.role === "practice_admin" || (staff.role === "clinician" && isOwnClient);
   const canEdit = staff.role === "practice_admin" || staff.role === "front_desk";
+  const canUploadDocuments =
+    staff.role === "practice_admin" || staff.role === "front_desk" || (staff.role === "clinician" && isOwnClient);
+  const canDeleteDocuments = staff.role === "practice_admin";
 
-  const [{ data: notes }, { data: invoices }, { data: consentForms }, { data: templates }, { data: upcoming }] =
+  const [{ data: notes }, { data: invoices }, { data: consentForms }, { data: templates }, { data: upcoming }, { data: documents }] =
     await Promise.all([
       canSeeNotes
         ? supabase
@@ -113,6 +123,11 @@ export default async function ClientDetailPage({
         .gte("starts_at", new Date().toISOString())
         .order("starts_at")
         .limit(5),
+      supabase
+        .from("client_documents")
+        .select("id, file_name, file_size_bytes, content_type, created_at")
+        .eq("client_id", id)
+        .order("created_at", { ascending: false }),
     ]);
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -542,13 +557,76 @@ export default async function ClientDetailPage({
             </div>
           )}
 
-          {/* Documents tab -- no file storage built yet, honest placeholder */}
+          {/* Documents tab */}
           {activeTab === "documents" && (
-            <div className="mt-4 rounded-2xl border border-border bg-surface p-8 text-center shadow-sm">
-              <div className="text-[15px] font-bold text-foreground">Coming soon</div>
-              <p className="mx-auto mt-2 max-w-sm text-[13px] text-text-2">
-                Client document uploads (intake forms, insurance cards, referral letters) aren&apos;t built yet.
-              </p>
+            <div className="mt-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+              <div className="mb-3 text-[13px] font-bold text-foreground">Documents</div>
+              {documents?.length ? (
+                <ul className="divide-y divide-border">
+                  {documents.map((d) => (
+                    <li key={d.id} className="flex items-center gap-3 py-2.5">
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-4 w-4 flex-none text-text-3"
+                      >
+                        <path d="M7 3h8l4 4v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" />
+                        <path d="M9 12h6M9 16h6M9 8h3" />
+                      </svg>
+                      <div className="flex-1 text-[13.4px]">
+                        <div className="text-foreground">{d.file_name}</div>
+                        <div className="text-[11.5px] text-text-3">
+                          {formatFileSize(d.file_size_bytes)} · added {new Date(d.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                        </div>
+                      </div>
+                      <a
+                        href={`/clients/${id}/documents/${d.id}/download`}
+                        className="rounded-lg border border-border px-3 py-1.5 text-[12px] font-semibold text-text-2 transition hover:bg-surface-2"
+                      >
+                        Download
+                      </a>
+                      {canDeleteDocuments && (
+                        <form action={deleteClientDocument}>
+                          <input type="hidden" name="clientId" value={id} />
+                          <input type="hidden" name="documentId" value={d.id} />
+                          <button type="submit" className="text-[12px] font-semibold text-bad">
+                            Delete
+                          </button>
+                        </form>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[13px] text-text-3">No documents uploaded yet.</p>
+              )}
+
+              {canUploadDocuments && (
+                <form action={uploadClientDocument} className="mt-4 flex items-end gap-2 border-t border-border pt-4">
+                  <input type="hidden" name="clientId" value={id} />
+                  <div className="flex-1">
+                    <label className="block text-[12px] font-semibold text-text-2">Upload document</label>
+                    <input
+                      type="file"
+                      name="file"
+                      required
+                      accept="application/pdf,image/jpeg,image/png,image/webp,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      className="mt-1 block w-full text-[12.5px] text-text-2 file:mr-3 file:rounded-lg file:border file:border-border file:bg-surface file:px-3 file:py-1.5 file:text-[12.5px] file:font-semibold file:text-text-2 hover:file:bg-surface-2"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="rounded-lg bg-brand px-3.5 py-2 text-[13px] font-semibold text-white transition hover:bg-brand-ink"
+                  >
+                    Upload
+                  </button>
+                </form>
+              )}
+              <p className="mt-2 text-[11px] text-text-3">PDF, Word, or image — up to 10 MB.</p>
             </div>
           )}
         </div>
