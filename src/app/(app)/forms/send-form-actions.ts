@@ -68,3 +68,29 @@ export async function resendPendingSignature(formData: FormData) {
 
   redirect(`/forms?tab=pending&resent=1`);
 }
+
+// Marks the request as cancelled rather than deleting it -- keeps a record
+// that the form was sent and later withdrawn. The client-facing signing
+// page checks for this status and blocks signing once cancelled, so an
+// old link can't still be used after the practice calls it off.
+export async function cancelPendingSignature(formData: FormData) {
+  const staff = await getCurrentStaff();
+  if (staff.role !== "practice_admin" && staff.role !== "front_desk") {
+    redirect("/forms?tab=pending");
+  }
+
+  const consentFormId = formData.get("consentFormId") as string;
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("consent_forms")
+    .update({ status: "cancelled" })
+    .eq("id", consentFormId)
+    .eq("status", "pending");
+
+  if (error) {
+    redirect(`/forms?tab=pending&error=${encodeURIComponent("Could not cancel the request — please try again.")}`);
+  }
+
+  redirect(`/forms?tab=pending&cancelled=1`);
+}

@@ -26,12 +26,14 @@ const CONSENT_STATUS_STYLE: Record<string, string> = {
   pending: "bg-warn-tint text-warn",
   signed: "bg-ok-tint text-ok",
   expired: "bg-bad-tint text-bad",
+  cancelled: "bg-surface-2 text-text-3",
 };
 
 const CONSENT_STATUS_LABEL: Record<string, string> = {
   pending: "Awaiting signature",
   signed: "Signed",
   expired: "Expired",
+  cancelled: "Cancelled",
 };
 
 function formatFileSize(bytes: number) {

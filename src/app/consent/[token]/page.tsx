@@ -59,6 +59,23 @@ export default async function ConsentSigningPage({
               . No further action is needed.
             </p>
           </div>
+        ) : form.status === "cancelled" || form.status === "expired" ? (
+          <div>
+            {form.practice_logo_url && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={form.practice_logo_url} alt="" className="mb-3 h-12 w-auto object-contain" />
+            )}
+            <div className="mb-2 inline-flex rounded-full bg-surface-2 px-2.5 py-0.5 text-[11.5px] font-semibold text-text-3">
+              {form.status === "cancelled" ? "Request cancelled" : "Link expired"}
+            </div>
+            <h1 className="text-[20px] font-bold text-foreground">{form.title}</h1>
+            <p className="mt-1 text-[13px] text-text-3">{form.practice_name}</p>
+            <p className="mt-4 text-[13.5px] text-text-2">
+              {form.status === "cancelled"
+                ? "This form request was cancelled by the practice. If you still need to sign something, please contact them for a new link."
+                : "This signing link has expired. Please contact the practice for a new link."}
+            </p>
+          </div>
         ) : (
           <div>
             {form.practice_logo_url && (

@@ -3,7 +3,7 @@ import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { loadStarterTemplates } from "./actions";
-import { resendPendingSignature } from "./send-form-actions";
+import { resendPendingSignature, cancelPendingSignature } from "./send-form-actions";
 import { avatarColorFor, initialsOf } from "@/utils/avatar-color";
 import { LiveSearchInput } from "@/components/live-search-input";
 import { SendFormModal } from "./send-form-modal";
@@ -20,9 +20,9 @@ function formatSentDate(dateStr: string) {
 export default async function ConsentTemplatesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; send?: string; sent?: string; resent?: string; error?: string }>;
+  searchParams: Promise<{ tab?: string; send?: string; sent?: string; resent?: string; cancelled?: string; error?: string }>;
 }) {
-  const { tab, send, sent, resent, error } = await searchParams;
+  const { tab, send, sent, resent, cancelled, error } = await searchParams;
   const activeTab = TABS.some((t) => t.key === tab) ? tab! : "templates";
   const staff = await getCurrentStaff();
   if (staff.role !== "practice_admin") {
@@ -77,6 +77,11 @@ export default async function ConsentTemplatesPage({
       {resent && (
         <p className="mb-4 rounded-lg bg-ok-tint px-3 py-2 text-[13px] text-ok">
           Signing link re-emailed to the client.
+        </p>
+      )}
+      {cancelled && (
+        <p className="mb-4 rounded-lg bg-ok-tint px-3 py-2 text-[13px] text-ok">
+          Signature request cancelled.
         </p>
       )}
       {error && !send && (
@@ -195,17 +200,28 @@ export default async function ConsentTemplatesPage({
                     </div>
                   </div>
                 </div>
-                <form action={resendPendingSignature}>
-                  <input type="hidden" name="consentFormId" value={f.id} />
-                  <button
-                    type="submit"
-                    disabled={!client?.email}
-                    title={client?.email ? undefined : "This client has no email on file"}
-                    className="rounded-lg border border-border px-3 py-1.5 text-[12px] font-semibold text-text-2 transition hover:border-brand hover:text-brand-ink disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    Resend
-                  </button>
-                </form>
+                <div className="flex items-center gap-2">
+                  <form action={resendPendingSignature}>
+                    <input type="hidden" name="consentFormId" value={f.id} />
+                    <button
+                      type="submit"
+                      disabled={!client?.email}
+                      title={client?.email ? undefined : "This client has no email on file"}
+                      className="rounded-lg border border-border px-3 py-1.5 text-[12px] font-semibold text-text-2 transition hover:border-brand hover:text-brand-ink disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Resend
+                    </button>
+                  </form>
+                  <form action={cancelPendingSignature}>
+                    <input type="hidden" name="consentFormId" value={f.id} />
+                    <button
+                      type="submit"
+                      className="rounded-lg border border-border px-3 py-1.5 text-[12px] font-semibold text-bad transition hover:bg-bad-tint"
+                    >
+                      Cancel request
+                    </button>
+                  </form>
+                </div>
               </div>
             );
           })}
