@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import Link from "next/link";
+import { avatarColorFor, initialsOf } from "@/utils/avatar-color";
 
 const STATUS_STYLE: Record<string, string> = {
   draft: "bg-surface-2 text-text-3",
@@ -45,7 +46,7 @@ function StatCard({
 const STATUS_FILTERS = [
   { key: "all", label: "All" },
   { key: "draft", label: "Draft" },
-  { key: "sent", label: "Sent" },
+  { key: "sent", label: "Outstanding" },
   { key: "paid", label: "Paid" },
   { key: "void", label: "Void" },
 ];
@@ -62,7 +63,7 @@ export default async function InvoicesPage({
 
   const { data } = await supabase
     .from("invoices")
-    .select("id, invoice_number, status, issue_date, due_date, total_cents, amount_paid_cents, paid_at, clients(full_name)")
+    .select("id, invoice_number, status, issue_date, due_date, total_cents, amount_paid_cents, paid_at, client_id, clients(full_name)")
     .order("issue_date", { ascending: false })
     .order("invoice_number", { ascending: false });
 
@@ -75,6 +76,7 @@ export default async function InvoicesPage({
     total_cents: number;
     amount_paid_cents: number;
     paid_at: string | null;
+    client_id: string;
     clients: { full_name: string } | null;
   };
   const invoices = (data ?? []) as unknown as Row[];
@@ -164,22 +166,30 @@ export default async function InvoicesPage({
         {filteredInvoices.map((inv) => {
           const balance = inv.total_cents - inv.amount_paid_cents;
           const isOverdue = inv.status === "sent" && !!inv.due_date && inv.due_date < today;
+          const color = avatarColorFor(inv.client_id);
           return (
             <Link
               key={inv.id}
               href={`/invoices/${inv.id}`}
               className="flex items-center justify-between rounded-2xl border border-border bg-surface p-4 shadow-sm transition hover:border-brand"
             >
-              <div>
-                <div className="text-[13.4px] font-semibold text-foreground">
-                  INV-{String(inv.invoice_number).padStart(4, "0")}
-                  <span className="ml-2 font-normal text-text-3">
-                    · {inv.clients?.full_name ?? "Unknown client"}
-                  </span>
-                </div>
-                <div className="mt-1 text-[12px] text-text-3">
-                  Issued {inv.issue_date}
-                  {inv.due_date ? ` · Due ${inv.due_date}` : ""}
+              <div className="flex items-center gap-3">
+                <span
+                  className={`flex h-9 w-9 flex-none items-center justify-center rounded-full text-[12.5px] font-bold ${color.bg} ${color.text}`}
+                >
+                  {initialsOf(inv.clients?.full_name ?? "?")}
+                </span>
+                <div>
+                  <div className="text-[13.4px] font-semibold text-foreground">
+                    INV-{String(inv.invoice_number).padStart(4, "0")}
+                    <span className="ml-2 font-normal text-text-3">
+                      · {inv.clients?.full_name ?? "Unknown client"}
+                    </span>
+                  </div>
+                  <div className="mt-1 text-[12px] text-text-3">
+                    Issued {inv.issue_date}
+                    {inv.due_date ? ` · Due ${inv.due_date}` : ""}
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-4">
