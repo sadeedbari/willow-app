@@ -1,6 +1,31 @@
 import { createClient } from "@/utils/supabase/server";
 import { sendEmail } from "@/utils/resend/send";
 
+function signingUrlFor(accessToken: string) {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  return `${siteUrl}/consent/${accessToken}`;
+}
+
+// Shared by every "send a client this form to sign" entry point (new send,
+// resend) so the email is worded identically everywhere.
+export async function sendConsentFormSigningEmail(params: {
+  clientEmail: string;
+  clientName: string;
+  practiceName: string;
+  formTitle: string;
+  accessToken: string;
+}): Promise<boolean> {
+  return sendEmail({
+    to: params.clientEmail,
+    subject: `${params.formTitle} — please review and sign`,
+    html: `
+      <p>Hi ${params.clientName},</p>
+      <p>${params.practiceName} has sent you a form to review and sign: <strong>${params.formTitle}</strong>.</p>
+      <p><a href="${signingUrlFor(params.accessToken)}">Click here to review and sign</a>.</p>
+    `,
+  });
+}
+
 type CreateConsentFormResult =
   | { ok: true; accessToken: string; emailed: boolean }
   | { ok: false; error: string };
@@ -46,16 +71,12 @@ export async function createAndSendConsentForm(
 
   let emailed = false;
   if (client?.email) {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-    const signingUrl = `${siteUrl}/consent/${data.access_token}`;
-    emailed = await sendEmail({
-      to: client.email,
-      subject: `${template.title} — please review and sign`,
-      html: `
-        <p>Hi ${client.full_name},</p>
-        <p>${params.practiceName} has sent you a form to review and sign: <strong>${template.title}</strong>.</p>
-        <p><a href="${signingUrl}">Click here to review and sign</a>.</p>
-      `,
+    emailed = await sendConsentFormSigningEmail({
+      clientEmail: client.email,
+      clientName: client.full_name,
+      practiceName: params.practiceName,
+      formTitle: template.title,
+      accessToken: data.access_token,
     });
   }
 

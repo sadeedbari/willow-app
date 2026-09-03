@@ -59,7 +59,6 @@ const NAV = [
         label: "Forms",
         color: "bg-hue-consent",
         adminOnly: true,
-        badge: "consent",
         icon: (
           <>
             <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3Z" />
@@ -161,11 +160,8 @@ export default async function AppLayout({
   const supabase = await createClient();
   const theme = (await cookies()).get("theme")?.value === "dark" ? "dark" : "light";
 
-  const [{ data: threads }, { count: pendingConsent }, { count: unreadNotifCount }] = await Promise.all([
+  const [{ data: threads }, { count: unreadNotifCount }] = await Promise.all([
     supabase.from("message_threads").select("id, staff_last_read_at, updated_at"),
-    staff.role === "practice_admin"
-      ? supabase.from("consent_forms").select("id", { count: "exact", head: true }).eq("status", "pending")
-      : Promise.resolve({ count: null }),
     supabase.from("notifications").select("id", { count: "exact", head: true }).eq("staff_id", staff.id).is("read_at", null),
   ]);
 
@@ -173,9 +169,12 @@ export default async function AppLayout({
     (t) => !t.staff_last_read_at || new Date(t.updated_at) > new Date(t.staff_last_read_at)
   ).length;
 
+  // Pending-signature nudges now live inside the Forms page itself (a
+  // dedicated tab), not as a sidebar badge -- a sidebar count for "someone
+  // hasn't signed yet" read as an error/notification rather than the
+  // informational status it actually is.
   const badgeCounts: Record<string, number> = {
     messages: unreadMessages,
-    consent: pendingConsent ?? 0,
   };
 
   return (
