@@ -2,6 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import Link from "next/link";
 import { avatarColorFor, initialsOf } from "@/utils/avatar-color";
+import { NewInvoiceModal } from "./new-invoice-modal";
 
 const STATUS_STYLE: Record<string, string> = {
   draft: "bg-surface-2 text-text-3",
@@ -54,9 +55,9 @@ const STATUS_FILTERS = [
 export default async function InvoicesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; new?: string; error?: string; clientId?: string }>;
 }) {
-  const { status } = await searchParams;
+  const { status, new: showNew, error, clientId } = await searchParams;
   const activeStatus = STATUS_FILTERS.some((s) => s.key === status) ? status! : "all";
   const staff = await getCurrentStaff();
   const supabase = await createClient();
@@ -117,7 +118,7 @@ export default async function InvoicesPage({
         </div>
         {canCreate && (
           <Link
-            href="/invoices/new"
+            href="/invoices?new=1"
             className="rounded-lg bg-brand px-3.5 py-2 text-[13.4px] font-semibold text-white transition hover:bg-brand-ink"
           >
             + New invoice
@@ -220,6 +221,8 @@ export default async function InvoicesPage({
           </p>
         )}
       </div>
+
+      {canCreate && showNew && <NewInvoiceModal error={error} clientId={clientId} />}
     </div>
   );
 }
