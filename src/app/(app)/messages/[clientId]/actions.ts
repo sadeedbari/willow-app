@@ -5,27 +5,7 @@ import { redirect } from "next/navigation";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import { sendEmail } from "@/utils/resend/send";
 import { friendlyErrorMessage } from "@/utils/friendly-error";
-
-async function findOrCreateThread(clientId: string, practiceId: string) {
-  const supabase = await createClient();
-
-  const { data: existing } = await supabase
-    .from("message_threads")
-    .select("id")
-    .eq("client_id", clientId)
-    .maybeSingle();
-
-  if (existing) return existing.id;
-
-  const { data: created, error } = await supabase
-    .from("message_threads")
-    .insert({ practice_id: practiceId, client_id: clientId })
-    .select("id")
-    .single();
-
-  if (error || !created) throw new Error(friendlyErrorMessage(error, "Could not start conversation"));
-  return created.id;
-}
+import { findOrCreateThread, replyToAddressFor } from "@/utils/messaging";
 
 export async function sendMessageAsStaff(formData: FormData) {
   const staff = await getCurrentStaff();
@@ -38,7 +18,7 @@ export async function sendMessageAsStaff(formData: FormData) {
   if (!body) redirect(`/messages/${clientId}`);
 
   const supabase = await createClient();
-  const threadId = await findOrCreateThread(clientId, staff.practiceId);
+  const { id: threadId, inboundToken } = await findOrCreateThread(supabase, clientId, staff.practiceId);
 
   const { error } = await supabase.from("messages").insert({
     thread_id: threadId,
@@ -63,12 +43,16 @@ export async function sendMessageAsStaff(formData: FormData) {
     .eq("id", clientId)
     .single();
 
-  if (clientRow?.email && clientRow.portal_user_id) {
+  if (clientRow?.email) {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+    const howToReply = clientRow.portal_user_id
+      ? `Reply directly to this email, or <a href="${siteUrl}/portal">log in to your client portal</a> to view the full conversation.`
+      : `Reply directly to this email to respond.`;
     await sendEmail({
       to: clientRow.email,
       subject: `New secure message from ${staff.practiceName}`,
-      html: `<p>You have a new secure message from ${staff.practiceName}.</p><p><a href="${siteUrl}/portal">Log in to view and reply</a></p>`,
+      html: `<p>You have a new message from ${staff.practiceName}:</p><p>${body}</p><p>${howToReply}</p>`,
+      replyTo: replyToAddressFor(inboundToken),
     });
   }
 

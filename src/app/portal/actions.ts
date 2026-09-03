@@ -3,34 +3,12 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { getCurrentClient } from "@/utils/supabase/current-client";
-import { sendEmail } from "@/utils/resend/send";
-import { friendlyErrorMessage } from "@/utils/friendly-error";
+import { findOrCreateThread, notifyStaffOfClientMessage } from "@/utils/messaging";
 
 export async function portalLogout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/portal/login");
-}
-
-async function findOrCreateThread(clientId: string, practiceId: string) {
-  const supabase = await createClient();
-
-  const { data: existing } = await supabase
-    .from("message_threads")
-    .select("id")
-    .eq("client_id", clientId)
-    .maybeSingle();
-
-  if (existing) return existing.id;
-
-  const { data: created, error } = await supabase
-    .from("message_threads")
-    .insert({ practice_id: practiceId, client_id: clientId })
-    .select("id")
-    .single();
-
-  if (error || !created) throw new Error(friendlyErrorMessage(error, "Could not start conversation"));
-  return created.id;
 }
 
 export async function sendMessageAsClient(formData: FormData) {
@@ -39,7 +17,7 @@ export async function sendMessageAsClient(formData: FormData) {
   if (!body) redirect("/portal");
 
   const supabase = await createClient();
-  const threadId = await findOrCreateThread(client.id, client.practiceId);
+  const { id: threadId } = await findOrCreateThread(supabase, client.id, client.practiceId);
 
   await supabase.from("messages").insert({
     thread_id: threadId,
@@ -53,17 +31,12 @@ export async function sendMessageAsClient(formData: FormData) {
     .update({ client_last_read_at: new Date().toISOString() })
     .eq("id", threadId);
 
-  await supabase.rpc("notify_message_recipient", { p_preview: body.slice(0, 140) });
-
-  const { data: recipientEmail } = await supabase.rpc("get_my_message_recipient_email");
-  if (recipientEmail) {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-    await sendEmail({
-      to: recipientEmail,
-      subject: `New secure message from ${client.fullName}`,
-      html: `<p>You have a new secure message from ${client.fullName}.</p><p><a href="${siteUrl}/messages/${client.id}">Log in to view and reply</a></p>`,
-    });
-  }
+  await notifyStaffOfClientMessage(supabase, {
+    clientId: client.id,
+    clientFullName: client.fullName,
+    practiceId: client.practiceId,
+    body,
+  });
 
   redirect("/portal");
 }

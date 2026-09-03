@@ -1,7 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/signup", "/auth", "/consent", "/portal/login", "/portal/accept-invite"];
+// /api/webhooks/* authenticates itself (e.g. a webhook signature), never via
+// a Supabase session -- the caller is a third-party service, not a browser.
+const PUBLIC_PATHS = ["/login", "/signup", "/auth", "/consent", "/portal/login", "/portal/accept-invite", "/api/webhooks"];
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
