@@ -26,7 +26,7 @@ export async function createClientRecord(formData: FormData) {
     .single();
 
   if (error || !data) {
-    redirect(`/clients/new?error=${encodeURIComponent(friendlyErrorMessage(error, "Could not create client"))}`);
+    redirect(`/clients?new=1&error=${encodeURIComponent(friendlyErrorMessage(error, "Could not create client"))}`);
   }
 
   redirect(`/clients/${data.id}`);

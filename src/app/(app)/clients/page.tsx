@@ -2,6 +2,8 @@ import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import Link from "next/link";
 import { avatarColorFor, initialsOf } from "@/utils/avatar-color";
+import { AddClientModal } from "./add-client-modal";
+import { LiveSearchInput } from "@/components/live-search-input";
 
 const CONSENT_STATUS_STYLE: Record<string, string> = {
   pending: "bg-warn-tint text-warn",
@@ -28,7 +30,12 @@ function formatNextSession(startsAt: string) {
     : `${d.toLocaleDateString(undefined, { month: "short", day: "numeric" })} · ${time}`;
 }
 
-export default async function ClientsPage() {
+export default async function ClientsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ new?: string; error?: string }>;
+}) {
+  const { new: showNew, error } = await searchParams;
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
@@ -74,13 +81,19 @@ export default async function ClientsPage() {
         </div>
         {canAdd && (
           <Link
-            href="/clients/new"
+            href="/clients?new=1"
             className="rounded-lg bg-brand px-3.5 py-2 text-[13.4px] font-semibold text-white transition hover:bg-brand-ink"
           >
             + Add Client
           </Link>
         )}
       </div>
+
+      {!!clients?.length && (
+        <div className="mb-4">
+          <LiveSearchInput placeholder="Search clients…" itemSelector="[data-client-row]" emptyStateSelector="[data-no-search-results]" />
+        </div>
+      )}
 
       <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
         <table className="w-full text-[13.4px]">
@@ -101,7 +114,12 @@ export default async function ClientsPage() {
               const consentStatus = consentByClient.get(c.id);
 
               return (
-                <tr key={c.id} className="border-b border-border last:border-0 hover:bg-surface-2">
+                <tr
+                  key={c.id}
+                  data-client-row
+                  data-search={`${c.full_name} ${c.presenting_concern ?? ""}`.toLowerCase()}
+                  className="border-b border-border last:border-0 hover:bg-surface-2"
+                >
                   <td className="px-4 py-3">
                     <Link href={`/clients/${c.id}`} className="flex items-center gap-3">
                       <span
@@ -150,6 +168,13 @@ export default async function ClientsPage() {
                 </tr>
               );
             })}
+            {!!clients?.length && (
+              <tr data-no-search-results style={{ display: "none" }}>
+                <td colSpan={6} className="px-4 py-10 text-center text-text-3">
+                  No clients match your search.
+                </td>
+              </tr>
+            )}
             {!clients?.length && (
               <tr>
                 <td colSpan={6} className="px-4 py-10 text-center text-text-3">
@@ -160,6 +185,8 @@ export default async function ClientsPage() {
           </tbody>
         </table>
       </div>
+
+      {canAdd && showNew && <AddClientModal error={error} />}
     </div>
   );
 }
