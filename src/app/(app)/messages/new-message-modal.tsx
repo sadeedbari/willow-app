@@ -2,11 +2,17 @@ import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
 import { startConversation } from "./actions";
 
-export async function NewMessageModal({ staffId, isAdmin }: { staffId: string; isAdmin: boolean }) {
+export async function NewMessageModal({
+  staffId,
+  seesAllClients,
+}: {
+  staffId: string;
+  seesAllClients: boolean;
+}) {
   const supabase = await createClient();
 
   let query = supabase.from("clients").select("id, full_name").order("full_name");
-  if (!isAdmin) query = query.eq("assigned_staff_id", staffId);
+  if (!seesAllClients) query = query.eq("assigned_staff_id", staffId);
   const { data: clients } = await query;
 
   return (

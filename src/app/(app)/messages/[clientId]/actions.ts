@@ -12,7 +12,7 @@ export async function sendMessageAsStaff(formData: FormData) {
   const clientId = formData.get("clientId") as string;
   const body = (formData.get("body") as string)?.trim();
 
-  if (staff.role !== "practice_admin" && staff.role !== "clinician") {
+  if (staff.role !== "practice_admin" && staff.role !== "clinician" && staff.role !== "front_desk") {
     redirect(`/messages/${clientId}`);
   }
   if (!body) redirect(`/messages/${clientId}`);

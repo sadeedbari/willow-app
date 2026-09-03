@@ -15,7 +15,7 @@ export default async function StaffThreadPage({
   const { error } = await searchParams;
   const staff = await getCurrentStaff();
 
-  if (staff.role !== "practice_admin" && staff.role !== "clinician") {
+  if (staff.role !== "practice_admin" && staff.role !== "clinician" && staff.role !== "front_desk") {
     redirect("/dashboard");
   }
 

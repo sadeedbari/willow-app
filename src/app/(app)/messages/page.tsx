@@ -13,7 +13,7 @@ export default async function MessagesInboxPage({
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
-  if (staff.role !== "practice_admin" && staff.role !== "clinician") {
+  if (staff.role !== "practice_admin" && staff.role !== "clinician" && staff.role !== "front_desk") {
     return (
       <div>
         <h1 className="text-[26px] font-bold tracking-tight text-foreground">Messages</h1>
@@ -82,7 +82,12 @@ export default async function MessagesInboxPage({
         )}
       </div>
 
-      {showNew && <NewMessageModal staffId={staff.id} isAdmin={staff.role === "practice_admin"} />}
+      {showNew && (
+        <NewMessageModal
+          staffId={staff.id}
+          seesAllClients={staff.role === "practice_admin" || staff.role === "front_desk"}
+        />
+      )}
     </div>
   );
 }
