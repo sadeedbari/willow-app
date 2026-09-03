@@ -3,6 +3,7 @@ import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import Link from "next/link";
 import { AppointmentModal } from "./appointment-modal";
 import { NewAppointmentModal } from "./new-appointment-modal";
+import { APPOINTMENT_TYPE_SHORT_LABEL as TYPE_LABEL } from "@/utils/appointment-type-label";
 
 type ApptRow = {
   id: string;
@@ -13,14 +14,6 @@ type ApptRow = {
   status: string;
   staff_id: string;
   clients: { full_name: string } | null;
-};
-
-const TYPE_LABEL: Record<string, string> = {
-  individual: "Individual",
-  couples: "Couples",
-  family: "Family",
-  intake: "Intake",
-  group: "Group",
 };
 
 // Couples and family share one color, matching the practice's own visual
