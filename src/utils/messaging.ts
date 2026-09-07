@@ -42,7 +42,7 @@ export async function findOrCreateThread(
 // the inbound-email webhook (src/app/api/webhooks/resend-inbound/route.ts)
 // looks up the thread by the token in the local part.
 export function replyToAddressFor(inboundToken: string): string {
-  const domain = process.env.INBOUND_EMAIL_DOMAIN ?? "reply.therapybyniha.com";
+  const domain = process.env.INBOUND_EMAIL_DOMAIN ?? "reply.sulosystems.com";
   return `reply+${inboundToken}@${domain}`;
 }
 

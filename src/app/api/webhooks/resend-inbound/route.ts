@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     return Response.json({ ok: true, skipped: "already processed" });
   }
 
-  const domain = process.env.INBOUND_EMAIL_DOMAIN ?? "reply.therapybyniha.com";
+  const domain = process.env.INBOUND_EMAIL_DOMAIN ?? "reply.sulosystems.com";
   const tokenPattern = new RegExp(`^reply\\+([^@]+)@${domain.replace(/\./g, "\\.")}$`, "i");
   const recipient = event.data.to.find((addr) => tokenPattern.test(addr));
   const token = recipient ? tokenPattern.exec(recipient)?.[1] : undefined;

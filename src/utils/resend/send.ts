@@ -3,7 +3,7 @@
 // (e.g. appointment confirmations) can ignore the return value; callers
 // triggered by an explicit user action (e.g. "Resend invoice") can check
 // it to show real success/failure feedback instead of assuming it worked.
-const FROM = "Willow <no-reply@therapybyniha.com>";
+const FROM = process.env.RESEND_FROM_EMAIL ?? "Willow <no-reply@sulosystems.com>";
 
 export async function sendEmail({
   to,
