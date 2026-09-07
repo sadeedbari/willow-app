@@ -25,7 +25,10 @@ export default async function AcceptInvitePage({
     redirect("/login");
   }
 
-  const { data: invitation } = await supabase.rpc("get_my_pending_invitation").maybeSingle();
+  const { data: invitationRow } = await supabase.rpc("get_my_pending_invitation").maybeSingle();
+  const invitation = invitationRow as
+    | { practice_name: string; role: string; full_name: string }
+    | null;
 
   if (!invitation) {
     return (
