@@ -15,17 +15,31 @@ const SLOT_MINUTES = 30;
 
 type AvailabilityBlock = { day_of_week: number; start_time: string; end_time: string };
 type BusyTime = { starts_at: string; ends_at: string };
+type AvailabilityOverride = { is_unavailable: boolean; start_time: string | null; end_time: string | null };
 
 function timeToMinutes(t: string) {
   const [h, m] = t.split(":").map(Number);
   return h * 60 + m;
 }
 
-function computeSlots(date: string, blocks: AvailabilityBlock[], busy: BusyTime[], durationMinutes: number) {
+function computeSlots(
+  date: string,
+  blocks: AvailabilityBlock[],
+  busy: BusyTime[],
+  durationMinutes: number,
+  override?: AvailabilityOverride | null
+) {
   const dayStart = new Date(`${date}T00:00:00`);
-  const dayOfWeek = dayStart.getDay();
-  const relevantBlocks = blocks.filter((b) => b.day_of_week === dayOfWeek);
   const now = new Date();
+
+  // A custom date (holiday, vacation, one-off hours) fully replaces the
+  // weekly pattern for that date -- either no hours at all, or a single
+  // override range instead of the day-of-week blocks.
+  if (override?.is_unavailable) return [];
+  const relevantBlocks =
+    override && override.start_time && override.end_time
+      ? [{ day_of_week: dayStart.getDay(), start_time: override.start_time, end_time: override.end_time }]
+      : blocks.filter((b) => b.day_of_week === dayStart.getDay());
 
   // A staff member's blocks for a day can legitimately overlap (e.g. two
   // separate ranges added for flexibility) -- dedupe by start time so the
@@ -157,15 +171,17 @@ async function BookingSlots({
   const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
   const durationMinutes = APPOINTMENT_TYPE_DURATION_MINUTES[effectiveType];
 
-  const [{ data: blocks }, { data: busy }] = await Promise.all([
+  const [{ data: blocks }, { data: busy }, { data: overrideRows }] = await Promise.all([
     supabase.rpc("get_my_clinician_availability"),
     supabase.rpc("get_my_clinician_busy_times", {
       p_from: dayStart.toISOString(),
       p_to: dayEnd.toISOString(),
     }),
+    supabase.rpc("get_my_clinician_availability_override", { p_date: selectedDate }),
   ]);
+  const override = overrideRows?.[0] as AvailabilityOverride | undefined;
 
-  if (!blocks?.length) {
+  if (!blocks?.length && !override) {
     return (
       <p className="mt-5 rounded-2xl border border-border bg-surface p-6 text-center text-[13px] text-text-3">
         Your clinician hasn&apos;t opened any booking hours yet — please contact them directly to schedule.
@@ -173,7 +189,7 @@ async function BookingSlots({
     );
   }
 
-  const slots = computeSlots(selectedDate, blocks, busy ?? [], durationMinutes);
+  const slots = computeSlots(selectedDate, blocks ?? [], busy ?? [], durationMinutes, override);
 
   return (
     <div className="mt-5">

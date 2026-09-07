@@ -1,7 +1,12 @@
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import { updateProfile } from "./actions";
-import { addAvailabilityBlock, removeAvailabilityBlock } from "./availability-actions";
+import {
+  addAvailabilityBlock,
+  removeAvailabilityBlock,
+  addAvailabilityOverride,
+  removeAvailabilityOverride,
+} from "./availability-actions";
 
 const ROLE_LABEL: Record<string, string> = {
   practice_admin: "Practice Admin",
@@ -54,12 +59,18 @@ export default async function ProfilePage({
     .order("day_of_week")
     .order("start_time");
 
+  const { data: overrides } = await supabase
+    .from("staff_availability_overrides")
+    .select("id, date, is_unavailable, start_time, end_time")
+    .eq("staff_id", staff.id)
+    .order("date");
+
   return (
     <div className="mx-auto max-w-5xl">
       <div className="mb-6 flex items-end justify-between">
         <div>
           <h1 className="text-[26px] font-bold tracking-tight text-foreground">
-            Therapist Profile
+            Practitioner Profile
           </h1>
           <p className="mt-1 text-[13.5px] text-text-2">
             How you appear to clients &amp; practice admin
@@ -294,6 +305,96 @@ export default async function ProfilePage({
             className="rounded-lg bg-brand px-4 py-2 text-[13.4px] font-semibold text-white transition hover:bg-brand-ink"
           >
             Add block
+          </button>
+        </form>
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-border bg-surface p-6 shadow-sm">
+        <div className="mb-1 text-[13px] font-bold text-foreground">Custom dates</div>
+        <p className="mb-4 text-[12.5px] text-text-2">
+          Override your weekly availability for a specific date — for holidays, vacations, or a day
+          with different hours. A custom date always replaces your weekly hours for that day.
+        </p>
+
+        {overrides?.length ? (
+          <ul className="space-y-2 text-[13.4px]">
+            {overrides.map((o) => (
+              <li
+                key={o.id}
+                className="flex items-center justify-between rounded-lg border border-border px-3 py-2"
+              >
+                <span className="text-foreground">
+                  <span className="font-semibold">
+                    {new Date(`${o.date}T00:00:00`).toLocaleDateString(undefined, {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </span>{" "}
+                  {o.is_unavailable
+                    ? "— Unavailable"
+                    : `— ${formatTime(o.start_time as string)} – ${formatTime(o.end_time as string)}`}
+                </span>
+                <form action={removeAvailabilityOverride}>
+                  <input type="hidden" name="overrideId" value={o.id} />
+                  <button type="submit" className="text-[11.5px] font-semibold text-bad">
+                    Remove
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="rounded-lg border border-border px-3 py-4 text-center text-[13px] text-text-3">
+            No custom dates set — your weekly availability applies every day.
+          </p>
+        )}
+
+        <form
+          action={addAvailabilityOverride}
+          className="mt-4 flex flex-wrap items-end gap-3 border-t border-border pt-4"
+        >
+          <div>
+            <label className="block text-[12px] font-semibold text-text-2">Date</label>
+            <input
+              name="date"
+              type="date"
+              required
+              className="mt-1 rounded-lg border border-border bg-surface px-3 py-2 text-[13.4px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+            />
+          </div>
+          <label className="peer flex items-center gap-2 pb-2.5 text-[13px] text-text-2">
+            <input type="checkbox" name="isUnavailable" defaultChecked />
+            Mark as unavailable
+          </label>
+          <div className="flex gap-3 peer-has-[:checked]:hidden">
+            <div>
+              <label className="block text-[12px] font-semibold text-text-2">Start time</label>
+              <input
+                name="startTime"
+                type="time"
+                required
+                defaultValue="09:00"
+                className="mt-1 rounded-lg border border-border bg-surface px-3 py-2 text-[13.4px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              />
+            </div>
+            <div>
+              <label className="block text-[12px] font-semibold text-text-2">End time</label>
+              <input
+                name="endTime"
+                type="time"
+                required
+                defaultValue="17:00"
+                className="mt-1 rounded-lg border border-border bg-surface px-3 py-2 text-[13.4px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              />
+            </div>
+          </div>
+          <button
+            type="submit"
+            className="rounded-lg bg-brand px-4 py-2 text-[13.4px] font-semibold text-white transition hover:bg-brand-ink"
+          >
+            Add custom date
           </button>
         </form>
       </div>

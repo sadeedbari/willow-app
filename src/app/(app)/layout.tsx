@@ -112,7 +112,7 @@ const NAV = [
     items: [
       {
         href: "/profile",
-        label: "Therapist Profile",
+        label: "Practitioner Profile",
         color: "bg-[#8C948E]",
         icon: (
           <>
