@@ -45,7 +45,7 @@ export default async function InvoiceDetailPage({
   const { data: invoice } = await supabase
     .from("invoices")
     .select(
-      "id, invoice_number, status, issue_date, due_date, total_cents, amount_paid_cents, payment_method, paid_at, notes, client_id, clients(full_name, email), issued_by_staff_id, staff(full_name, credential, license_number, license_province)"
+      "id, invoice_number, status, issue_date, due_date, total_cents, amount_paid_cents, payment_method, paid_at, notes, client_id, payment_token, clients(full_name, email), issued_by_staff_id, staff(full_name, credential, license_number, license_province)"
     )
     .eq("id", id)
     .single();
@@ -301,6 +301,17 @@ export default async function InvoiceDetailPage({
               Resend invoice
             </button>
           </form>
+
+          {balance > 0 && invoice.status !== "void" && (
+            <Link
+              href={`/pay/${invoice.payment_token}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center rounded-lg border border-border px-4 py-2 text-[13.4px] font-semibold text-text-2 transition hover:border-brand hover:text-brand-ink"
+            >
+              View payment page
+            </Link>
+          )}
 
           {isDraft && (
             <form action={markSent}>

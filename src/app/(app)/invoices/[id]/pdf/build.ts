@@ -10,6 +10,7 @@ export type BuiltInvoicePdf = {
   clientEmail: string | null;
   clientFullName: string;
   practiceName: string;
+  paymentToken: string;
 };
 
 // Shared by the PDF download route and the "Resend invoice" email action so
@@ -21,7 +22,7 @@ export async function buildInvoicePdf(
   const { data: invoice } = await supabase
     .from("invoices")
     .select(
-      "invoice_number, status, issue_date, due_date, total_cents, amount_paid_cents, payment_method, paid_at, notes, practice_id, clients(full_name, email), staff(full_name, credential, license_number, license_province)"
+      "invoice_number, status, issue_date, due_date, total_cents, amount_paid_cents, payment_method, paid_at, notes, practice_id, payment_token, clients(full_name, email), staff(full_name, credential, license_number, license_province)"
     )
     .eq("id", invoiceId)
     .single();
@@ -101,5 +102,6 @@ export async function buildInvoicePdf(
     clientEmail: client?.email ?? null,
     clientFullName: client?.full_name ?? "Unknown client",
     practiceName: practice?.name ?? "Practice",
+    paymentToken: invoice.payment_token,
   };
 }

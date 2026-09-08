@@ -98,6 +98,7 @@ export async function POST(request: Request) {
         totalCents: built.totalCents,
         balanceCents: built.totalCents - built.amountPaidCents,
         pdfBuffer: built.pdfBuffer,
+        paymentToken: built.paymentToken,
       });
     }
     invoiced++;

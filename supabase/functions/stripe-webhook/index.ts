@@ -27,6 +27,7 @@ const RELEVANT_EVENTS = [
   "customer.subscription.created",
   "customer.subscription.updated",
   "customer.subscription.deleted",
+  "checkout.session.completed",
 ];
 
 Deno.serve(async (req: Request) => {
@@ -53,6 +54,52 @@ Deno.serve(async (req: Request) => {
   }
 
   if (!RELEVANT_EVENTS.includes(event.type)) {
+    return new Response(JSON.stringify({ received: true }), { status: 200 });
+  }
+
+  // checkout.session.completed fires for BOTH a client paying an invoice
+  // (a direct charge on a connected account, event.account set) and could
+  // in principle fire for the platform's own subscription checkout -- but
+  // subscription checkout redirects straight to Stripe's hosted page and
+  // we already track subscription state via the customer.subscription.*
+  // events below, so here we only act on it when it carries our own
+  // invoice_id metadata (set when the /pay/[token] page creates the
+  // session).
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    const invoiceId = session.metadata?.invoice_id;
+
+    if (!invoiceId) {
+      return new Response(JSON.stringify({ received: true, skipped: "no invoice_id in metadata" }), { status: 200 });
+    }
+
+    const { data: invoice } = await adminClient
+      .from("invoices")
+      .select("id, status, total_cents")
+      .eq("id", invoiceId)
+      .maybeSingle();
+
+    // Idempotency: Stripe retries on non-2xx, and a customer could in theory
+    // land back on the success page and the webhook could both fire --
+    // already-paid is a no-op, not an error.
+    if (!invoice || invoice.status === "paid") {
+      return new Response(JSON.stringify({ received: true, skipped: "invoice missing or already paid" }), { status: 200 });
+    }
+
+    const { error } = await adminClient
+      .from("invoices")
+      .update({
+        status: "paid",
+        amount_paid_cents: invoice.total_cents,
+        payment_method: "card",
+        paid_at: new Date().toISOString(),
+      })
+      .eq("id", invoiceId);
+
+    if (error) {
+      return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    }
+
     return new Response(JSON.stringify({ received: true }), { status: 200 });
   }
 
