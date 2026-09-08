@@ -1,14 +1,24 @@
 // Deployed via the Supabase MCP `deploy_edge_function` tool with verify_jwt:
 // false -- Stripe calls this endpoint directly and does not send a Supabase
-// JWT. Authenticity is instead verified via the Stripe-Signature header
-// against STRIPE_WEBHOOK_SECRET.
+// JWT. Authenticity is instead verified via the Stripe-Signature header.
 //
-// Requires two custom secrets set manually in the Supabase Dashboard
+// This one URL receives events from TWO separate Stripe webhook_endpoint
+// registrations, each with its own signing secret: a "your account" one
+// (subscription events, connect:false) and a "connected accounts" one
+// (connect:true -- required for events on a connected account, e.g. a
+// client paying an invoice via a direct charge on the practice's own
+// Stripe account; these do NOT show up on the platform's own event/webhook
+// stream at all, confirmed via the Connect webhooks docs and by checking
+// /v1/events directly -- a "your account" webhook alone silently never
+// fires for them). We don't know in advance which secret signed a given
+// request, so we just try both.
+//
+// Requires three custom secrets set manually in the Supabase Dashboard
 // (Edge Functions -> stripe-webhook -> Secrets), since no MCP tool exists
 // to set them:
-//   STRIPE_SECRET_KEY     -- same test-mode secret key used by the Next.js app
-//   STRIPE_WEBHOOK_SECRET -- signing secret from the Stripe Dashboard webhook
-//                            endpoint, created after this function is deployed
+//   STRIPE_SECRET_KEY             -- same test-mode secret key used by the Next.js app
+//   STRIPE_WEBHOOK_SECRET         -- signing secret from the "your account" webhook endpoint
+//   STRIPE_CONNECT_WEBHOOK_SECRET -- signing secret from the "connected accounts" (connect:true) endpoint
 import Stripe from "https://esm.sh/stripe@14?target=denonext";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -38,18 +48,25 @@ Deno.serve(async (req: Request) => {
     return new Response("Missing Stripe-Signature header", { status: 400 });
   }
 
-  let event: Stripe.Event;
-  try {
-    event = await stripe.webhooks.constructEventAsync(
-      body,
-      signature,
-      Deno.env.get("STRIPE_WEBHOOK_SECRET")!,
-      undefined,
-      cryptoProvider,
-    );
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("Webhook signature verification failed:", message);
+  const candidateSecrets = [
+    Deno.env.get("STRIPE_WEBHOOK_SECRET")!,
+    Deno.env.get("STRIPE_CONNECT_WEBHOOK_SECRET"),
+  ].filter((s): s is string => !!s);
+
+  let event: Stripe.Event | undefined;
+  let lastError: unknown;
+  for (const secret of candidateSecrets) {
+    try {
+      event = await stripe.webhooks.constructEventAsync(body, signature, secret, undefined, cryptoProvider);
+      break;
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  if (!event) {
+    const message = lastError instanceof Error ? lastError.message : String(lastError);
+    console.error("Webhook signature verification failed against all known secrets:", message);
     return new Response(`Invalid signature: ${message}`, { status: 400 });
   }
 
