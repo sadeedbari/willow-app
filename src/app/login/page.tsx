@@ -73,6 +73,11 @@ export default async function LoginPage({
             Sign up
           </Link>
         </p>
+
+        <p className="text-center text-xs text-neutral-400">
+          <Link href="/terms" className="underline">Terms of Service</Link>{" "}·{" "}
+          <Link href="/privacy" className="underline">Privacy Policy</Link>
+        </p>
       </div>
     </div>
   );

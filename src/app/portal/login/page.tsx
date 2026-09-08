@@ -75,6 +75,11 @@ export default async function PortalLoginPage({
         <p className="text-center text-[12px] text-text-3">
           Your practice will send you an invitation link to set up portal access.
         </p>
+
+        <p className="text-center text-[11.5px] text-text-3">
+          <Link href="/terms" className="underline">Terms of Service</Link>{" "}·{" "}
+          <Link href="/privacy" className="underline">Privacy Policy</Link>
+        </p>
       </div>
     </div>
   );

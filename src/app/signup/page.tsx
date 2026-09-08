@@ -68,6 +68,12 @@ export default async function SignupPage({
             Log in
           </Link>
         </p>
+
+        <p className="text-center text-xs text-neutral-400">
+          By creating an account, you agree to our{" "}
+          <Link href="/terms" className="underline">Terms of Service</Link> and{" "}
+          <Link href="/privacy" className="underline">Privacy Policy</Link>.
+        </p>
       </div>
     </div>
   );
