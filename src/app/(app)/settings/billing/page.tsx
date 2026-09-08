@@ -1,6 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
-import { startCheckout, openBillingPortal } from "./actions";
+import { openBillingPortal, cancelSubscription, resumeSubscription } from "./actions";
 import { SettingsTabs } from "../tabs";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -34,12 +34,15 @@ export default async function BillingPage({
 
   const { data: practice } = await supabase
     .from("practices")
-    .select("subscription_status, stripe_customer_id, current_period_end")
+    .select("subscription_status, stripe_customer_id, current_period_end, cancel_at_period_end")
     .eq("id", staff.practiceId)
     .single();
 
   const status = practice?.subscription_status ?? "trialing";
   const hasSubscription = !!practice?.stripe_customer_id && status !== "trialing";
+  const cancelAtPeriodEnd = !!practice?.cancel_at_period_end;
+  const canCancel = hasSubscription && status !== "canceled" && !cancelAtPeriodEnd;
+  const canResume = hasSubscription && status !== "canceled" && cancelAtPeriodEnd;
 
   return (
     <div className="max-w-lg">
@@ -86,7 +89,7 @@ export default async function BillingPage({
 
         {practice?.current_period_end && (
           <p className="mt-4 text-[12.5px] text-text-3">
-            {status === "canceled" ? "Access ends" : "Renews"}{" "}
+            {status === "canceled" ? "Access ends" : cancelAtPeriodEnd ? "Cancels" : "Renews"}{" "}
             {new Date(practice.current_period_end).toLocaleDateString(undefined, {
               month: "long",
               day: "numeric",
@@ -96,7 +99,7 @@ export default async function BillingPage({
         )}
 
         {staff.role === "practice_admin" ? (
-          <div className="mt-5">
+          <div className="mt-5 flex flex-wrap items-center gap-3">
             {hasSubscription ? (
               <form action={openBillingPortal}>
                 <button
@@ -107,12 +110,27 @@ export default async function BillingPage({
                 </button>
               </form>
             ) : (
-              <form action={startCheckout}>
+              <form action="/api/stripe/checkout" method="POST" target="_blank">
                 <button
                   type="submit"
                   className="rounded-lg bg-brand px-4 py-2 text-[13.6px] font-semibold text-white transition hover:bg-brand-ink"
                 >
                   Subscribe
+                </button>
+              </form>
+            )}
+
+            {canCancel && (
+              <form action={cancelSubscription}>
+                <button type="submit" className="text-[12.5px] font-semibold text-bad">
+                  Cancel subscription
+                </button>
+              </form>
+            )}
+            {canResume && (
+              <form action={resumeSubscription}>
+                <button type="submit" className="text-[12.5px] font-semibold text-brand-ink">
+                  Resume subscription
                 </button>
               </form>
             )}

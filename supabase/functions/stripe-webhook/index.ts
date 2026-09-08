@@ -72,6 +72,7 @@ Deno.serve(async (req: Request) => {
       subscription_status: status,
       stripe_subscription_id: subscription.id,
       current_period_end: currentPeriodEnd ? new Date(currentPeriodEnd * 1000).toISOString() : null,
+      cancel_at_period_end: subscription.cancel_at_period_end ?? false,
     })
     .eq("id", practiceId);
 
