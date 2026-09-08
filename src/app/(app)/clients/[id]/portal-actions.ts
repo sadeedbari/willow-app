@@ -4,7 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
-import { friendlyErrorMessage } from "@/utils/friendly-error";
+import { edgeFunctionErrorMessage } from "@/utils/friendly-error";
 
 export async function inviteToPortal(formData: FormData) {
   const staff = await getCurrentStaff();
@@ -26,7 +26,8 @@ export async function inviteToPortal(formData: FormData) {
   });
 
   if (error || data?.error) {
-    redirect(`/clients/${clientId}?error=${encodeURIComponent(data?.error ?? friendlyErrorMessage(error, "Could not send invite"))}`);
+    const message = data?.error ?? (await edgeFunctionErrorMessage(error, "Could not send invite"));
+    redirect(`/clients/${clientId}?error=${encodeURIComponent(message)}`);
   }
 
   redirect(`/clients/${clientId}`);

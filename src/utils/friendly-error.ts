@@ -34,3 +34,24 @@ export function friendlyErrorMessage(error: PostgrestLikeError, fallback = "That
         : fallback;
   }
 }
+
+// supabase.functions.invoke() throws a FunctionsHttpError on any non-2xx
+// response WITHOUT reading its body -- error.message is always the generic
+// "Edge Function returned a non-2xx status code", and the edge function's
+// actual {error: "..."} JSON is left unread on error.context (the raw
+// Response). This reads it so the real message reaches the user.
+export async function edgeFunctionErrorMessage(
+  error: unknown,
+  fallback = "That didn't work — please try again."
+): Promise<string> {
+  const context = (error as { context?: unknown } | null | undefined)?.context;
+  if (context instanceof Response) {
+    try {
+      const body = await context.clone().json();
+      if (typeof body?.error === "string") return body.error;
+    } catch {
+      // Body wasn't JSON -- fall through to fallback.
+    }
+  }
+  return fallback;
+}
