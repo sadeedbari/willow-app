@@ -5,13 +5,24 @@ import { NextResponse } from "next/server";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
+// Suppresses the Referer header on the hop this redirect causes. Without it,
+// the browser sends our own origin as the referrer when it follows the
+// redirect to checkout.stripe.com (a form's rel="noopener noreferrer" only
+// covers the FIRST hop, to this route -- it doesn't carry through to where
+// this route's own redirect then sends the browser next).
+function redirectWithNoReferrer(url: string) {
+  const response = NextResponse.redirect(url);
+  response.headers.set("Referrer-Policy", "no-referrer");
+  return response;
+}
+
 // A plain route handler (not a server action) so the billing page's form can
 // use a real `target="_blank"` -- server actions submit via JS and ignore
 // that attribute, but a genuine form POST to a URL respects it.
 export async function POST() {
   const staff = await getCurrentStaff();
   if (staff.role !== "practice_admin") {
-    return NextResponse.redirect(
+    return redirectWithNoReferrer(
       `${SITE_URL}/settings/billing?error=${encodeURIComponent("Only practice admins can manage billing")}`
     );
   }
@@ -24,7 +35,7 @@ export async function POST() {
     .single();
 
   if (!practice) {
-    return NextResponse.redirect(`${SITE_URL}/settings/billing?error=${encodeURIComponent("Practice not found")}`);
+    return redirectWithNoReferrer(`${SITE_URL}/settings/billing?error=${encodeURIComponent("Practice not found")}`);
   }
 
   try {
@@ -51,9 +62,9 @@ export async function POST() {
       managed_payments: { enabled: false },
     });
 
-    return NextResponse.redirect(session.url!);
+    return redirectWithNoReferrer(session.url!);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Could not start checkout";
-    return NextResponse.redirect(`${SITE_URL}/settings/billing?error=${encodeURIComponent(message)}`);
+    return redirectWithNoReferrer(`${SITE_URL}/settings/billing?error=${encodeURIComponent(message)}`);
   }
 }
