@@ -15,7 +15,7 @@ export async function inviteStaff(formData: FormData) {
       email: formData.get("email") as string,
       fullName: formData.get("fullName") as string,
       role: formData.get("role") as string,
-      redirectTo: `${origin}/auth/callback?next=/accept-invite`,
+      redirectTo: `${origin}/accept-invite`,
     },
   });
 

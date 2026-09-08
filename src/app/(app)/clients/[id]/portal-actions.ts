@@ -21,7 +21,7 @@ export async function inviteToPortal(formData: FormData) {
   const { data, error } = await supabase.functions.invoke("invite-client", {
     body: {
       clientId,
-      redirectTo: `${origin}/auth/callback?next=/portal/accept-invite`,
+      redirectTo: `${origin}/portal/accept-invite`,
     },
   });
 
