@@ -1,6 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
-import { openBillingPortal, cancelSubscription, resumeSubscription } from "./actions";
+import { startCheckout, openBillingPortal, cancelSubscription, resumeSubscription } from "./actions";
 import { SettingsTabs } from "../tabs";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -110,7 +110,7 @@ export default async function BillingPage({
                 </button>
               </form>
             ) : (
-              <form action="/api/stripe/checkout" method="POST" target="_blank" rel="noopener noreferrer">
+              <form action={startCheckout}>
                 <button
                   type="submit"
                   className="rounded-lg bg-brand px-4 py-2 text-[13.6px] font-semibold text-white transition hover:bg-brand-ink"

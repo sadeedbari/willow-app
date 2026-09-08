@@ -7,6 +7,55 @@ import { redirect } from "next/navigation";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
+export async function startCheckout() {
+  const staff = await getCurrentStaff();
+  if (staff.role !== "practice_admin") {
+    redirect("/settings/billing?error=Only+practice+admins+can+manage+billing");
+  }
+
+  const supabase = await createClient();
+  const { data: practice } = await supabase
+    .from("practices")
+    .select("id, name, stripe_customer_id, primary_contact_email")
+    .eq("id", staff.practiceId)
+    .single();
+
+  if (!practice) {
+    redirect("/settings/billing?error=Practice+not+found");
+  }
+
+  let customerId = practice.stripe_customer_id;
+
+  if (!customerId) {
+    const customer = await stripe.customers.create({
+      name: practice.name,
+      email: practice.primary_contact_email ?? undefined,
+      metadata: { practice_id: practice.id },
+    });
+    customerId = customer.id;
+
+    // Written via the caller's own RLS-respecting session -- the existing
+    // "practice_admin updates own practice" policy already covers this,
+    // no service-role client needed here.
+    await supabase.from("practices").update({ stripe_customer_id: customerId }).eq("id", practice.id);
+  }
+
+  const session = await stripe.checkout.sessions.create({
+    mode: "subscription",
+    customer: customerId,
+    line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }],
+    subscription_data: { metadata: { practice_id: practice.id } },
+    success_url: `${SITE_URL}/settings/billing?checkout=success`,
+    cancel_url: `${SITE_URL}/settings/billing?checkout=cancelled`,
+    // Managed Payments (on by default on newer Stripe accounts) requires a
+    // tax code on the product, which we haven't set up -- disable it rather
+    // than block checkout on that.
+    managed_payments: { enabled: false },
+  });
+
+  redirect(session.url!);
+}
+
 export async function openBillingPortal() {
   const staff = await getCurrentStaff();
   if (staff.role !== "practice_admin") {
