@@ -110,7 +110,7 @@ export default async function BillingPage({
                 </button>
               </form>
             ) : (
-              <form action="/api/stripe/checkout" method="POST" target="_blank">
+              <form action="/api/stripe/checkout" method="POST" target="_blank" rel="noopener noreferrer">
                 <button
                   type="submit"
                   className="rounded-lg bg-brand px-4 py-2 text-[13.6px] font-semibold text-white transition hover:bg-brand-ink"
