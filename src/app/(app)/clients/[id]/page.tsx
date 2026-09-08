@@ -3,7 +3,7 @@ import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { sendConsentForm } from "./consent-actions";
-import { inviteToPortal } from "./portal-actions";
+import { inviteToPortal, resendPortalInvite } from "./portal-actions";
 import { avatarColorFor, initialsOf } from "@/utils/avatar-color";
 import { EditClientModal } from "./edit-client-modal";
 import { uploadClientDocument, deleteClientDocument } from "./documents-actions";
@@ -55,10 +55,10 @@ export default async function ClientDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string; error?: string; consentToken?: string; edit?: string }>;
+  searchParams: Promise<{ tab?: string; error?: string; invited?: string; consentToken?: string; edit?: string }>;
 }) {
   const { id } = await params;
-  const { tab, error, consentToken, edit } = await searchParams;
+  const { tab, error, invited, consentToken, edit } = await searchParams;
   const staff = await getCurrentStaff();
   const supabase = await createClient();
   const activeTab = TABS.some((t) => t.key === tab) ? tab! : "overview";
@@ -145,6 +145,9 @@ export default async function ClientDetailPage({
 
       {error && (
         <p className="mt-4 rounded-lg bg-bad-tint px-3 py-2 text-[13px] text-bad">{decodeURIComponent(error)}</p>
+      )}
+      {invited && (
+        <p className="mt-4 rounded-lg bg-ok-tint px-3 py-2 text-[13px] text-ok">Portal invite sent.</p>
       )}
 
       {sentForm && (
@@ -266,8 +269,11 @@ export default async function ClientDetailPage({
               </div>
             </div>
 
-            {canInviteToPortal && !client.portal_user_id && (
-              <form action={inviteToPortal} className="mt-3 border-t border-border pt-3">
+            {canInviteToPortal && (
+              <form
+                action={client.portal_user_id ? resendPortalInvite : inviteToPortal}
+                className="mt-3 border-t border-border pt-3"
+              >
                 <input type="hidden" name="clientId" value={client.id} />
                 <button
                   type="submit"
@@ -275,7 +281,7 @@ export default async function ClientDetailPage({
                   title={client.email ? undefined : "Add an email address first"}
                   className="text-[12px] font-semibold text-brand-ink disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  Invite to client portal
+                  {client.portal_user_id ? "Resend portal invite" : "Invite to client portal"}
                 </button>
               </form>
             )}
