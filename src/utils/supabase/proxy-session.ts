@@ -4,7 +4,18 @@ import { NextResponse, type NextRequest } from "next/server";
 // /api/webhooks/* and /api/cron/* authenticate themselves (a webhook
 // signature or a shared secret), never via a Supabase session -- the caller
 // is a third-party service or Postgres itself, not a browser.
-const PUBLIC_PATHS = ["/login", "/signup", "/auth", "/consent", "/portal/login", "/portal/accept-invite", "/api/webhooks", "/api/cron"];
+const PUBLIC_PATHS = [
+  "/login",
+  "/signup",
+  "/auth",
+  "/consent",
+  "/forgot-password",
+  "/portal/login",
+  "/portal/accept-invite",
+  "/portal/forgot-password",
+  "/api/webhooks",
+  "/api/cron",
+];
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });

@@ -1,4 +1,5 @@
 import { portalLogin } from "./actions";
+import Link from "next/link";
 
 export default async function PortalLoginPage({
   searchParams,
@@ -64,6 +65,12 @@ export default async function PortalLoginPage({
             Log in
           </button>
         </form>
+
+        <p className="text-center text-[12px] text-text-3">
+          <Link href="/portal/forgot-password" className="font-semibold text-brand-ink">
+            Forgot password?
+          </Link>
+        </p>
 
         <p className="text-center text-[12px] text-text-3">
           Your practice will send you an invitation link to set up portal access.
