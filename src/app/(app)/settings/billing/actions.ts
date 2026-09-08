@@ -47,6 +47,10 @@ export async function startCheckout() {
     subscription_data: { metadata: { practice_id: practice.id } },
     success_url: `${SITE_URL}/settings/billing?checkout=success`,
     cancel_url: `${SITE_URL}/settings/billing?checkout=cancelled`,
+    // Managed Payments (on by default on newer Stripe accounts) requires a
+    // tax code on the product, which we haven't set up -- disable it rather
+    // than block checkout on that.
+    managed_payments: { enabled: false },
   });
 
   redirect(session.url!);
