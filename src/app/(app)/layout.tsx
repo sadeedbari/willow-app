@@ -132,6 +132,18 @@ const NAV = [
           </>
         ),
       },
+      {
+        href: "/help",
+        label: "Help & FAQ",
+        color: "bg-[#8C948E]",
+        icon: (
+          <>
+            <circle cx="12" cy="12" r="9" />
+            <path d="M9.5 9.2a2.5 2.5 0 0 1 4.9.8c0 1.7-2.4 2-2.4 3.5" />
+            <path d="M12 17.5h.01" />
+          </>
+        ),
+      },
     ],
   },
 ];
