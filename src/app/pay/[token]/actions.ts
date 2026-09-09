@@ -18,6 +18,7 @@ type InvoiceByToken = {
   practice_logo_url: string | null;
   stripe_connect_account_id: string | null;
   stripe_connect_charges_enabled: boolean;
+  client_stripe_customer_id: string | null;
 };
 
 export async function startInvoicePayment(formData: FormData) {
@@ -63,7 +64,20 @@ export async function startInvoicePayment(formData: FormData) {
             quantity: 1,
           },
         ],
+        // Reuse the client's existing Stripe Customer if they already have
+        // one (from a previous payment) rather than creating a duplicate;
+        // otherwise let Stripe create one only if the client actually opts
+        // in to its own "save my payment info" checkbox below.
+        ...(invoice.client_stripe_customer_id
+          ? { customer: invoice.client_stripe_customer_id }
+          : { customer_creation: "if_required" as const }),
         payment_intent_data: {
+          // Attaches the card to the Customer for reuse if the client checks
+          // Stripe's built-in save-payment-info box -- their choice, not
+          // forced. See the stripe-webhook Edge Function's
+          // checkout.session.completed handler for where that gets picked
+          // up and cached onto clients.stripe_customer_id/card_*.
+          setup_future_usage: "off_session",
           metadata: { invoice_id: invoice.id, payment_token: token },
         },
         metadata: { invoice_id: invoice.id, payment_token: token },

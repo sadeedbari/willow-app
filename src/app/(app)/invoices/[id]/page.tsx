@@ -2,7 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { addLineItem, removeLineItem, markSent, recordPayment, voidInvoice, resendInvoice } from "./actions";
+import { addLineItem, removeLineItem, markSent, recordPayment, voidInvoice, resendInvoice, chargeSavedCard } from "./actions";
 
 const STATUS_STYLE: Record<string, string> = {
   draft: "bg-surface-2 text-text-3",
@@ -35,17 +35,17 @@ export default async function InvoiceDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string; resent?: string }>;
+  searchParams: Promise<{ error?: string; resent?: string; charged?: string }>;
 }) {
   const { id } = await params;
-  const { error, resent } = await searchParams;
+  const { error, resent, charged } = await searchParams;
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
   const { data: invoice } = await supabase
     .from("invoices")
     .select(
-      "id, invoice_number, status, issue_date, due_date, total_cents, amount_paid_cents, payment_method, paid_at, notes, client_id, payment_token, clients(full_name, email), issued_by_staff_id, staff(full_name, credential, license_number, license_province)"
+      "id, invoice_number, status, issue_date, due_date, total_cents, amount_paid_cents, payment_method, paid_at, notes, client_id, payment_token, clients(full_name, email, stripe_card_brand, stripe_card_last4), issued_by_staff_id, staff(full_name, credential, license_number, license_province)"
     )
     .eq("id", id)
     .single();
@@ -64,7 +64,12 @@ export default async function InvoiceDetailPage({
     .eq("active", true)
     .order("code");
 
-  const client = invoice.clients as unknown as { full_name: string; email: string | null } | null;
+  const client = invoice.clients as unknown as {
+    full_name: string;
+    email: string | null;
+    stripe_card_brand: string | null;
+    stripe_card_last4: string | null;
+  } | null;
   const issuer = invoice.staff as unknown as {
     full_name: string;
     credential: string | null;
@@ -91,6 +96,11 @@ export default async function InvoiceDetailPage({
       {resent && (
         <p className="mt-4 rounded-lg bg-ok-tint px-3 py-2 text-[13px] text-ok">
           Invoice emailed to the client.
+        </p>
+      )}
+      {charged && (
+        <p className="mt-4 rounded-lg bg-ok-tint px-3 py-2 text-[13px] text-ok">
+          Charging the saved card — this invoice will show as paid in a moment.
         </p>
       )}
 
@@ -311,6 +321,19 @@ export default async function InvoiceDetailPage({
             >
               View payment page
             </Link>
+          )}
+
+          {balance > 0 && invoice.status !== "void" && client?.stripe_card_last4 && (
+            <form action={chargeSavedCard}>
+              <input type="hidden" name="invoiceId" value={invoice.id} />
+              <button
+                type="submit"
+                className="rounded-lg bg-brand px-4 py-2 text-[13.4px] font-semibold text-white transition hover:bg-brand-ink"
+                title={`${client.stripe_card_brand ?? "Card"} •••• ${client.stripe_card_last4}`}
+              >
+                Charge saved card ({formatMoney(balance)})
+              </button>
+            </form>
           )}
 
           {isDraft && (

@@ -7,6 +7,7 @@ import { inviteToPortal, resendPortalInvite } from "./portal-actions";
 import { avatarColorFor, initialsOf } from "@/utils/avatar-color";
 import { EditClientModal } from "./edit-client-modal";
 import { uploadClientDocument, deleteClientDocument } from "./documents-actions";
+import { removeSavedCard } from "./card-actions";
 
 const STATUS_LABEL: Record<string, string> = {
   active: "Active",
@@ -71,7 +72,7 @@ export default async function ClientDetailPage({
   const { data: client } = await supabase
     .from("clients")
     .select(
-      "id, full_name, date_of_birth, phone, email, presenting_concern, status, payer, balance_cents, assigned_staff_id, portal_user_id, default_appointment_type, session_frequency, created_at, staff:assigned_staff_id(full_name)"
+      "id, full_name, date_of_birth, phone, email, presenting_concern, status, payer, balance_cents, assigned_staff_id, portal_user_id, default_appointment_type, session_frequency, created_at, stripe_card_brand, stripe_card_last4, staff:assigned_staff_id(full_name)"
     )
     .eq("id", id)
     .single();
@@ -528,7 +529,31 @@ export default async function ClientDetailPage({
 
           {/* Billing tab */}
           {activeTab === "billing" && (
-            <div className="mt-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+            <>
+              {canManageInvoices && (
+                <div className="mt-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+                  <div className="text-[13px] font-bold text-foreground">Card on file</div>
+                  {client.stripe_card_last4 ? (
+                    <div className="mt-2 flex items-center justify-between">
+                      <span className="text-[13.4px] text-foreground">
+                        {client.stripe_card_brand ?? "Card"} •••• {client.stripe_card_last4}
+                      </span>
+                      <form action={removeSavedCard}>
+                        <input type="hidden" name="clientId" value={client.id} />
+                        <button type="submit" className="text-[11.5px] font-semibold text-bad">
+                          Remove
+                        </button>
+                      </form>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-[13px] text-text-3">
+                      No card on file yet — the client can save one the next time they pay an invoice online.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div className="mt-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
               <div className="mb-3 flex items-center justify-between">
                 <div className="text-[13px] font-bold text-foreground">Invoices</div>
                 {canManageInvoices && (
@@ -564,7 +589,8 @@ export default async function ClientDetailPage({
               ) : (
                 <p className="text-[13px] text-text-3">No invoices yet.</p>
               )}
-            </div>
+              </div>
+            </>
           )}
 
           {/* Documents tab */}

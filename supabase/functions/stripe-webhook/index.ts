@@ -38,7 +38,37 @@ const RELEVANT_EVENTS = [
   "customer.subscription.updated",
   "customer.subscription.deleted",
   "checkout.session.completed",
+  "payment_intent.succeeded",
+  "payment_intent.payment_failed",
 ];
+
+// Shared by checkout.session.completed and payment_intent.succeeded --
+// exactly the same "already paid is a no-op" idempotent update, just
+// reached via two different Stripe flows (a one-off Checkout session vs a
+// saved-card off-session charge).
+async function markInvoicePaid(invoiceId: string) {
+  const { data: invoice } = await adminClient
+    .from("invoices")
+    .select("id, status, total_cents")
+    .eq("id", invoiceId)
+    .maybeSingle();
+
+  if (!invoice || invoice.status === "paid") {
+    return { skipped: "invoice missing or already paid" };
+  }
+
+  const { error } = await adminClient
+    .from("invoices")
+    .update({
+      status: "paid",
+      amount_paid_cents: invoice.total_cents,
+      payment_method: "card",
+      paid_at: new Date().toISOString(),
+    })
+    .eq("id", invoiceId);
+
+  return { error };
+}
 
 Deno.serve(async (req: Request) => {
   const signature = req.headers.get("Stripe-Signature");
@@ -90,32 +120,103 @@ Deno.serve(async (req: Request) => {
       return new Response(JSON.stringify({ received: true, skipped: "no invoice_id in metadata" }), { status: 200 });
     }
 
-    const { data: invoice } = await adminClient
+    const { data: invoiceRow } = await adminClient
       .from("invoices")
-      .select("id, status, total_cents")
+      .select("client_id")
       .eq("id", invoiceId)
       .maybeSingle();
 
-    // Idempotency: Stripe retries on non-2xx, and a customer could in theory
-    // land back on the success page and the webhook could both fire --
-    // already-paid is a no-op, not an error.
-    if (!invoice || invoice.status === "paid") {
-      return new Response(JSON.stringify({ received: true, skipped: "invoice missing or already paid" }), { status: 200 });
-    }
-
-    const { error } = await adminClient
-      .from("invoices")
-      .update({
-        status: "paid",
-        amount_paid_cents: invoice.total_cents,
-        payment_method: "card",
-        paid_at: new Date().toISOString(),
-      })
-      .eq("id", invoiceId);
-
+    const { error } = await markInvoicePaid(invoiceId);
     if (error) {
       return new Response(JSON.stringify({ error: error.message }), { status: 500 });
     }
+
+    // If the client opted in to Stripe's "save my payment info" checkbox
+    // (see payment_intent_data.setup_future_usage in src/app/pay/[token]/
+    // actions.ts), a Customer now exists on this connected account with a
+    // saved card attached -- cache it on the client for display, and for
+    // future off-session charges from the invoice page.
+    if (session.customer && invoiceRow?.client_id && event.account) {
+      const customerId = session.customer as string;
+
+      await adminClient
+        .from("clients")
+        .update({ stripe_customer_id: customerId })
+        .eq("id", invoiceRow.client_id)
+        .is("stripe_customer_id", null);
+
+      const paymentMethods = await stripe.paymentMethods.list(
+        { customer: customerId, type: "card" },
+        { stripeAccount: event.account }
+      );
+      const card = paymentMethods.data[0]?.card;
+      if (card) {
+        await adminClient
+          .from("clients")
+          .update({ stripe_card_brand: card.brand, stripe_card_last4: card.last4 })
+          .eq("id", invoiceRow.client_id);
+      }
+    }
+
+    return new Response(JSON.stringify({ received: true }), { status: 200 });
+  }
+
+  // A saved-card charge from the invoice page (chargeSavedCard) creates and
+  // confirms a PaymentIntent directly -- there's no Checkout Session in that
+  // flow to carry checkout.session.completed, so this is what actually
+  // marks the invoice paid for that path. Kept as a separate confirmation
+  // step (rather than trusting the synchronous API response in the Next.js
+  // action) for the same reason regular checkout payments already work this
+  // way: the webhook is the one source of truth for "paid".
+  if (event.type === "payment_intent.succeeded") {
+    const paymentIntent = event.data.object as Stripe.PaymentIntent;
+    const invoiceId = paymentIntent.metadata?.invoice_id;
+
+    if (!invoiceId) {
+      return new Response(JSON.stringify({ received: true, skipped: "no invoice_id in metadata" }), { status: 200 });
+    }
+
+    const { error } = await markInvoicePaid(invoiceId);
+    if (error) {
+      return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    }
+
+    return new Response(JSON.stringify({ received: true }), { status: 200 });
+  }
+
+  // Defense-in-depth: chargeSavedCard's own try/catch already shows staff an
+  // immediate error for the overwhelmingly common synchronous-decline case.
+  // This covers the rarer case where the charge fails asynchronously after
+  // that request already returned, so it doesn't just look "stuck".
+  if (event.type === "payment_intent.payment_failed") {
+    const paymentIntent = event.data.object as Stripe.PaymentIntent;
+    const invoiceId = paymentIntent.metadata?.invoice_id;
+
+    if (!invoiceId) {
+      return new Response(JSON.stringify({ received: true, skipped: "no invoice_id in metadata" }), { status: 200 });
+    }
+
+    const { data: invoice } = await adminClient
+      .from("invoices")
+      .select("id, invoice_number, practice_id, issued_by_staff_id")
+      .eq("id", invoiceId)
+      .maybeSingle();
+
+    if (!invoice) {
+      return new Response(JSON.stringify({ received: true, skipped: "invoice not found" }), { status: 200 });
+    }
+
+    const reason = paymentIntent.last_payment_error?.message ?? "The card was declined";
+    const invoiceLabel = `INV-${String(invoice.invoice_number).padStart(4, "0")}`;
+
+    await adminClient.from("notifications").insert({
+      practice_id: invoice.practice_id,
+      staff_id: invoice.issued_by_staff_id,
+      type: "payment_failed",
+      title: "Saved-card charge failed",
+      body: `${invoiceLabel}: ${reason}`,
+      link: `/invoices/${invoiceId}`,
+    });
 
     return new Response(JSON.stringify({ received: true }), { status: 200 });
   }
