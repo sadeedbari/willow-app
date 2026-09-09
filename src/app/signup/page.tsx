@@ -31,6 +31,19 @@ export default async function SignupPage({
 
           <form action={signup} className="space-y-4">
             <div>
+              <label htmlFor="practiceName" className="block text-[12.5px] font-semibold text-text-2">
+                Practice name
+              </label>
+              <input
+                id="practiceName"
+                name="practiceName"
+                type="text"
+                required
+                placeholder="e.g. Willow Therapy Collective"
+                className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              />
+            </div>
+            <div>
               <label htmlFor="email" className="block text-[12.5px] font-semibold text-text-2">
                 Email
               </label>
