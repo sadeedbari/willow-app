@@ -15,12 +15,20 @@ export async function createAppointment(formData: FormData) {
   const time = formData.get("time") as string;
   const durationMinutes = Number(formData.get("duration"));
   const startsAt = new Date(`${date}T${time}`);
-  const endsAt = new Date(startsAt.getTime() + durationMinutes * 60 * 1000);
   const type = formData.get("type") as string;
   const locationType = formData.get("locationType") as string;
   const clientId = formData.get("clientId") as string;
   const returnTo = (formData.get("returnTo") as string) || "/calendar";
   const reopenHref = (formData.get("reopenHref") as string) || "/calendar/new";
+
+  // A malformed/missing date, time, or duration produces an Invalid Date --
+  // toISOString() throws on that rather than returning an error, so this
+  // must be caught before it ever reaches the database call.
+  if (!Number.isFinite(durationMinutes) || durationMinutes <= 0 || Number.isNaN(startsAt.getTime())) {
+    redirect(`${reopenHref}&error=${encodeURIComponent("Please provide a valid date, time, and duration")}`);
+  }
+
+  const endsAt = new Date(startsAt.getTime() + durationMinutes * 60 * 1000);
 
   const staffId =
     staff.role === "clinician" ? staff.id : (formData.get("staffId") as string);

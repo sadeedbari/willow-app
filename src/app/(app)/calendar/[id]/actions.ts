@@ -12,8 +12,15 @@ export async function rescheduleAppointment(formData: FormData) {
   const date = formData.get("date") as string;
   const time = formData.get("time") as string;
   const durationMinutes = Number(formData.get("duration"));
-
   const startsAt = new Date(`${date}T${time}`);
+
+  // A malformed/missing date, time, or duration produces an Invalid Date --
+  // toISOString() throws on that rather than returning an error, so this
+  // must be caught before it ever reaches the database call.
+  if (!Number.isFinite(durationMinutes) || durationMinutes <= 0 || Number.isNaN(startsAt.getTime())) {
+    redirect(`${returnTo}&error=${encodeURIComponent("Please provide a valid date, time, and duration")}`);
+  }
+
   const endsAt = new Date(startsAt.getTime() + durationMinutes * 60 * 1000);
 
   const supabase = await createClient();

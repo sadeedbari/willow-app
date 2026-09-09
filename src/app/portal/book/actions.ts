@@ -26,7 +26,7 @@ export async function bookAppointment(formData: FormData) {
     p_type: type,
   });
 
-  if (error) {
+  if (error || !data) {
     redirect(`/portal/book?${backParams}&error=${encodeURIComponent(friendlyErrorMessage(error))}`);
   }
 
