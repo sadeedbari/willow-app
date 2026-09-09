@@ -14,6 +14,7 @@ export async function AddClientModal({ error }: { error?: string }) {
     .from("staff")
     .select("id, full_name")
     .in("role", ["clinician", "practice_admin"])
+    .eq("active", true)
     .order("full_name");
 
   return (

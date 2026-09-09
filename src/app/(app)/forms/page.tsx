@@ -25,9 +25,10 @@ export default async function ConsentTemplatesPage({
   const { tab, send, sent, resent, cancelled, error } = await searchParams;
   const activeTab = TABS.some((t) => t.key === tab) ? tab! : "templates";
   const staff = await getCurrentStaff();
-  if (staff.role !== "practice_admin") {
+  if (staff.role !== "practice_admin" && staff.role !== "front_desk") {
     redirect("/dashboard");
   }
+  const canManageTemplates = staff.role === "practice_admin";
 
   const supabase = await createClient();
 
@@ -60,12 +61,14 @@ export default async function ConsentTemplatesPage({
           >
             + Send Form
           </Link>
-          <Link
-            href="/forms/new"
-            className="rounded-lg bg-brand px-3.5 py-2 text-[13.4px] font-semibold text-white transition hover:bg-brand-ink"
-          >
-            + New Form
-          </Link>
+          {canManageTemplates && (
+            <Link
+              href="/forms/new"
+              className="rounded-lg bg-brand px-3.5 py-2 text-[13.4px] font-semibold text-white transition hover:bg-brand-ink"
+            >
+              + New Form
+            </Link>
+          )}
         </div>
       </div>
 
@@ -108,7 +111,7 @@ export default async function ConsentTemplatesPage({
 
       {activeTab === "templates" && (
         <>
-          {!templates?.length && (
+          {!templates?.length && canManageTemplates && (
             <form action={loadStarterTemplates} className="mb-5 rounded-2xl border border-border bg-surface p-4 shadow-sm">
               <div className="text-[13px] font-bold text-foreground">Start with common templates</div>
               <p className="mt-1 text-[12.5px] text-text-2">
@@ -134,14 +137,11 @@ export default async function ConsentTemplatesPage({
           <div className="space-y-2">
             {templates?.map((t) => {
               const color = avatarColorFor(t.id);
-              return (
-                <Link
-                  key={t.id}
-                  href={`/forms/${t.id}`}
-                  data-form-row
-                  data-search={t.title.toLowerCase()}
-                  className="flex items-center justify-between rounded-2xl border border-border bg-surface p-4 shadow-sm transition hover:border-brand"
-                >
+              const rowClassName =
+                "flex items-center justify-between rounded-2xl border border-border bg-surface p-4 shadow-sm transition" +
+                (canManageTemplates ? " hover:border-brand" : "");
+              const rowContent = (
+                <>
                   <div className="flex items-center gap-3">
                     <span
                       className={`flex h-9 w-9 flex-none items-center justify-center rounded-full ${color.bg} ${color.text}`}
@@ -160,7 +160,16 @@ export default async function ConsentTemplatesPage({
                   >
                     {t.active ? "Active" : "Inactive"}
                   </span>
+                </>
+              );
+              return canManageTemplates ? (
+                <Link key={t.id} href={`/forms/${t.id}`} data-form-row data-search={t.title.toLowerCase()} className={rowClassName}>
+                  {rowContent}
                 </Link>
+              ) : (
+                <div key={t.id} data-form-row data-search={t.title.toLowerCase()} className={rowClassName}>
+                  {rowContent}
+                </div>
               );
             })}
             {!!templates?.length && (

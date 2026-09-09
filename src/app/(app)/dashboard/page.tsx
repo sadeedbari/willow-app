@@ -49,7 +49,7 @@ export default async function DashboardPage() {
   const supabase = await createClient();
 
   const [data, threads] = await Promise.all([
-    getDashboardData(supabase, staff.id),
+    getDashboardData(supabase, staff.id, staff.role),
     getThreadList(supabase),
   ]);
 
@@ -175,7 +175,10 @@ export default async function DashboardPage() {
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-[13.6px] font-semibold text-foreground">{a.clients?.full_name ?? "Unknown client"}</div>
-                      <div className="text-[11.8px] text-text-3">{typeLabel}</div>
+                      <div className="text-[11.8px] text-text-3">
+                        {typeLabel}
+                        {staff.role !== "clinician" && a.staff?.full_name ? ` · ${a.staff.full_name}` : ""}
+                      </div>
                     </div>
                     <Link
                       href={`/calendar/${a.id}`}

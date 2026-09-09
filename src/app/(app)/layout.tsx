@@ -59,7 +59,7 @@ const NAV = [
         href: "/forms",
         label: "Forms",
         color: "bg-hue-consent",
-        adminOnly: true,
+        roles: ["practice_admin", "front_desk"],
         icon: (
           <>
             <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3Z" />
@@ -98,7 +98,7 @@ const NAV = [
         href: "/practice-overview",
         label: "Practice Overview",
         color: "bg-hue-admin",
-        adminOnly: true,
+        roles: ["practice_admin"],
         icon: (
           <>
             <path d="M4 20V10M11 20V4M18 20v-7" />
@@ -205,7 +205,7 @@ export default async function AppLayout({
         <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
           {NAV.map((section) => {
             const visibleItems = section.items.filter(
-              (item) => !item.adminOnly || staff.role === "practice_admin"
+              (item) => !item.roles || (item.roles as string[]).includes(staff.role)
             );
             if (!visibleItems.length) return null;
 

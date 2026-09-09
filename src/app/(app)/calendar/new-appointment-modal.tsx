@@ -2,6 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import Link from "next/link";
 import { createAppointment } from "./new/actions";
+import { ClientClinicianFields } from "./client-clinician-fields";
 
 export async function NewAppointmentModal({
   closeHref,
@@ -24,10 +25,15 @@ export async function NewAppointmentModal({
   const supabase = await createClient();
 
   const [{ data: clients }, { data: clinicians }, { data: practice }] = await Promise.all([
-    supabase.from("clients").select("id, full_name").order("full_name"),
+    supabase.from("clients").select("id, full_name, assigned_staff_id").order("full_name"),
     staff.role === "clinician"
       ? Promise.resolve({ data: null })
-      : supabase.from("staff").select("id, full_name").in("role", ["clinician", "practice_admin"]).order("full_name"),
+      : supabase
+          .from("staff")
+          .select("id, full_name")
+          .in("role", ["clinician", "practice_admin"])
+          .eq("active", true)
+          .order("full_name"),
     supabase.from("practices").select("auto_send_invoice_default").eq("id", staff.practiceId).single(),
   ]);
 
@@ -59,42 +65,12 @@ export async function NewAppointmentModal({
           <form action={createAppointment} className="mt-5 space-y-4">
             <input type="hidden" name="returnTo" value={closeHref} />
             <input type="hidden" name="reopenHref" value={reopenHref} />
-            <div>
-              <label className="block text-[12.5px] font-semibold text-text-2">Client</label>
-              <select
-                name="clientId"
-                required
-                defaultValue={clientId ?? ""}
-                className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-              >
-                <option value="" disabled>
-                  Select a client
-                </option>
-                {clients?.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.full_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {clinicians && (
-              <div>
-                <label className="block text-[12.5px] font-semibold text-text-2">Clinician</label>
-                <select
-                  name="staffId"
-                  required
-                  defaultValue={staffId ?? ""}
-                  className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-                >
-                  {clinicians.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.full_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+            <ClientClinicianFields
+              clients={clients ?? []}
+              clinicians={clinicians}
+              defaultClientId={clientId}
+              defaultStaffId={staffId}
+            />
 
             <div className="grid grid-cols-2 gap-3">
               <div>

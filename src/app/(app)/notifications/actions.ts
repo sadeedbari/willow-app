@@ -5,12 +5,16 @@ import { redirect } from "next/navigation";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 
 export async function openNotification(formData: FormData) {
-  await getCurrentStaff();
+  const staff = await getCurrentStaff();
   const id = formData.get("id") as string;
   const link = (formData.get("link") as string) || "/notifications";
 
   const supabase = await createClient();
-  await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", id);
+  await supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("staff_id", staff.id);
 
   redirect(link);
 }

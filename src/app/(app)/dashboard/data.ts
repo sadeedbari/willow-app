@@ -19,6 +19,7 @@ export type TodayAppointment = {
   location_type: string;
   client_id: string;
   clients: { full_name: string } | null;
+  staff: { full_name: string } | null;
 };
 
 export type AttentionItem = { kind: "note" | "consent" | "balance"; label: string; text: string; href: string };
@@ -39,7 +40,19 @@ export type DashboardData = {
   attentionItems: AttentionItem[];
 };
 
-export async function getDashboardData(supabase: SupabaseClient, staffId: string): Promise<DashboardData> {
+export async function getDashboardData(
+  supabase: SupabaseClient,
+  staffId: string,
+  role: "practice_admin" | "clinician" | "front_desk" | "billing_admin",
+): Promise<DashboardData> {
+  // A clinician's "Today's schedule" and utilization are personal (their own
+  // caseload). Everyone else's dashboard already shows practice-wide numbers
+  // for caseload/notes/revenue via RLS -- filtering their own schedule down
+  // to just their own appointments (usually zero, for a pure admin) made the
+  // page show an empty "Today's schedule" next to whole-practice revenue, an
+  // incoherent mix of "my data" and "practice data". So for non-clinician
+  // roles, show the practice-wide schedule/utilization instead.
+  const personalScope = role === "clinician";
   const now = new Date();
   const todayStart = startOfDay(now);
   const todayEnd = new Date(todayStart);
@@ -69,22 +82,24 @@ export async function getDashboardData(supabase: SupabaseClient, staffId: string
       .select("id", { count: "exact", head: true })
       .eq("status", "active")
       .gte("created_at", monthStart.toISOString()),
-    supabase
-      .from("appointments")
-      .select("starts_at, ends_at")
-      .eq("staff_id", staffId)
+    (personalScope
+      ? supabase.from("appointments").select("starts_at, ends_at").eq("staff_id", staffId)
+      : supabase.from("appointments").select("starts_at, ends_at"))
       .neq("status", "cancelled")
       .gte("starts_at", weekStart.toISOString())
       .lt("starts_at", weekEnd.toISOString()),
-    supabase
-      .from("appointments")
-      .select("id, starts_at, type, location_type, client_id, clients(full_name)")
-      .eq("staff_id", staffId)
+    (personalScope
+      ? supabase.from("appointments").select("id, starts_at, type, location_type, client_id, clients(full_name), staff(full_name)").eq("staff_id", staffId)
+      : supabase.from("appointments").select("id, starts_at, type, location_type, client_id, clients(full_name), staff(full_name)"))
       .neq("status", "cancelled")
       .gte("starts_at", todayStart.toISOString())
       .lt("starts_at", todayEnd.toISOString())
       .order("starts_at"),
-    supabase.from("staff_availability").select("start_time, end_time").eq("staff_id", staffId),
+    personalScope
+      ? supabase.from("staff_availability").select("start_time, end_time").eq("staff_id", staffId)
+      : role === "practice_admin"
+        ? supabase.from("staff_availability").select("start_time, end_time")
+        : Promise.resolve({ data: [] as { start_time: string; end_time: string }[] }),
     supabase
       .from("session_notes")
       .select("id, session_date, clients(full_name)")

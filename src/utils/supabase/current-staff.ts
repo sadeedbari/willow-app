@@ -24,23 +24,37 @@ export async function getCurrentStaff(): Promise<CurrentStaff> {
     redirect("/login");
   }
 
-  const { data } = await supabase
-    .from("staff")
-    .select("id, full_name, role, practice_id, practices(name)")
-    .eq("user_id", user.id)
-    .single();
+  // A plain `staff` table select is RLS-scoped through my_practice_id(),
+  // which itself filters on active = true -- so once a staff member is
+  // offboarded, that query returns nothing at all for their OWN row,
+  // indistinguishable from "never onboarded". get_my_staff_row() is a
+  // SECURITY DEFINER function that looks them up regardless of active, so
+  // the two cases can be told apart.
+  const { data } = (await supabase.rpc("get_my_staff_row").maybeSingle()) as {
+    data: {
+      id: string;
+      full_name: string;
+      role: CurrentStaff["role"];
+      practice_id: string;
+      active: boolean;
+      practice_name: string;
+    } | null;
+  };
 
   if (!data) {
     redirect("/onboarding");
   }
 
-  const practice = data.practices as unknown as { name: string } | null;
+  if (!data.active) {
+    await supabase.auth.signOut();
+    redirect(`/login?error=${encodeURIComponent("Your account has been deactivated. Contact your practice administrator.")}`);
+  }
 
   return {
     id: data.id,
     fullName: data.full_name,
     role: data.role,
     practiceId: data.practice_id,
-    practiceName: practice?.name ?? "Your practice",
+    practiceName: data.practice_name ?? "Your practice",
   };
 }
