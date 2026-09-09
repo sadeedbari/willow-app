@@ -50,7 +50,7 @@ export function NavLink({
           {icon}
         </svg>
       </span>
-      {label}
+      <span className={count ? "font-bold" : undefined}>{label}</span>
       {!!count && (
         <span className="ml-auto min-w-[16px] rounded-full bg-brand px-1.5 py-[1.5px] text-center text-[10.5px] font-bold text-white">
           {count}
