@@ -7,6 +7,7 @@ import {
   addAvailabilityOverride,
   removeAvailabilityOverride,
 } from "./availability-actions";
+import { enableBookingLink, disableBookingLink, updateBookingSlug } from "./booking-link-actions";
 
 const ROLE_LABEL: Record<string, string> = {
   practice_admin: "Practice Admin",
@@ -45,12 +46,14 @@ export default async function ProfilePage({
   const { data: profile } = await supabase
     .from("staff")
     .select(
-      "full_name, role, credential, license_number, license_province, license_expiry, specialty, bio, phone, email, notify_on_message, created_at"
+      "full_name, role, credential, license_number, license_province, license_expiry, specialty, bio, phone, email, notify_on_message, notify_on_booking_request, booking_enabled, booking_slug, created_at"
     )
     .eq("id", staff.id)
     .single();
 
   if (!profile) return null;
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
   const { data: availability } = await supabase
     .from("staff_availability")
@@ -218,6 +221,14 @@ export default async function ProfilePage({
               <input type="checkbox" name="notifyOnMessage" defaultChecked={profile.notify_on_message} />
               Email me when I get a new secure message
             </label>
+            <label className="mt-2 flex items-center gap-2 text-[13px] text-text-2">
+              <input
+                type="checkbox"
+                name="notifyOnBookingRequest"
+                defaultChecked={profile.notify_on_booking_request}
+              />
+              Email me when someone submits a public booking request
+            </label>
           </div>
 
           <button
@@ -227,6 +238,54 @@ export default async function ProfilePage({
             Save changes
           </button>
         </form>
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-border bg-surface p-6 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <div className="text-[13px] font-bold text-foreground">Public booking link</div>
+            <p className="mt-1 text-[12.5px] text-text-2">
+              Share this link on your own website so new clients can request an intake session —
+              nothing is added to your calendar until you approve it.
+            </p>
+          </div>
+          <form action={profile.booking_enabled ? disableBookingLink : enableBookingLink}>
+            <button
+              type="submit"
+              className={`flex-none rounded-lg px-3.5 py-2 text-[12.5px] font-semibold transition ${
+                profile.booking_enabled
+                  ? "border border-border text-text-2 hover:bg-surface-2"
+                  : "bg-brand text-white hover:bg-brand-ink"
+              }`}
+            >
+              {profile.booking_enabled ? "Disable" : "Enable"}
+            </button>
+          </form>
+        </div>
+
+        {profile.booking_enabled && (
+          <div className="mt-4 border-t border-border pt-4">
+            <div className="select-all break-all rounded-lg bg-surface-2 px-3 py-2 font-mono text-[12.5px] text-foreground">
+              {siteUrl}/book/{profile.booking_slug}
+            </div>
+            <form action={updateBookingSlug} className="mt-3 flex flex-wrap items-end gap-3">
+              <div>
+                <label className="block text-[12px] font-semibold text-text-2">Link name</label>
+                <input
+                  name="slug"
+                  defaultValue={profile.booking_slug ?? ""}
+                  className="mt-1 rounded-lg border border-border bg-surface px-3 py-2 text-[13.4px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                />
+              </div>
+              <button
+                type="submit"
+                className="rounded-lg border border-border px-3.5 py-2 text-[12.5px] font-semibold text-text-2 transition hover:bg-surface-2"
+              >
+                Save link name
+              </button>
+            </form>
+          </div>
+        )}
       </div>
 
       <div className="mt-6 rounded-2xl border border-border bg-surface p-6 shadow-sm">

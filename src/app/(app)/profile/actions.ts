@@ -22,6 +22,7 @@ export async function updateProfile(formData: FormData) {
       phone: (formData.get("phone") as string) || null,
       email: (formData.get("email") as string) || null,
       notify_on_message: formData.get("notifyOnMessage") === "on",
+      notify_on_booking_request: formData.get("notifyOnBookingRequest") === "on",
     })
     .eq("id", staff.id);
 

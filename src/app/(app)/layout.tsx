@@ -90,6 +90,18 @@ const NAV = [
           </>
         ),
       },
+      {
+        href: "/booking-requests",
+        label: "Requests",
+        color: "bg-hue-consent",
+        badge: "bookingRequests",
+        icon: (
+          <>
+            <rect x="3" y="5" width="18" height="16" rx="3" />
+            <path d="M16 3v4M8 3v4M3 10h18M8 15l2.5 2.5L16 13" />
+          </>
+        ),
+      },
     ],
   },
   {
@@ -174,9 +186,15 @@ export default async function AppLayout({
   const supabase = await createClient();
   const theme = (await cookies()).get("theme")?.value === "dark" ? "dark" : "light";
 
-  const [{ data: threads }, { count: unreadNotifCount }] = await Promise.all([
+  const pendingBookingRequestsQuery = supabase
+    .from("booking_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "pending");
+
+  const [{ data: threads }, { count: unreadNotifCount }, { count: pendingBookingRequestCount }] = await Promise.all([
     supabase.from("message_threads").select("id, staff_last_read_at, updated_at"),
     supabase.from("notifications").select("id", { count: "exact", head: true }).eq("staff_id", staff.id).is("read_at", null),
+    staff.role === "clinician" ? pendingBookingRequestsQuery.eq("staff_id", staff.id) : pendingBookingRequestsQuery,
   ]);
 
   const unreadMessages = (threads ?? []).filter((t) =>
@@ -189,6 +207,7 @@ export default async function AppLayout({
   // informational status it actually is.
   const badgeCounts: Record<string, number> = {
     messages: unreadMessages,
+    bookingRequests: pendingBookingRequestCount ?? 0,
   };
 
   return (
