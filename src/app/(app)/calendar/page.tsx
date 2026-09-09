@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AppointmentModal } from "./appointment-modal";
 import { NewAppointmentModal } from "./new-appointment-modal";
 import { APPOINTMENT_TYPE_SHORT_LABEL as TYPE_LABEL } from "@/utils/appointment-type-label";
+import { parseDateParam } from "@/utils/parse-date-param";
 
 type ApptRow = {
   id: string;
@@ -75,7 +76,7 @@ export default async function CalendarPage({
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
-  const weekStart = mondayOf(week ? new Date(`${week}T00:00:00`) : new Date());
+  const weekStart = mondayOf(parseDateParam(week, new Date()));
   const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
   const prevWeek = toDateParam(new Date(weekStart.getTime() - 7 * 24 * 60 * 60 * 1000));
   const nextWeek = toDateParam(new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000));

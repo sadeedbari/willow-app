@@ -44,7 +44,11 @@ export function RecoverySessionBridge({ loginHref }: { loginHref: string }) {
       router.refresh();
     }
 
-    bridge();
+    // A network blip (offline, DNS, CORS) makes setSession() reject instead
+    // of resolving with {error} -- without this catch, that rejection is
+    // unhandled and the user is stuck on "Verifying your link…" forever
+    // with no way to tell what happened or get back to login.
+    bridge().catch(() => setFailed(true));
   }, [router]);
 
   if (failed) {

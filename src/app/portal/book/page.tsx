@@ -10,6 +10,7 @@ import {
   SELF_BOOKABLE_TYPES,
   type SelfBookableType,
 } from "@/utils/appointment-types";
+import { parseDateParamString } from "@/utils/parse-date-param";
 
 const SLOT_MINUTES = 30;
 
@@ -65,7 +66,7 @@ function computeSlots(
 }
 
 function shiftDate(date: string, days: number) {
-  const d = new Date(`${date}T00:00:00`);
+  const d = new Date(`${parseDateParamString(date, new Date().toISOString().slice(0, 10))}T00:00:00`);
   d.setDate(d.getDate() + days);
   return d.toISOString().slice(0, 10);
 }
@@ -82,7 +83,7 @@ export default async function BookAppointmentPage({
   const effectiveType = (client.defaultAppointmentType ?? type) as SelfBookableType | undefined;
 
   const today = new Date().toISOString().slice(0, 10);
-  const selectedDate = date ?? today;
+  const selectedDate = parseDateParamString(date, today);
 
   const { data: thread } = await supabase
     .from("message_threads")

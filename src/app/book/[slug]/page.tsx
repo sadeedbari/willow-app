@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requestBooking } from "./actions";
 import { BrandMark } from "@/components/brand-mark";
 import { APPOINTMENT_TYPE_DURATION_MINUTES } from "@/utils/appointment-types";
+import { parseDateParamString } from "@/utils/parse-date-param";
 
 const SLOT_MINUTES = 30;
 const DURATION_MINUTES = APPOINTMENT_TYPE_DURATION_MINUTES.intake;
@@ -54,7 +55,7 @@ function computeSlots(
 }
 
 function shiftDate(date: string, days: number) {
-  const d = new Date(`${date}T00:00:00`);
+  const d = new Date(`${parseDateParamString(date, new Date().toISOString().slice(0, 10))}T00:00:00`);
   d.setDate(d.getDate() + days);
   return d.toISOString().slice(0, 10);
 }
@@ -107,7 +108,7 @@ export default async function PublicBookingPage({
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  const selectedDate = date ?? today;
+  const selectedDate = parseDateParamString(date, today);
 
   return (
     <div className="flex min-h-screen flex-col bg-surface-2">

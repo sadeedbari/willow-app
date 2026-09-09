@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { parseDateParamString } from "@/utils/parse-date-param";
 
 function mondayOf(date: Date) {
   const d = new Date(date);
@@ -16,7 +17,7 @@ export default async function NewAppointmentRedirectPage({
 }) {
   const { error, clientId, date, time, staffId } = await searchParams;
 
-  const targetDate = date ?? new Date().toISOString().slice(0, 10);
+  const targetDate = parseDateParamString(date, new Date().toISOString().slice(0, 10));
   const week = mondayOf(new Date(`${targetDate}T00:00:00`)).toISOString().slice(0, 10);
 
   const params = new URLSearchParams({ week, new: "1", date: targetDate, time: time ?? "14:00" });
