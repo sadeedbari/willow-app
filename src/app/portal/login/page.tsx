@@ -1,5 +1,6 @@
 import { portalLogin } from "./actions";
 import Link from "next/link";
+import { BrandMark } from "@/components/brand-mark";
 
 export default async function PortalLoginPage({
   searchParams,
@@ -12,14 +13,10 @@ export default async function PortalLoginPage({
     <div className="flex min-h-screen items-center justify-center bg-surface-2 px-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
-          <div
-            className="mx-auto h-9 w-9 rounded-[10px] shadow-sm"
-            style={{
-              background:
-                "conic-gradient(from 200deg, #4F9E8C, #6E93C9 30%, #9E8FD6 60%, #DB9179 85%, #4F9E8C)",
-            }}
-          />
-          <h1 className="mt-3 text-[22px] font-bold tracking-tight text-foreground">
+          <div className="flex justify-center">
+            <BrandMark size={44} />
+          </div>
+          <h1 className="mt-4 text-[22px] font-bold tracking-tight text-foreground">
             Client Portal
           </h1>
           <p className="mt-1 text-[13.5px] text-text-2">

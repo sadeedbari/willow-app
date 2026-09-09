@@ -7,6 +7,7 @@ import { toggleTheme } from "./theme-actions";
 import { NavLink } from "./nav-link";
 import { ThemeToggleForm } from "./theme-toggle-form";
 import { isThreadUnread } from "@/utils/messaging";
+import { BrandMark } from "@/components/brand-mark";
 
 const NAV = [
   {
@@ -208,13 +209,7 @@ export default async function AppLayout({
         style={{ background: "linear-gradient(175deg,var(--sidebar-from) 0%,var(--sidebar-to) 100%)" }}
       >
         <div className="flex items-center gap-2.5 px-2.5 pb-4.5 pt-1.5">
-          <div
-            className="h-8.5 w-8.5 flex-none rounded-[10px] shadow-sm"
-            style={{
-              background:
-                "conic-gradient(from 200deg, #4F9E8C, #6E93C9 30%, #9E8FD6 60%, #DB9179 85%, #4F9E8C)",
-            }}
-          />
+          <BrandMark size={34} />
           <div>
             <div className="text-[16.5px] font-bold tracking-tight text-foreground">
               Willow
