@@ -1,7 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
-import { redirect } from "next/navigation";
 import { updatePassword } from "./actions";
 import { BrandMark } from "@/components/brand-mark";
+import { RecoverySessionBridge } from "@/components/recovery-session-bridge";
 
 export default async function ResetPasswordPage({
   searchParams,
@@ -16,7 +16,22 @@ export default async function ResetPasswordPage({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login?error=confirmation_failed");
+    // No server-side session yet doesn't mean the link is bad -- Supabase's
+    // recovery link hands the session back as a URL hash fragment, which
+    // never reaches this server component. The bridge below reads it
+    // client-side and asks us to re-render once a real session exists.
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-surface-2 px-4 py-10">
+        <div className="w-full max-w-sm">
+          <div className="flex flex-col items-center text-center">
+            <BrandMark size={56} />
+          </div>
+          <div className="mt-7">
+            <RecoverySessionBridge loginHref="/login" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

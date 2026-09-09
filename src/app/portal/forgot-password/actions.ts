@@ -10,7 +10,7 @@ export async function requestPortalPasswordReset(formData: FormData) {
 
   const supabase = await createClient();
   await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${SITE_URL}/reset-password`,
+    redirectTo: `${SITE_URL}/portal/reset-password`,
   });
 
   redirect("/portal/forgot-password/check-email");

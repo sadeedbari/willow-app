@@ -14,9 +14,11 @@ const PUBLIC_PATHS = [
   "/terms",
   "/privacy",
   "/forgot-password",
+  "/reset-password",
   "/portal/login",
   "/portal/accept-invite",
   "/portal/forgot-password",
+  "/portal/reset-password",
   "/api/webhooks",
   "/api/cron",
 ];

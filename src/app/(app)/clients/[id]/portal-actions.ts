@@ -64,7 +64,7 @@ export async function resendPortalInvite(formData: FormData) {
   }
 
   const { error } = await supabase.auth.resetPasswordForEmail(client.email, {
-    redirectTo: `${SITE_URL}/reset-password`,
+    redirectTo: `${SITE_URL}/portal/reset-password`,
   });
 
   if (error) {
