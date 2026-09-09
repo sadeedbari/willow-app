@@ -131,6 +131,35 @@ export const FAQS: FaqItem[] = [
   },
   {
     category: "Calendar & Appointments",
+    question: "How do I get a public booking link for my own website?",
+    steps: [
+      "Go to Practitioner Profile (My Account in the sidebar).",
+      "Set your Weekly availability first, if you haven't already — the link only shows times inside those hours.",
+      "Under Public booking link, click Enable to get a link like willow.sulosystems.com/book/your-name.",
+      "Copy it onto your own website, email signature, or social profile so new clients can request a time with you directly.",
+    ],
+  },
+  {
+    category: "Calendar & Appointments",
+    question: "What happens when someone requests an appointment through my public booking link?",
+    steps: [
+      "It doesn't book anything automatically — it creates a request for you to review under Requests in the sidebar.",
+      "Approving a request creates the client and a real appointment (an 80-minute Intake session, held by telehealth) on your calendar.",
+      "Declining a request lets you add an optional reason, which is emailed to the person who requested it.",
+      "You can turn off email notifications for new requests under Practitioner Profile → Notifications if you'd rather just check the Requests page.",
+    ],
+  },
+  {
+    category: "Calendar & Appointments",
+    question: "How do I rename or turn off my public booking link?",
+    steps: [
+      "Go to Practitioner Profile → Public booking link.",
+      "Edit Link name and click Save link name to change the URL.",
+      "Click Disable to take the link offline — your link name is kept, so re-enabling brings back the same URL.",
+    ],
+  },
+  {
+    category: "Calendar & Appointments",
     question: "How do I cancel or reschedule an appointment?",
     steps: [
       "Go to Calendar and click the appointment.",
