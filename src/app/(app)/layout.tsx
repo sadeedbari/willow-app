@@ -145,18 +145,6 @@ const NAV = [
           </>
         ),
       },
-      {
-        href: "/help",
-        label: "Help & FAQ",
-        color: "bg-[#8C948E]",
-        icon: (
-          <>
-            <circle cx="12" cy="12" r="9" />
-            <path d="M9.5 9.2a2.5 2.5 0 0 1 4.9.8c0 1.7-2.4 2-2.4 3.5" />
-            <path d="M12 17.5h.01" />
-          </>
-        ),
-      },
     ],
   },
 ];
@@ -326,6 +314,18 @@ export default async function AppLayout({
           </form>
 
           <div className="ml-auto flex flex-none items-center gap-1.5 sm:gap-2.5">
+            <Link
+              href="/help"
+              title="Help & FAQ"
+              className="flex h-8.5 w-8.5 flex-none items-center justify-center rounded-[10px] border border-border bg-surface text-text-2 transition hover:bg-surface-2 hover:text-foreground"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M9.5 9.2a2.5 2.5 0 0 1 4.9.8c0 1.7-2.4 2-2.4 3.5" />
+                <path d="M12 17.5h.01" />
+              </svg>
+            </Link>
+
             <ThemeToggleForm theme={theme} toggleTheme={toggleTheme} />
 
             <Link
