@@ -70,7 +70,7 @@ export async function getDashboardData(
     { data: weekAppointments },
     { data: todayAppointments },
     { data: availability },
-    { data: draftNotes },
+    { data: notesOverview },
     { data: pendingConsent },
     { data: paidThisMonth },
     { data: paidLastMonth },
@@ -100,11 +100,7 @@ export async function getDashboardData(
       : role === "practice_admin"
         ? supabase.from("staff_availability").select("start_time, end_time")
         : Promise.resolve({ data: [] as { start_time: string; end_time: string }[] }),
-    supabase
-      .from("session_notes")
-      .select("id, session_date, clients(full_name)")
-      .eq("status", "draft")
-      .order("session_date"),
+    supabase.rpc("get_practice_notes_overview"),
     supabase.from("consent_forms").select("id, clients(full_name)").eq("status", "pending"),
     supabase.from("invoices").select("amount_paid_cents").eq("status", "paid").gte("paid_at", monthStart.toISOString()),
     supabase
@@ -133,7 +129,20 @@ export async function getDashboardData(
   }, 0);
   const weeklyUtilizationPct = availableMinutes > 0 ? Math.round((bookedMinutes / availableMinutes) * 100) : null;
 
-  const oldestDue = draftNotes?.[0] as unknown as { session_date: string; clients: { full_name: string } | null } | undefined;
+  type NoteOverviewRow = {
+    id: string;
+    session_date: string;
+    status: string;
+    client_id: string;
+    client_full_name: string;
+    staff_id: string;
+    staff_full_name: string;
+    subjective_preview: string | null;
+  };
+  const draftNotes = (notesOverview as NoteOverviewRow[] | null ?? [])
+    .filter((n) => n.status === "draft")
+    .sort((a, b) => a.session_date.localeCompare(b.session_date));
+  const oldestDue = draftNotes[0];
 
   const collectedThisMonthCents = (paidThisMonth ?? []).reduce((sum, i) => sum + i.amount_paid_cents, 0);
   const collectedLastMonthCents = (paidLastMonth ?? []).reduce((sum, i) => sum + i.amount_paid_cents, 0);
@@ -154,7 +163,7 @@ export async function getDashboardData(
     attentionItems.push({
       kind: "note",
       label: "Note due",
-      text: `${oldestDue.clients?.full_name ?? "A client"}'s note ${oldestDueWhen} is unsigned.`,
+      text: `${oldestDue.client_full_name ?? "A client"}'s note ${oldestDueWhen} is unsigned.`,
       href: "/notes?tab=unsigned",
     });
   }
@@ -192,9 +201,9 @@ export async function getDashboardData(
     newClientsThisMonth: newClientsThisMonth ?? 0,
     weekSessionCount: (weekAppointments ?? []).length,
     weeklyUtilizationPct,
-    notesDueCount: draftNotes?.length ?? 0,
+    notesDueCount: draftNotes.length,
     oldestDueNote: oldestDue
-      ? { client_name: oldestDue.clients?.full_name ?? "Unknown", session_date: oldestDue.session_date, when: oldestDueWhen }
+      ? { client_name: oldestDue.client_full_name ?? "Unknown", session_date: oldestDue.session_date, when: oldestDueWhen }
       : null,
     pendingConsentCount: pendingConsent?.length ?? 0,
     collectedThisMonthCents,

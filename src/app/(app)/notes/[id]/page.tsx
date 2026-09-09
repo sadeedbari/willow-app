@@ -26,6 +26,27 @@ const TYPE_LABEL: Record<string, string> = {
   group: "Group",
 };
 
+type FullNote = {
+  id: string;
+  session_date: string;
+  status: string;
+  subjective?: string | null;
+  objective?: string | null;
+  assessment?: string | null;
+  plan?: string | null;
+  risk_level?: string | null;
+  risk_notes?: string | null;
+  signed_at?: string | null;
+  client_id: string;
+  staff_id?: string;
+  appointment_id?: string | null;
+  clients?: { full_name: string } | null;
+  staff?: { full_name: string } | null;
+  appointments?: { type: string; starts_at: string; ends_at: string } | null;
+};
+
+type Addendum = { id: string; content: string; created_at: string };
+
 export default async function NoteDetailPage({
   params,
   searchParams,
@@ -38,53 +59,71 @@ export default async function NoteDetailPage({
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
-  // "clinician" and "practice_admin" can both author notes -- for a solo
-  // practice the owner is always "practice_admin" and IS the treating
-  // clinician. front_desk/billing_admin never touch clinical content, full
-  // stop, so they get metadata columns only. A clinician/admin viewing a
-  // note authored by someone else (multi-clinician practices, not in scope
-  // today) also only gets metadata -- content is gated by authorship below,
-  // not by role, to keep "minimum necessary access" even though RLS would
-  // technically allow an admin to read another clinician's note content.
-  const canManageNotes = staff.role === "clinician" || staff.role === "practice_admin";
-  const columns = canManageNotes
-    ? "id, session_date, status, subjective, objective, assessment, plan, risk_level, risk_notes, signed_at, client_id, staff_id, appointment_id, clients(full_name), staff(full_name), appointments(type, starts_at, ends_at)"
-    : "id, session_date, status, client_id, clients(full_name), staff(full_name)";
+  // Three-tier fetch, narrowest first:
+  // 1. A plain table read -- succeeds via RLS only for the note's own
+  //    author, or the client's CURRENT clinician (continuity of care).
+  // 2. If that finds nothing and the caller is practice_admin, the note's
+  //    author may have left the practice -- get_departed_clinician_note is
+  //    the only path to that content, and it's audited (see the migration).
+  // 3. Otherwise, metadata only (existence/status/client/clinician) --
+  //    matches what front_desk/billing_admin, or an admin viewing a still-
+  //    active clinician's note, are entitled to.
+  const { data: fullRow } = await supabase
+    .from("session_notes")
+    .select(
+      "id, session_date, status, subjective, objective, assessment, plan, risk_level, risk_notes, signed_at, client_id, staff_id, appointment_id, clients(full_name), staff(full_name), appointments(type, starts_at, ends_at)"
+    )
+    .eq("id", id)
+    .maybeSingle();
 
-  const { data } = await supabase.from("session_notes").select(columns).eq("id", id).single();
+  let note: FullNote | null = fullRow as unknown as FullNote | null;
+  let canSeeContent = !!note;
+  let addenda: Addendum[] | null = null;
+  let viaDepartedClinicianPath = false;
 
-  if (!data) notFound();
+  if (!note && staff.role === "practice_admin") {
+    const { data: departed } = await supabase.rpc("get_departed_clinician_note", { p_note_id: id });
+    if (departed) {
+      const d = departed as unknown as FullNote & { client_full_name?: string; staff_full_name?: string; addenda?: Addendum[] };
+      note = { ...d, clients: { full_name: d.client_full_name ?? "Unknown client" }, staff: { full_name: d.staff_full_name ?? "Unknown" } };
+      addenda = d.addenda ?? [];
+      canSeeContent = true;
+      viaDepartedClinicianPath = true;
+    }
+  }
 
-  type Note = {
-    id: string;
-    session_date: string;
-    status: string;
-    subjective?: string;
-    objective?: string;
-    assessment?: string;
-    plan?: string;
-    risk_level?: string;
-    risk_notes?: string | null;
-    signed_at?: string | null;
-    client_id: string;
-    staff_id?: string;
-    appointment_id?: string | null;
-    clients: { full_name: string } | null;
-    staff?: { full_name: string } | null;
-    appointments?: { type: string; starts_at: string; ends_at: string } | null;
-  };
-  const note = data as unknown as Note;
-  const canSeeContent = canManageNotes && note.staff_id === staff.id;
+  if (!note) {
+    const { data: overviewRow } = await supabase.rpc("get_session_note_overview", { p_note_id: id }).maybeSingle();
+    const overview = overviewRow as {
+      id: string;
+      session_date: string;
+      status: string;
+      client_id: string;
+      client_full_name: string;
+      staff_full_name: string;
+    } | null;
+    if (!overview) notFound();
+    note = {
+      id: overview.id,
+      session_date: overview.session_date,
+      status: overview.status,
+      client_id: overview.client_id,
+      clients: { full_name: overview.client_full_name },
+      staff: { full_name: overview.staff_full_name },
+    };
+    canSeeContent = false;
+  }
 
-  const addenda = canSeeContent
-    ? (
-        await supabase
-          .from("session_note_addenda")
-          .select("id, content, created_at")
-          .eq("note_id", id)
-          .order("created_at", { ascending: true })
-      ).data
-    : null;
+  if (canSeeContent && !viaDepartedClinicianPath) {
+    const { data } = await supabase
+      .from("session_note_addenda")
+      .select("id, content, created_at")
+      .eq("note_id", id)
+      .order("created_at", { ascending: true });
+    addenda = data;
+  }
+
+  const canEdit = canSeeContent && note.staff_id === staff.id;
 
   const appt = note.appointments;
   const durationMinutes = appt
@@ -121,7 +160,7 @@ export default async function NoteDetailPage({
         <Link href={`/clients/${note.client_id}?tab=notes`} className="text-[12.5px] font-semibold text-brand-ink">
           View client
         </Link>
-        {canSeeContent && note.status === "draft" && (
+        {canEdit && note.status === "draft" && (
           <Link href={`/notes/${note.id}/edit`} className="text-[12.5px] font-semibold text-brand-ink">
             Edit draft
           </Link>
@@ -131,6 +170,13 @@ export default async function NoteDetailPage({
       {error && (
         <p className="mt-4 rounded-lg bg-bad-tint px-3 py-2 text-[13px] text-bad">
           {decodeURIComponent(error)}
+        </p>
+      )}
+
+      {viaDepartedClinicianPath && (
+        <p className="mt-4 rounded-lg bg-warn-tint px-3 py-2 text-[13px] text-warn">
+          {note.staff?.full_name ?? "This clinician"} is no longer with the practice. Viewing this note has been
+          logged.
         </p>
       )}
 
@@ -170,7 +216,7 @@ export default async function NoteDetailPage({
             </div>
           </div>
 
-          {note.status === "draft" ? (
+          {canEdit && note.status === "draft" ? (
             <form action={signNote} className="mt-5">
               <input type="hidden" name="noteId" value={note.id} />
               <button
@@ -180,12 +226,12 @@ export default async function NoteDetailPage({
                 Sign & lock note
               </button>
             </form>
-          ) : (
+          ) : note.status === "signed" ? (
             <p className="mt-5 text-[12px] text-text-3">
               Signed{note.signed_at && ` ${new Date(note.signed_at).toLocaleString()}`} — locked from editing.
               Corrections are added below as a dated addendum.
             </p>
-          )}
+          ) : null}
 
           <div className="mt-6">
             <div className="text-[13px] font-bold text-foreground">Addenda</div>
@@ -204,23 +250,25 @@ export default async function NoteDetailPage({
               <p className="mt-2 text-[13px] text-text-3">No addenda.</p>
             )}
 
-            <form action={addAddendum} className="mt-4 rounded-2xl border border-border bg-surface p-4 shadow-sm">
-              <input type="hidden" name="noteId" value={note.id} />
-              <label className="block text-[12.5px] font-semibold text-text-2">Add addendum</label>
-              <textarea
-                name="content"
-                required
-                rows={3}
-                placeholder="Corrections or updates to this note — this is appended with a timestamp, the original note is never changed."
-                className="mt-1 w-full resize-y rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-              />
-              <button
-                type="submit"
-                className="mt-3 rounded-lg border border-border px-3.5 py-2 text-[13px] font-semibold text-text-2 transition hover:bg-surface-2"
-              >
-                Add addendum
-              </button>
-            </form>
+            {!viaDepartedClinicianPath && (
+              <form action={addAddendum} className="mt-4 rounded-2xl border border-border bg-surface p-4 shadow-sm">
+                <input type="hidden" name="noteId" value={note.id} />
+                <label className="block text-[12.5px] font-semibold text-text-2">Add addendum</label>
+                <textarea
+                  name="content"
+                  required
+                  rows={3}
+                  placeholder="Corrections or updates to this note — this is appended with a timestamp, the original note is never changed."
+                  className="mt-1 w-full resize-y rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                />
+                <button
+                  type="submit"
+                  className="mt-3 rounded-lg border border-border px-3.5 py-2 text-[13px] font-semibold text-text-2 transition hover:bg-surface-2"
+                >
+                  Add addendum
+                </button>
+              </form>
+            )}
           </div>
         </>
       )}

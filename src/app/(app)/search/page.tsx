@@ -83,15 +83,18 @@ export default async function SearchPage({
       .limit(15);
     notes = (data ?? []) as unknown as NoteRow[];
   } else if (clientIdList) {
-    // Practice admins never query note content, even in search -- same
-    // minimum-necessary-access posture as the Notes list page.
-    const { data } = await supabase
-      .from("session_notes")
-      .select("id, session_date, status, clients(full_name)")
-      .in("client_id", clientIds)
-      .order("session_date", { ascending: false })
-      .limit(15);
-    notes = (data ?? []) as unknown as NoteRow[];
+    // Practice admins/front_desk/billing_admin never query note content,
+    // even in search -- same minimum-necessary-access posture as the Notes
+    // list page. get_practice_notes_overview() is metadata-only, and is the
+    // only path that returns rows for a client a caller isn't personally
+    // assigned to (RLS alone would return nothing for these roles).
+    const { data } = await supabase.rpc("get_practice_notes_overview");
+    const clientIdSet = new Set(clientIds);
+    notes = ((data ?? []) as { id: string; session_date: string; status: string; client_id: string; client_full_name: string }[])
+      .filter((n) => clientIdSet.has(n.client_id))
+      .sort((a, b) => b.session_date.localeCompare(a.session_date))
+      .slice(0, 15)
+      .map((n) => ({ id: n.id, session_date: n.session_date, status: n.status, clients: { full_name: n.client_full_name } }));
   }
 
   type InvoiceRow = {

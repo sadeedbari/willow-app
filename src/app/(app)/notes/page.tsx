@@ -23,47 +23,25 @@ export default async function NotesPage({
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
-  // "clinician" and "practice_admin" can both author notes -- for a solo
-  // practice the owner is always "practice_admin" and IS the treating
-  // clinician, so this can't be clinician-only. front_desk/billing_admin
-  // never touch clinical content, full stop.
-  const canManageNotes = staff.role === "clinician" || staff.role === "practice_admin";
-
-  if (!canManageNotes) {
-    return (
-      <div>
-        <h1 className="text-[26px] font-bold tracking-tight text-foreground">
-          Session Notes
-        </h1>
-        <p className="mt-3 text-[13.5px] text-text-2">
-          Clinical notes aren&apos;t visible to your role. This is enforced by
-          the database, not just hidden in the UI — front desk and billing
-          staff never receive note content, even via a direct query.
-        </p>
-      </div>
-    );
-  }
-
-  // Content (subjective preview) is only ever rendered for notes this staff
-  // member authored themselves -- an admin who is also seeing another
-  // clinician's note (multi-clinician practices, not in scope today) still
-  // only gets metadata here, never clinical content, to keep "minimum
-  // necessary access" even though RLS would technically allow reading it.
-  const { data } = await supabase
-    .from("session_notes")
-    .select("id, session_date, status, subjective, staff_id, clients(full_name), staff(full_name)")
-    .order("session_date", { ascending: false });
+  // Metadata-only RPC -- never returns clinical content except a preview of
+  // the caller's OWN notes (safe regardless of role), so front_desk/billing_admin
+  // can see the list exists/status here without ever touching content, and a
+  // clinician/admin viewing another clinician's note only gets metadata too.
+  // Full content for a departed clinician's note is a separate, audited path
+  // on the note's own detail page -- not surfaced in this list.
+  const { data } = await supabase.rpc("get_practice_notes_overview");
 
   type Row = {
     id: string;
     session_date: string;
     status: string;
-    subjective?: string;
+    client_id: string;
+    client_full_name: string;
     staff_id: string;
-    clients: { full_name: string } | null;
-    staff?: { full_name: string } | null;
+    staff_full_name: string;
+    subjective_preview: string | null;
   };
-  const allNotes = (data ?? []) as unknown as Row[];
+  const allNotes = (data ?? []) as Row[];
   const notes =
     activeTab === "unsigned"
       ? allNotes.filter((n) => n.status === "draft")
@@ -119,10 +97,10 @@ export default async function NotesPage({
             <div key={n.id} className="rounded-2xl border border-border bg-surface p-4 shadow-sm transition hover:bg-surface-2">
               <Link href={`/notes/${n.id}`} className="flex items-center justify-between">
                 <div className="text-[13.4px] font-semibold text-foreground">
-                  {n.clients?.full_name ?? "Unknown client"} — {formatSessionDate(n.session_date)}
-                  {n.staff?.full_name && (
+                  {n.client_full_name ?? "Unknown client"} — {formatSessionDate(n.session_date)}
+                  {n.staff_full_name && (
                     <span className="ml-2 font-normal text-text-3">
-                      · {n.staff.full_name}
+                      · {n.staff_full_name}
                     </span>
                   )}
                 </div>
@@ -149,9 +127,9 @@ export default async function NotesPage({
                 </>
               )}
 
-              {!isUnsigned && isOwn && n.subjective && (
+              {!isUnsigned && n.subjective_preview && (
                 <p className="mt-2 line-clamp-2 text-[13px] text-text-2">
-                  {n.subjective}
+                  {n.subjective_preview}
                 </p>
               )}
             </div>

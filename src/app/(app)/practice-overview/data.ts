@@ -56,8 +56,7 @@ export async function getPracticeOverviewData(supabase: SupabaseClient, staffId:
     { count: dischargedThisMonth },
     { data: recentAppointments },
     { data: availability },
-    { data: recentNotes },
-    { count: overdueNotesCount },
+    { data: notesOverview },
     { data: outstandingInvoices },
   ] = await Promise.all([
     supabase.from("invoices").select("total_cents, issue_date").gte("issue_date", sixMonthsAgo.toISOString().slice(0, 10)),
@@ -78,12 +77,7 @@ export async function getPracticeOverviewData(supabase: SupabaseClient, staffId:
       .gte("starts_at", thirtyDaysAgo.toISOString())
       .lt("starts_at", now.toISOString()),
     supabase.from("staff_availability").select("start_time, end_time").eq("staff_id", staffId),
-    supabase.from("session_notes").select("status").gte("created_at", thirtyDaysAgo.toISOString()),
-    supabase
-      .from("session_notes")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "draft")
-      .lt("created_at", twoDaysAgo.toISOString()),
+    supabase.rpc("get_practice_notes_overview"),
     supabase.from("invoices").select("total_cents, amount_paid_cents").eq("status", "sent"),
   ]);
 
@@ -151,11 +145,19 @@ export async function getPracticeOverviewData(supabase: SupabaseClient, staffId:
         .sort((a, b) => b.pct - a.pct)
     : [];
 
-  // Notes compliance: of notes authored in the last 30 days, what fraction
-  // were signed (vs. still sitting as an unsigned draft).
-  const notesTotal = recentNotes?.length ?? 0;
-  const notesSigned = (recentNotes ?? []).filter((n) => n.status === "signed").length;
+  // Notes compliance: of notes for sessions in the last 30 days, what
+  // fraction were signed (vs. still sitting as an unsigned draft). Uses
+  // get_practice_notes_overview() (metadata only, no clinical content) so
+  // non-clinician roles see practice-wide counts instead of zero rows.
+  type NoteOverviewRow = { session_date: string; status: string };
+  const notes = (notesOverview as NoteOverviewRow[] | null) ?? [];
+  const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().slice(0, 10);
+  const twoDaysAgoStr = twoDaysAgo.toISOString().slice(0, 10);
+  const recentNotes = notes.filter((n) => n.session_date >= thirtyDaysAgoStr);
+  const notesTotal = recentNotes.length;
+  const notesSigned = recentNotes.filter((n) => n.status === "signed").length;
   const notesCompliancePct = notesTotal > 0 ? Math.round((notesSigned / notesTotal) * 100) : null;
+  const overdueNotesCount = notes.filter((n) => n.status === "draft" && n.session_date < twoDaysAgoStr).length;
 
   const outstandingBalanceCents = (outstandingInvoices ?? []).reduce(
     (sum, inv) => sum + (inv.total_cents - inv.amount_paid_cents),
@@ -170,7 +172,7 @@ export async function getPracticeOverviewData(supabase: SupabaseClient, staffId:
     utilizationPct,
     noShowRatePct,
     notesCompliancePct,
-    overdueNotesCount: overdueNotesCount ?? 0,
+    overdueNotesCount,
     outstandingBalanceCents,
     netCaseloadChange: (newClientsThisMonth ?? 0) - (dischargedThisMonth ?? 0),
     revenueByMonth,
