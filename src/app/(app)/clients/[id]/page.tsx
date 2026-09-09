@@ -62,7 +62,6 @@ export default async function ClientDetailPage({
   const { tab, error, invited, consentToken, edit } = await searchParams;
   const staff = await getCurrentStaff();
   const supabase = await createClient();
-  const activeTab = TABS.some((t) => t.key === tab) ? tab! : "overview";
 
   const { data: allClients } = await supabase
     .from("clients")
@@ -78,6 +77,12 @@ export default async function ClientDetailPage({
     .single();
 
   if (!client) notFound();
+
+  // Fire-and-forget audit trail: records that this staff member viewed this
+  // client's record, regardless of role. The RPC silently no-ops on a
+  // cross-practice id instead of throwing, so a transient failure here
+  // never breaks the page -- ignore the result either way.
+  await supabase.rpc("log_client_record_view", { p_client_id: id });
 
   const clinician = client.staff as unknown as { full_name: string } | null;
 
@@ -95,8 +100,12 @@ export default async function ClientDetailPage({
   const canUploadDocuments =
     staff.role === "practice_admin" || staff.role === "front_desk" || (staff.role === "clinician" && isOwnClient);
   const canDeleteDocuments = staff.role === "practice_admin";
+  const canSeeAccessLog = staff.role === "practice_admin";
 
-  const [{ data: notes }, { data: invoices }, { data: consentForms }, { data: templates }, { data: upcoming }, { data: documents }] =
+  const tabs = canSeeAccessLog ? [...TABS, { key: "access-log", label: "Access Log" }] : TABS;
+  const activeTab = tabs.some((t) => t.key === tab) ? tab! : "overview";
+
+  const [{ data: notes }, { data: invoices }, { data: consentForms }, { data: templates }, { data: upcoming }, { data: documents }, { data: accessLog }] =
     await Promise.all([
       canSeeNotes
         ? supabase
@@ -131,6 +140,9 @@ export default async function ClientDetailPage({
         .select("id, file_name, file_size_bytes, content_type, created_at")
         .eq("client_id", id)
         .order("created_at", { ascending: false }),
+      canSeeAccessLog && activeTab === "access-log"
+        ? supabase.rpc("get_client_access_log", { p_client_id: id })
+        : Promise.resolve({ data: null }),
     ]);
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -290,7 +302,7 @@ export default async function ClientDetailPage({
             )}
 
             <div className="mt-4 flex gap-1 overflow-x-auto border-t border-border pt-4">
-              {TABS.map((t) => (
+              {tabs.map((t) => (
                 <Link
                   key={t.key}
                   href={tabHref(t.key)}
@@ -663,6 +675,36 @@ export default async function ClientDetailPage({
                 </form>
               )}
               <p className="mt-2 text-[11px] text-text-3">PDF, Word, or image — up to 10 MB.</p>
+            </div>
+          )}
+
+          {/* Access Log tab (practice_admin only) */}
+          {activeTab === "access-log" && canSeeAccessLog && (
+            <div className="mt-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+              <div className="mb-1 text-[13px] font-bold text-foreground">Access log</div>
+              <p className="mb-3 text-[12px] text-text-3">
+                Every staff view of this client&apos;s record, most recent first.
+              </p>
+              {(accessLog as { id: string; viewed_at: string; staff_full_name: string | null }[] | null)?.length ? (
+                <ul className="divide-y divide-border">
+                  {(accessLog as { id: string; viewed_at: string; staff_full_name: string | null }[]).map((v) => (
+                    <li key={v.id} className="flex items-center justify-between py-2 text-[13px]">
+                      <span className="font-semibold text-foreground">{v.staff_full_name ?? "Unknown staff"}</span>
+                      <span className="text-text-3">
+                        {new Date(v.viewed_at).toLocaleString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[13px] text-text-3">No recorded views yet.</p>
+              )}
             </div>
           )}
         </div>
