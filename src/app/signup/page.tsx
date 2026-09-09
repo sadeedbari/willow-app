@@ -1,6 +1,7 @@
 import { signup } from "./actions";
 import Link from "next/link";
 import { BrandMark } from "@/components/brand-mark";
+import { PASSWORD_PATTERN, PASSWORD_REQUIREMENTS_HINT } from "@/utils/password";
 
 export default async function SignupPage({
   searchParams,
@@ -66,9 +67,12 @@ export default async function SignupPage({
                 type="password"
                 required
                 minLength={8}
+                pattern={PASSWORD_PATTERN}
+                title={PASSWORD_REQUIREMENTS_HINT}
                 autoComplete="new-password"
                 className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
               />
+              <p className="mt-1 text-[11.5px] text-text-3">{PASSWORD_REQUIREMENTS_HINT}</p>
             </div>
             <button
               type="submit"
