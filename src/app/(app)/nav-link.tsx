@@ -22,6 +22,13 @@ export function NavLink({
   return (
     <Link
       href={href}
+      onClick={() => {
+        // Closes the mobile drawer (see (app)/layout.tsx) after navigating --
+        // otherwise it stays open over the new page since the checkbox is an
+        // uncontrolled DOM node that persists across client-side navigation.
+        const mobileNav = document.getElementById("mobile-nav") as HTMLInputElement | null;
+        if (mobileNav) mobileNav.checked = false;
+      }}
       className={`flex items-center gap-[11px] rounded-[10px] px-2.5 py-2 text-[13.6px] font-[560] transition ${
         isActive
           ? "bg-brand-tint text-brand-ink"

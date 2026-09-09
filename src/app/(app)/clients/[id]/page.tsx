@@ -161,9 +161,11 @@ export default async function ClientDetailPage({
         </div>
       )}
 
-      <div className="mt-4 grid grid-cols-[260px_1fr] gap-6">
-        {/* Left: client list */}
-        <div className="space-y-1.5">
+      <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-[260px_1fr]">
+        {/* Left: client list -- hidden on mobile, where "Back to Clients"
+            above already covers switching clients, and this list would
+            otherwise squeeze the actual client content off-screen. */}
+        <div className="hidden space-y-1.5 lg:block">
           {allClients?.map((c) => {
             const isSelected = c.id === id;
             const cColor = avatarColorFor(c.id);
@@ -196,7 +198,7 @@ export default async function ClientDetailPage({
         {/* Right: detail panel */}
         <div>
           <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-center gap-4">
                 <span
                   className={`flex h-16 w-16 flex-none items-center justify-center rounded-full text-[20px] font-bold ${color.bg} ${color.text}`}
@@ -220,7 +222,7 @@ export default async function ClientDetailPage({
                   </div>
                 </div>
               </div>
-              <div className="flex flex-none items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {canEdit && (
                   <Link
                     href={`/clients/${id}?edit=1${activeTab !== "overview" ? `&tab=${activeTab}` : ""}`}
@@ -286,12 +288,12 @@ export default async function ClientDetailPage({
               </form>
             )}
 
-            <div className="mt-4 flex gap-1 border-t border-border pt-4">
+            <div className="mt-4 flex gap-1 overflow-x-auto border-t border-border pt-4">
               {TABS.map((t) => (
                 <Link
                   key={t.key}
                   href={tabHref(t.key)}
-                  className={`-mb-px border-b-2 px-2.5 pb-2 text-[13.4px] font-semibold transition ${
+                  className={`-mb-px flex-none whitespace-nowrap border-b-2 px-2.5 pb-2 text-[13.4px] font-semibold transition ${
                     activeTab === t.key
                       ? "border-brand text-foreground"
                       : "border-transparent text-text-3 hover:text-foreground"
@@ -305,7 +307,7 @@ export default async function ClientDetailPage({
 
           {/* Overview tab */}
           {activeTab === "overview" && (
-            <div className="mt-4 grid grid-cols-2 gap-4">
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-4">
                 <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
                   <div className="mb-2 text-[13px] font-bold text-foreground">Clinical summary</div>

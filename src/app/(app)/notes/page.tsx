@@ -80,7 +80,7 @@ export default async function NotesPage({
 
   return (
     <div className="mx-auto max-w-5xl">
-      <div className="mb-4 flex items-end justify-between">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-[26px] font-bold tracking-tight text-foreground">
             Session Notes

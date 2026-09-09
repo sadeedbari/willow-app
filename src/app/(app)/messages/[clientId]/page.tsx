@@ -62,7 +62,7 @@ export default async function StaffThreadPage({
 
   return (
     <div className="mx-auto max-w-5xl">
-      <div className="flex items-end justify-between">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-[26px] font-bold tracking-tight text-foreground">Messages</h1>
           <p className="mt-1 text-[13.5px] text-text-2">Secure messaging with clients.</p>
@@ -76,6 +76,7 @@ export default async function StaffThreadPage({
       </div>
 
       <MessagesFrame
+        mobileView="detail"
         left={<ThreadList threads={threads} activeClientId={clientId} />}
         right={<ThreadDetail client={client} messages={messages ?? []} error={error} />}
       />

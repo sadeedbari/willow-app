@@ -133,7 +133,7 @@ export default async function CalendarPage({
             {selectedClinicianName ? ` · ${selectedClinicianName}` : ""}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {canFilterByClinician && clinicians && clinicians.length > 0 && (
             <form method="GET" className="flex items-center gap-1.5">
               <input type="hidden" name="week" value={week ?? todayParam} />

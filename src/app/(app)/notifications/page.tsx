@@ -29,7 +29,7 @@ export default async function NotificationsPage() {
 
   return (
     <div className="max-w-xl">
-      <div className="mb-6 flex items-end justify-between">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-[26px] font-bold tracking-tight text-foreground">Notifications</h1>
           <p className="mt-1 text-[13.5px] text-text-2">

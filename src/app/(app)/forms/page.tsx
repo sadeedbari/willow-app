@@ -47,7 +47,7 @@ export default async function ConsentTemplatesPage({
 
   return (
     <div className="max-w-2xl">
-      <div className="mb-6 flex items-end justify-between">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-[26px] font-bold tracking-tight text-foreground">
             Forms

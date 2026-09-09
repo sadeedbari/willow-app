@@ -67,7 +67,7 @@ export default async function ProfilePage({
 
   return (
     <div className="mx-auto max-w-5xl">
-      <div className="mb-6 flex items-end justify-between">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-[26px] font-bold tracking-tight text-foreground">
             Practitioner Profile
@@ -123,7 +123,7 @@ export default async function ProfilePage({
 
         <form action={updateProfile} className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
           <div className="mb-3 text-[13px] font-bold text-foreground">Basic info</div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="block text-[12px] font-semibold text-text-2">Full name</label>
               <input
@@ -144,7 +144,7 @@ export default async function ProfilePage({
             </div>
           </div>
 
-          <div className="mt-3 grid grid-cols-3 gap-3">
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
               <label className="block text-[12px] font-semibold text-text-2">License #</label>
               <input
@@ -173,7 +173,7 @@ export default async function ProfilePage({
             </div>
           </div>
 
-          <div className="mt-3 grid grid-cols-2 gap-3">
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="block text-[12px] font-semibold text-text-2">Contact phone</label>
               <input

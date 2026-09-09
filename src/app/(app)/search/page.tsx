@@ -148,7 +148,7 @@ export default async function SearchPage({
               <Link
                 key={c.id}
                 href={`/clients/${c.id}`}
-                className="flex items-center justify-between rounded-2xl border border-border bg-surface p-4 shadow-sm transition hover:border-brand"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-surface p-4 shadow-sm transition hover:border-brand"
               >
                 <div>
                   <div className="text-[13.4px] font-semibold text-foreground">{c.full_name}</div>
@@ -173,7 +173,7 @@ export default async function SearchPage({
               <Link
                 key={n.id}
                 href="/notes"
-                className="flex items-center justify-between rounded-2xl border border-border bg-surface p-4 shadow-sm transition hover:border-brand"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-surface p-4 shadow-sm transition hover:border-brand"
               >
                 <div className="text-[13.4px] font-semibold text-foreground">
                   {n.clients?.full_name ?? "Unknown client"}
@@ -198,7 +198,7 @@ export default async function SearchPage({
               <Link
                 key={inv.id}
                 href={`/invoices/${inv.id}`}
-                className="flex items-center justify-between rounded-2xl border border-border bg-surface p-4 shadow-sm transition hover:border-brand"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-surface p-4 shadow-sm transition hover:border-brand"
               >
                 <div className="text-[13.4px] font-semibold text-foreground">
                   INV-{String(inv.invoice_number).padStart(4, "0")}

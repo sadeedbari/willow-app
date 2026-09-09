@@ -74,7 +74,7 @@ export async function EditClientModal({
                 className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label className="block text-[12px] font-semibold text-text-2">Date of birth</label>
                 <input
@@ -99,7 +99,7 @@ export async function EditClientModal({
                 </select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label className="block text-[12px] font-semibold text-text-2">Phone</label>
                 <input
@@ -126,7 +126,7 @@ export async function EditClientModal({
                 className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label className="block text-[12px] font-semibold text-text-2">Session frequency</label>
                 <select
@@ -151,7 +151,7 @@ export async function EditClientModal({
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label className="block text-[12px] font-semibold text-text-2">Assigned clinician</label>
                 <select

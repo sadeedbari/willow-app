@@ -94,7 +94,7 @@ export default async function InvoiceDetailPage({
         </p>
       )}
 
-      <div className="mt-3 flex items-start justify-between">
+      <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-[22px] font-bold tracking-tight text-foreground">
             INV-{String(invoice.invoice_number).padStart(4, "0")}
@@ -130,8 +130,8 @@ export default async function InvoiceDetailPage({
         </p>
       )}
 
-      <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
-        <table className="w-full text-[13px]">
+      <div className="mt-6 overflow-x-auto rounded-2xl border border-border bg-surface shadow-sm">
+        <table className="w-full min-w-[560px] text-[13px]">
           <thead>
             <tr className="border-b border-border text-left text-[11.5px] font-semibold text-text-3">
               <th className="px-4 py-2.5">Date</th>
@@ -225,7 +225,7 @@ export default async function InvoiceDetailPage({
         <form action={addLineItem} className="mt-5 rounded-2xl border border-border bg-surface p-4 shadow-sm">
           <input type="hidden" name="invoiceId" value={invoice.id} />
           <div className="mb-3 text-[13px] font-bold text-foreground">Custom line item</div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="block text-[12px] font-semibold text-text-2">Service date</label>
               <input
@@ -254,7 +254,7 @@ export default async function InvoiceDetailPage({
               className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13.4px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             />
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-3">
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="block text-[12px] font-semibold text-text-2">Quantity</label>
               <input
@@ -344,7 +344,7 @@ export default async function InvoiceDetailPage({
         <form action={recordPayment} className="mt-5 rounded-2xl border border-border bg-surface p-4 shadow-sm">
           <input type="hidden" name="invoiceId" value={invoice.id} />
           <div className="mb-3 text-[13px] font-bold text-foreground">Record payment</div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="block text-[12px] font-semibold text-text-2">Amount received ($ CAD)</label>
               <input

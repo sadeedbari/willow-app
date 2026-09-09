@@ -72,7 +72,7 @@ export async function NewAppointmentModal({
               defaultStaffId={staffId}
             />
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label className="block text-[12.5px] font-semibold text-text-2">Date</label>
                 <input
@@ -95,7 +95,7 @@ export async function NewAppointmentModal({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label className="block text-[12.5px] font-semibold text-text-2">Duration</label>
                 <select

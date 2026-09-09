@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { avatarColorFor, initialsOf } from "@/utils/avatar-color";
 import { sendMessageAsStaff } from "./[clientId]/actions";
 
@@ -22,6 +23,15 @@ export function ThreadDetail({
   return (
     <>
       <div className="flex items-center gap-2.5 border-b border-border px-4.5 py-3.5">
+        <Link
+          href="/messages?view=inbox"
+          aria-label="Back to inbox"
+          className="flex h-8 w-8 flex-none items-center justify-center rounded-lg text-text-2 transition hover:bg-surface-2 sm:hidden"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+            <path d="m15 6-6 6 6 6" />
+          </svg>
+        </Link>
         <span
           className={`flex h-8.5 w-8.5 flex-none items-center justify-center rounded-full text-[11.5px] font-bold ${color.bg} ${color.text}`}
         >

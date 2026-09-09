@@ -5,7 +5,7 @@ import type { ThreadListRow } from "./data";
 
 export function ThreadList({ threads, activeClientId }: { threads: ThreadListRow[]; activeClientId?: string }) {
   return (
-    <div className="w-[280px] flex-none overflow-y-auto border-r border-border">
+    <div className="w-full overflow-y-auto border-r border-border sm:w-[280px] sm:flex-none">
       {threads.map((t) => {
         const unread = isThreadUnread(t.staff_last_read_at, t.updated_at);
         const active = t.client_id === activeClientId;

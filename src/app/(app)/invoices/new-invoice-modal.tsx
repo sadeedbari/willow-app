@@ -61,7 +61,7 @@ export async function NewInvoiceModal({ error, clientId }: { error?: string; cli
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label className="block text-[12.5px] font-semibold text-text-2">Due date (optional)</label>
                 <input

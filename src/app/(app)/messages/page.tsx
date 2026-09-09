@@ -10,9 +10,9 @@ import { NewMessageModal } from "./new-message-modal";
 export default async function MessagesInboxPage({
   searchParams,
 }: {
-  searchParams: Promise<{ new?: string }>;
+  searchParams: Promise<{ new?: string; view?: string }>;
 }) {
-  const { new: showNew } = await searchParams;
+  const { new: showNew, view } = await searchParams;
   const staff = await getCurrentStaff();
 
   if (staff.role !== "practice_admin" && staff.role !== "clinician" && staff.role !== "front_desk") {
@@ -30,13 +30,16 @@ export default async function MessagesInboxPage({
   const supabase = await createClient();
   const threads = await getThreadList(supabase);
 
-  if (threads.length) {
+  // "Back to inbox" from a thread (mobile, where list+conversation can't
+  // both fit) links here with ?view=inbox specifically to see the list --
+  // redirecting straight back into the first thread would defeat that.
+  if (threads.length && view !== "inbox") {
     redirect(`/messages/${threads[0].client_id}${showNew ? "?new=1" : ""}`);
   }
 
   return (
     <div className="mx-auto max-w-5xl">
-      <div className="flex items-end justify-between">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-[26px] font-bold tracking-tight text-foreground">Messages</h1>
           <p className="mt-1 text-[13.5px] text-text-2">Secure messaging with clients.</p>

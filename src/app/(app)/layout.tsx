@@ -192,9 +192,20 @@ export default async function AppLayout({
 
   return (
     <div className="flex h-screen w-screen overflow-hidden">
+      {/* Pure-CSS mobile drawer toggle -- no client component needed. This
+          Tailwind v4 setup doesn't generate the plain peer-checked: variant
+          (see the working `peer-has-[:checked]` example in profile/page.tsx),
+          so the checkbox, nav, and backdrop are wrapped in one `group`
+          (display:contents so it doesn't affect layout) and reference it via
+          group-has-[:checked]:, which does compile. NavLink (already a
+          client component, for active-state highlighting) unchecks the
+          checkbox on click so tapping a link closes the drawer instead of
+          leaving it open over the new page. */}
+      <div className="contents group">
+      <input type="checkbox" id="mobile-nav" className="hidden" />
       <nav
-        className="flex flex-none flex-col gap-1 overflow-hidden border-r border-border p-3"
-        style={{ width: "248px", background: "linear-gradient(175deg,var(--sidebar-from) 0%,var(--sidebar-to) 100%)" }}
+        className="fixed inset-y-0 left-0 z-40 flex w-[248px] -translate-x-full flex-col gap-1 overflow-hidden border-r border-border p-3 transition-transform duration-200 group-has-[:checked]:translate-x-0 md:static md:flex-none md:translate-x-0"
+        style={{ background: "linear-gradient(175deg,var(--sidebar-from) 0%,var(--sidebar-to) 100%)" }}
       >
         <div className="flex items-center gap-2.5 px-2.5 pb-4.5 pt-1.5">
           <div
@@ -266,9 +277,29 @@ export default async function AppLayout({
         </div>
       </nav>
 
+      {/* Backdrop: tapping outside the open drawer closes it (unchecking the
+          same checkbox via the native label/for behavior). md:hidden since
+          the drawer itself is always open (static) from md up. */}
+      <label
+        htmlFor="mobile-nav"
+        aria-hidden="true"
+        className="fixed inset-0 z-30 hidden bg-black/40 group-has-[:checked]:block md:hidden"
+      />
+      </div>
+
       <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex flex-none items-center border-b border-border bg-surface/70 px-6 py-3 backdrop-blur">
-          <form action="/search" method="GET" className="flex w-70 items-center gap-2 rounded-[10px] border border-border bg-surface-2 px-3 py-1.5 text-text-3 transition focus-within:border-brand focus-within:ring-1 focus-within:ring-brand">
+        <header className="flex flex-none items-center gap-2 border-b border-border bg-surface/70 px-3 py-3 backdrop-blur sm:gap-0 sm:px-6">
+          <label
+            htmlFor="mobile-nav"
+            aria-label="Open menu"
+            className="flex h-8.5 w-8.5 flex-none items-center justify-center rounded-[10px] border border-border bg-surface text-text-2 transition hover:bg-surface-2 hover:text-foreground md:hidden"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="h-4 w-4">
+              <path d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </label>
+
+          <form action="/search" method="GET" className="flex min-w-0 flex-1 items-center gap-2 rounded-[10px] border border-border bg-surface-2 px-3 py-1.5 text-text-3 transition focus-within:border-brand focus-within:ring-1 focus-within:ring-brand sm:w-70 sm:flex-none">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="h-3.5 w-3.5 flex-none">
               <circle cx="11" cy="11" r="7" />
               <path d="m21 21-4.3-4.3" />
@@ -276,17 +307,17 @@ export default async function AppLayout({
             <input
               name="q"
               placeholder="Search clients, notes, invoices…"
-              className="w-full bg-transparent text-[13px] text-foreground outline-none placeholder:text-text-3"
+              className="w-full min-w-0 bg-transparent text-[13px] text-foreground outline-none placeholder:text-text-3"
             />
           </form>
 
-          <div className="ml-auto flex items-center gap-2.5">
+          <div className="ml-auto flex flex-none items-center gap-1.5 sm:gap-2.5">
             <ThemeToggleForm theme={theme} toggleTheme={toggleTheme} />
 
             <Link
               href="/notifications"
               title="Notifications"
-              className="relative flex h-8.5 w-8.5 items-center justify-center rounded-[10px] border border-border bg-surface text-text-2 transition hover:bg-surface-2 hover:text-foreground"
+              className="relative flex h-8.5 w-8.5 flex-none items-center justify-center rounded-[10px] border border-border bg-surface text-text-2 transition hover:bg-surface-2 hover:text-foreground"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
                 <path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z" />
@@ -299,18 +330,19 @@ export default async function AppLayout({
 
             <Link
               href="/calendar/new"
-              className="flex items-center gap-1.5 rounded-[10px] bg-brand px-3.5 py-2 text-[13px] font-semibold text-white shadow-sm transition hover:bg-brand-ink"
+              title="New Appointment"
+              className="flex flex-none items-center gap-1.5 rounded-[10px] bg-brand px-3 py-2 text-[13px] font-semibold text-white shadow-sm transition hover:bg-brand-ink sm:px-3.5"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" className="h-3.5 w-3.5">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" className="h-3.5 w-3.5 flex-none">
                 <path d="M12 5v14M5 12h14" />
               </svg>
-              New Appointment
+              <span className="hidden sm:inline">New Appointment</span>
             </Link>
           </div>
         </header>
 
         <main className="flex-1 overflow-y-auto">
-          <div className="px-8 py-8">{children}</div>
+          <div className="px-4 py-5 sm:px-8 sm:py-8">{children}</div>
         </main>
       </div>
     </div>

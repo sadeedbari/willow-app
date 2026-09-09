@@ -95,7 +95,7 @@ export default async function ServiceCodesPage({
             <div className="mb-2 text-[12.5px] font-semibold text-text-2">
               Default service per session type
             </div>
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
               {APPOINTMENT_TYPES.map((type) => (
                 <div key={type}>
                   <label className="block text-[11px] font-semibold text-text-3">
@@ -222,7 +222,7 @@ export default async function ServiceCodesPage({
       {canEdit && (
         <form action={addServiceCode} className="mt-5 rounded-2xl border border-border bg-surface p-4 shadow-sm">
           <div className="mb-3 text-[13px] font-bold text-foreground">Add a service code</div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
               <label className="block text-[12px] font-semibold text-text-2">Code</label>
               <input

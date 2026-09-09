@@ -8,12 +8,12 @@ const TABS = [
 
 export function PortalTabs({ active, unreadMessages }: { active: string; unreadMessages?: boolean }) {
   return (
-    <div className="flex gap-1 border-b border-border">
+    <div className="flex gap-4 overflow-x-auto border-b border-border sm:gap-1">
       {TABS.map((tab) => (
         <Link
           key={tab.href}
           href={tab.href}
-          className={`-mb-px flex items-center gap-1.5 border-b-2 px-1 pb-2.5 text-[13.6px] font-semibold transition ${
+          className={`-mb-px flex flex-none items-center gap-1.5 whitespace-nowrap border-b-2 px-1 pb-2.5 text-[13.6px] font-semibold transition ${
             tab.href === active
               ? "border-brand text-foreground"
               : "border-transparent text-text-3 hover:text-foreground"

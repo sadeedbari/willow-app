@@ -38,14 +38,14 @@ export default async function PracticeOverviewPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="flex items-end justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-[26px] font-bold tracking-tight text-foreground">Practice Overview</h1>
           <p className="mt-1 text-[13.5px] text-text-2">{staff.practiceName} · Solo practice</p>
         </div>
         <a
           href="/practice-overview/export"
-          className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3.5 py-2 text-[13.4px] font-semibold text-text-2 transition hover:bg-surface-2"
+          className="flex w-fit items-center gap-1.5 rounded-lg border border-border bg-surface px-3.5 py-2 text-[13.4px] font-semibold text-text-2 transition hover:bg-surface-2"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
             <path d="M12 3v13m0 0-4-4m4 4 4-4M4 19h16" />
@@ -54,7 +54,7 @@ export default async function PracticeOverviewPage() {
         </a>
       </div>
 
-      <div className="mt-6 grid grid-cols-4 gap-4">
+      <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <StatCard
           label={`Practice revenue (${new Date().toLocaleDateString(undefined, { month: "short" })})`}
           value={`$${(data.revenueThisMonthCents / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
@@ -84,7 +84,7 @@ export default async function PracticeOverviewPage() {
         />
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-4">
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           label="No-show / cancellation rate"
           value={data.noShowRatePct !== null ? `${data.noShowRatePct}%` : "—"}
@@ -102,7 +102,7 @@ export default async function PracticeOverviewPage() {
         />
       </div>
 
-      <div className="mt-6 grid grid-cols-[1.5fr_1fr] gap-4">
+      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[1.5fr_1fr]">
         <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
           <h2 className="text-[14.5px] font-bold text-foreground">Revenue, last 6 months</h2>
           <div className="mt-3">

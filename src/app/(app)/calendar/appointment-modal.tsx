@@ -218,7 +218,7 @@ export async function AppointmentModal({
             <input type="hidden" name="appointmentId" value={appt.id} />
             <input type="hidden" name="returnTo" value={returnTo} />
             <div className="mb-3 text-[13px] font-bold text-foreground">Reschedule</div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div>
                 <label className="block text-[12px] font-semibold text-text-2">Date</label>
                 <input

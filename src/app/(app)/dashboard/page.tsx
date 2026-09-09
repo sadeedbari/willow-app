@@ -62,9 +62,9 @@ export default async function DashboardPage() {
       <div className="mb-1.5 text-[13.5px] font-semibold text-text-2">
         {greeting()}, {firstName}
       </div>
-      <div className="flex items-end justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-[26px] font-bold tracking-tight text-foreground">{dateLabel}</h1>
+          <h1 className="text-[22px] font-bold tracking-tight text-foreground sm:text-[26px]">{dateLabel}</h1>
           <p className="mt-1 text-[13.5px] text-text-2">
             You have <b className="text-foreground">{data.todayAppointments.length}</b> session
             {data.todayAppointments.length === 1 ? "" : "s"} today ·{" "}
@@ -76,18 +76,18 @@ export default async function DashboardPage() {
         <div className="flex gap-2.5">
           <Link
             href="/notes/new"
-            className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3.5 py-2 text-[13.4px] font-semibold text-text-2 transition hover:bg-surface-2"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-3.5 py-2 text-[13.4px] font-semibold text-text-2 transition hover:bg-surface-2 sm:flex-none"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5 flex-none">
               <path d="M7 3h8l4 4v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" />
             </svg>
             Write a note
           </Link>
           <Link
             href="/calendar/new"
-            className="flex items-center gap-1.5 rounded-lg bg-brand px-3.5 py-2 text-[13.4px] font-semibold text-white transition hover:bg-brand-ink"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-brand px-3.5 py-2 text-[13.4px] font-semibold text-white transition hover:bg-brand-ink sm:flex-none"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" className="h-3.5 w-3.5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" className="h-3.5 w-3.5 flex-none">
               <path d="M12 5v14M5 12h14" />
             </svg>
             New Appointment
@@ -95,7 +95,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-4 gap-4">
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
         <StatCard
           label="Active caseload"
           value={data.activeClientCount}
@@ -151,7 +151,7 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <div className="mt-6 grid grid-cols-[1.5fr_1fr] gap-4">
+      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[1.5fr_1fr]">
         <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-[14.5px] font-bold text-foreground">Today&apos;s schedule</h2>

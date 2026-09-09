@@ -105,7 +105,7 @@ export default async function InvoicesPage({
 
   return (
     <div className="mx-auto max-w-5xl">
-      <div className="mb-6 flex items-end justify-between">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-[26px] font-bold tracking-tight text-foreground">
             Invoices
@@ -126,7 +126,7 @@ export default async function InvoicesPage({
         )}
       </div>
 
-      <div className="mb-6 grid grid-cols-3 gap-4">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           label="Outstanding"
           value={formatMoney(outstandingCents)}
@@ -172,16 +172,16 @@ export default async function InvoicesPage({
             <Link
               key={inv.id}
               href={`/invoices/${inv.id}`}
-              className="flex items-center justify-between rounded-2xl border border-border bg-surface p-4 shadow-sm transition hover:border-brand"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4 shadow-sm transition hover:border-brand"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex min-w-0 items-center gap-3">
                 <span
                   className={`flex h-9 w-9 flex-none items-center justify-center rounded-full text-[12.5px] font-bold ${color.bg} ${color.text}`}
                 >
                   {initialsOf(inv.clients?.full_name ?? "?")}
                 </span>
-                <div>
-                  <div className="text-[13.4px] font-semibold text-foreground">
+                <div className="min-w-0">
+                  <div className="truncate text-[13.4px] font-semibold text-foreground">
                     INV-{String(inv.invoice_number).padStart(4, "0")}
                     <span className="ml-2 font-normal text-text-3">
                       · {inv.clients?.full_name ?? "Unknown client"}
@@ -193,7 +193,7 @@ export default async function InvoicesPage({
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-none items-center gap-4">
                 <div className="text-right">
                   <div className="text-[13.4px] font-semibold text-foreground">
                     {formatMoney(inv.total_cents)}
