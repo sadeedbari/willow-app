@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { getCurrentStaff } from "@/utils/supabase/current-staff";
+import { getCurrentStaff, getCurrentStaffAllowExpiredTrial } from "@/utils/supabase/current-staff";
 import { stripe } from "@/utils/stripe/server";
 import { redirect } from "next/navigation";
 import { friendlyErrorMessage } from "@/utils/friendly-error";
@@ -19,7 +19,12 @@ function isMissingCustomerError(err: unknown): boolean {
 }
 
 export async function startCheckout() {
-  const staff = await getCurrentStaff();
+  // Uses the trial-tolerant variant -- this is the one action that must
+  // keep working even after a trial has expired, since it's exactly how a
+  // practice escapes that state. It's only ever linked to from either
+  // /settings/billing (trial still active) or /trial-expired (not), so the
+  // redirect target below is computed per-request rather than hardcoded.
+  const staff = await getCurrentStaffAllowExpiredTrial();
   if (staff.role !== "practice_admin") {
     redirect("/settings/billing?error=Only+practice+admins+can+manage+billing");
   }
@@ -27,13 +32,19 @@ export async function startCheckout() {
   const supabase = await createClient();
   const { data: practice } = await supabase
     .from("practices")
-    .select("id, name, stripe_customer_id, primary_contact_email")
+    .select("id, name, stripe_customer_id, primary_contact_email, subscription_status, trial_ends_at")
     .eq("id", staff.practiceId)
     .single();
 
   if (!practice) {
     redirect("/settings/billing?error=Practice+not+found");
   }
+
+  const trialExpired =
+    practice.subscription_status === "trialing" &&
+    !!practice.trial_ends_at &&
+    new Date(practice.trial_ends_at) < new Date();
+  const returnPath = trialExpired ? "/trial-expired" : "/settings/billing";
 
   let checkoutUrl: string | null = null;
   let errorMessage: string | null = null;
@@ -59,8 +70,8 @@ export async function startCheckout() {
         customer: customerId,
         line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }],
         subscription_data: { metadata: { practice_id: practice.id } },
-        success_url: `${SITE_URL}/settings/billing?checkout=success`,
-        cancel_url: `${SITE_URL}/settings/billing?checkout=cancelled`,
+        success_url: `${SITE_URL}${returnPath}?checkout=success`,
+        cancel_url: `${SITE_URL}${returnPath}?checkout=cancelled`,
         // Managed Payments (on by default on newer Stripe accounts) requires a
         // tax code on the product, which we haven't set up -- disable it rather
         // than block checkout on that.
@@ -89,7 +100,7 @@ export async function startCheckout() {
   // it by throwing, and a surrounding catch here would swallow that throw
   // and treat the redirect itself as a failure.
   if (errorMessage) {
-    redirect(`/settings/billing?error=${encodeURIComponent(errorMessage)}`);
+    redirect(`${returnPath}?error=${encodeURIComponent(errorMessage)}`);
   }
   redirect(checkoutUrl!);
 }

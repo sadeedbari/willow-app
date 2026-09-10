@@ -9,11 +9,7 @@ export type CurrentStaff = {
   practiceName: string;
 };
 
-// Fetches the signed-in user's staff row + practice name in one query.
-// Redirects rather than returning null — every caller is a page inside
-// the (app) route group, where a missing staff row means onboarding
-// was never finished (proxy.ts already handles the "not logged in" case).
-export async function getCurrentStaff(): Promise<CurrentStaff> {
+async function getCurrentStaffInternal(opts: { enforceTrial: boolean }): Promise<CurrentStaff> {
   const supabase = await createClient();
 
   const {
@@ -38,6 +34,8 @@ export async function getCurrentStaff(): Promise<CurrentStaff> {
       practice_id: string;
       active: boolean;
       practice_name: string;
+      subscription_status: string | null;
+      trial_ends_at: string | null;
     } | null;
   };
 
@@ -54,10 +52,25 @@ export async function getCurrentStaff(): Promise<CurrentStaff> {
   // reads straight off the current session's JWT (no network round trip) --
   // aal2 means this session already passed a TOTP challenge; nextLevel tells
   // us whether that's even possible yet (a verified factor exists) or not
-  // (nobody has enrolled one).
+  // (nobody has enrolled one). Checked before billing so identity is settled
+  // first regardless of subscription state.
   const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
   if (aal && aal.currentLevel !== "aal2") {
     redirect(aal.nextLevel === "aal2" ? "/mfa/verify" : "/mfa/setup");
+  }
+
+  // A trial that's run out with no paid subscription blocks every page
+  // except /trial-expired itself (which reads staff/practice info directly
+  // rather than through this function, to avoid redirecting to itself) and
+  // the checkout action it links to (enforceTrial: false -- otherwise
+  // clicking "Subscribe" from that very page would redirect right back to
+  // itself before ever reaching Stripe).
+  if (opts.enforceTrial) {
+    const trialExpired =
+      data.subscription_status === "trialing" && !!data.trial_ends_at && new Date(data.trial_ends_at) < new Date();
+    if (trialExpired) {
+      redirect("/trial-expired");
+    }
   }
 
   return {
@@ -67,4 +80,14 @@ export async function getCurrentStaff(): Promise<CurrentStaff> {
     practiceId: data.practice_id,
     practiceName: data.practice_name ?? "Your practice",
   };
+}
+
+export async function getCurrentStaff(): Promise<CurrentStaff> {
+  return getCurrentStaffInternal({ enforceTrial: true });
+}
+
+// For the handful of entry points that must keep working even once a trial
+// has expired -- today, just the checkout action linked from /trial-expired.
+export async function getCurrentStaffAllowExpiredTrial(): Promise<CurrentStaff> {
+  return getCurrentStaffInternal({ enforceTrial: false });
 }

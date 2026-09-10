@@ -23,6 +23,10 @@ const STATUS_STYLE: Record<string, string> = {
   incomplete_expired: "bg-bad-tint text-bad",
 };
 
+function daysUntil(isoDate: string): number {
+  return Math.ceil((new Date(isoDate).getTime() - Date.now()) / 86400000);
+}
+
 export default async function BillingPage({
   searchParams,
 }: {
@@ -34,7 +38,7 @@ export default async function BillingPage({
 
   const { data: practice } = await supabase
     .from("practices")
-    .select("subscription_status, stripe_customer_id, current_period_end, cancel_at_period_end")
+    .select("subscription_status, stripe_customer_id, current_period_end, cancel_at_period_end, trial_ends_at")
     .eq("id", staff.practiceId)
     .single();
 
@@ -43,6 +47,7 @@ export default async function BillingPage({
   const cancelAtPeriodEnd = !!practice?.cancel_at_period_end;
   const canCancel = hasSubscription && status !== "canceled" && !cancelAtPeriodEnd;
   const canResume = hasSubscription && status !== "canceled" && cancelAtPeriodEnd;
+  const trialDaysLeft = practice?.trial_ends_at ? daysUntil(practice.trial_ends_at) : null;
 
   return (
     <div className="max-w-lg">
@@ -91,6 +96,19 @@ export default async function BillingPage({
           <p className="mt-4 text-[12.5px] text-text-3">
             {status === "canceled" ? "Access ends" : cancelAtPeriodEnd ? "Cancels" : "Renews"}{" "}
             {new Date(practice.current_period_end).toLocaleDateString(undefined, {
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </p>
+        )}
+
+        {status === "trialing" && practice?.trial_ends_at && trialDaysLeft !== null && (
+          <p className={`mt-4 text-[12.5px] ${trialDaysLeft <= 3 ? "font-semibold text-warn" : "text-text-3"}`}>
+            {trialDaysLeft > 0
+              ? `Trial ends in ${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} — `
+              : "Trial has ended — "}
+            {new Date(practice.trial_ends_at).toLocaleDateString(undefined, {
               month: "long",
               day: "numeric",
               year: "numeric",
