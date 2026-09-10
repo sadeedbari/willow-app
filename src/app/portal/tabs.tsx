@@ -8,7 +8,7 @@ const TABS = [
 
 export function PortalTabs({ active, unreadMessages }: { active: string; unreadMessages?: boolean }) {
   return (
-    <div className="flex gap-4 overflow-x-auto border-b border-border sm:gap-1">
+    <div className="flex gap-4 overflow-x-auto overflow-y-hidden border-b border-border sm:gap-1">
       {TABS.map((tab) => (
         <Link
           key={tab.href}

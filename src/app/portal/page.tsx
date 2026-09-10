@@ -42,13 +42,13 @@ export default async function PortalPage() {
         </form>
       </header>
 
-      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col px-4 py-6">
+      <div className="mx-auto flex w-full max-w-lg min-h-0 flex-1 flex-col px-4 py-6">
         <PortalTabs active="/portal" />
 
         <h1 className="mt-4 text-[18px] font-bold tracking-tight text-foreground">Messages</h1>
         <p className="mt-1 text-[12.5px] text-text-3">Secure messaging with your practice.</p>
 
-        <div className="mt-4 flex-1 space-y-3 overflow-y-auto">
+        <div className="mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto">
           {messages?.length ? (
             messages.map((m) => (
               <div key={m.id} className={`flex ${m.sender_type === "client" ? "justify-end" : "justify-start"}`}>
