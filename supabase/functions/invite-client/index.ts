@@ -50,6 +50,7 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
     const clientId = body.clientId;
     const redirectTo = body.redirectTo;
+    const force = body.force === true;
 
     if (!clientId || !redirectTo) {
       return json({ error: "Missing required fields" }, 400);
@@ -76,14 +77,89 @@ Deno.serve(async (req: Request) => {
       { redirectTo },
     );
 
+    let userId: string;
+
     if (inviteError || !inviteData.user) {
-      console.error("inviteUserByEmail failed:", inviteError?.message, JSON.stringify(inviteError));
-      return json({ error: inviteError?.message ?? "Could not send invite" }, 400);
+      const alreadyRegistered =
+        inviteError?.code === "email_exists" ||
+        (inviteError?.message ?? "").toLowerCase().includes("already been registered");
+
+      if (!alreadyRegistered) {
+        console.error("inviteUserByEmail failed:", inviteError?.message, JSON.stringify(inviteError));
+        return json({ error: inviteError?.message ?? "Could not send invite" }, 400);
+      }
+
+      // This email already belongs to an auth user. clients.portal_user_id
+      // is unique platform-wide (one portal login = exactly one client
+      // record everywhere), so we can't just link both -- figure out what
+      // already holds this login and decide what's safe to do.
+      const { data: existingUserId, error: lookupError } = await adminClient.rpc(
+        "find_auth_user_by_email",
+        { p_email: clientRow.email },
+      );
+
+      if (lookupError || !existingUserId) {
+        console.error("find_auth_user_by_email failed:", lookupError?.message);
+        return json({ error: "A user with this email already exists, but couldn't be linked. Contact support." }, 400);
+      }
+
+      const { data: existingClientRow } = await adminClient
+        .from("clients")
+        .select("id, full_name, practice_id")
+        .eq("portal_user_id", existingUserId)
+        .maybeSingle();
+
+      if (existingClientRow && existingClientRow.practice_id !== staffRow.practice_id) {
+        // Cross-tenant: never silently move access another practice granted
+        // to their own client -- that practice has no visibility into this
+        // action and would lose access to their own record with no warning.
+        return json(
+          {
+            error:
+              "This email already has portal access at a different practice on Willow. A single email can only be linked to one portal account platform-wide right now -- use a different email for this client, or contact support.",
+          },
+          400,
+        );
+      }
+
+      if (existingClientRow && existingClientRow.id !== clientId && !force) {
+        // Same practice, different client record -- plausibly the same
+        // person (e.g. returning after time away, or a duplicate profile).
+        // Moving portal access away from that record is a real side effect
+        // for whoever holds it today, so require an explicit confirmation
+        // from the admin rather than silently transferring it.
+        return json({
+          conflict: true,
+          existingClientId: existingClientRow.id,
+          existingClientName: existingClientRow.full_name,
+        });
+      }
+
+      if (existingClientRow && existingClientRow.id !== clientId && force) {
+        // Confirmed -- release the old record's portal link first since
+        // portal_user_id is unique, then link it to this one instead.
+        const { error: unlinkError } = await adminClient
+          .from("clients")
+          .update({ portal_user_id: null })
+          .eq("id", existingClientRow.id);
+        if (unlinkError) {
+          return json({ error: unlinkError.message }, 400);
+        }
+      }
+
+      userId = existingUserId;
+
+      const { error: resetError } = await adminClient.auth.resetPasswordForEmail(clientRow.email, { redirectTo });
+      if (resetError) {
+        return json({ error: resetError.message ?? "Could not send invite" }, 400);
+      }
+    } else {
+      userId = inviteData.user.id;
     }
 
     const { error: linkError } = await adminClient
       .from("clients")
-      .update({ portal_user_id: inviteData.user.id })
+      .update({ portal_user_id: userId })
       .eq("id", clientId);
 
     if (linkError) {

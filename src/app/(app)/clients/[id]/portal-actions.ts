@@ -11,6 +11,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 export async function inviteToPortal(formData: FormData) {
   const staff = await getCurrentStaff();
   const clientId = formData.get("clientId") as string;
+  const force = formData.get("force") === "1";
 
   if (staff.role !== "practice_admin" && staff.role !== "front_desk") {
     redirect(`/clients/${clientId}`);
@@ -24,8 +25,15 @@ export async function inviteToPortal(formData: FormData) {
     body: {
       clientId,
       redirectTo: `${origin}/portal/accept-invite`,
+      force,
     },
   });
+
+  if (data?.conflict) {
+    redirect(
+      `/clients/${clientId}?conflictClientId=${encodeURIComponent(data.existingClientId)}&conflictClientName=${encodeURIComponent(data.existingClientName)}`
+    );
+  }
 
   if (error || data?.error) {
     const message = data?.error ?? (await edgeFunctionErrorMessage(error, "Could not send invite"));

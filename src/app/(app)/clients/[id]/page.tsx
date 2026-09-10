@@ -56,10 +56,18 @@ export default async function ClientDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string; error?: string; invited?: string; consentToken?: string; edit?: string }>;
+  searchParams: Promise<{
+    tab?: string;
+    error?: string;
+    invited?: string;
+    consentToken?: string;
+    edit?: string;
+    conflictClientId?: string;
+    conflictClientName?: string;
+  }>;
 }) {
   const { id } = await params;
-  const { tab, error, invited, consentToken, edit } = await searchParams;
+  const { tab, error, invited, consentToken, edit, conflictClientId, conflictClientName } = await searchParams;
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
@@ -161,6 +169,27 @@ export default async function ClientDetailPage({
       )}
       {invited && (
         <p className="mt-4 rounded-lg bg-ok-tint px-3 py-2 text-[13px] text-ok">Portal invite sent.</p>
+      )}
+      {conflictClientId && conflictClientName && (
+        <div className="mt-4 rounded-lg bg-warn-tint px-3 py-2.5 text-[13px] text-warn">
+          <p>
+            This email already has portal access linked to{" "}
+            <span className="font-semibold">{decodeURIComponent(conflictClientName)}</span> in this practice.
+            Moving it here means {decodeURIComponent(conflictClientName)} will lose portal access.
+          </p>
+          <div className="mt-2 flex items-center gap-3">
+            <form action={inviteToPortal}>
+              <input type="hidden" name="clientId" value={id} />
+              <input type="hidden" name="force" value="1" />
+              <button type="submit" className="text-[12.5px] font-semibold text-warn underline">
+                Move portal access here
+              </button>
+            </form>
+            <Link href={`/clients/${id}`} className="text-[12.5px] font-semibold text-text-2">
+              Cancel
+            </Link>
+          </div>
+        </div>
       )}
 
       {sentForm && (
