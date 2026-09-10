@@ -129,7 +129,19 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-bold text-foreground">7. Data retention</h2>
+            <h2 className="text-[15px] font-bold text-foreground">7. Data breach notification</h2>
+            <p className="mt-2">
+              If we become aware of a security incident affecting a Practice&apos;s data, we&apos;ll
+              notify the affected Practice without undue delay, including what we know about the
+              incident and what we&apos;re doing about it, so the Practice can meet its own
+              notification obligations as the health information custodian — including, where
+              applicable, notifying its Clients and the Information and Privacy Commissioner of
+              Ontario.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-[15px] font-bold text-foreground">8. Data retention</h2>
             <p className="mt-2">
               We retain Practice and Client data for as long as the Practice&apos;s account is active,
               plus a reasonable period afterward, unless a Practice requests earlier deletion or
@@ -138,7 +150,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-bold text-foreground">8. Your choices</h2>
+            <h2 className="text-[15px] font-bold text-foreground">9. Your choices</h2>
             <p className="mt-2">
               Practice staff can access and update their account information directly in Willow.
               Clients with portal access can do the same for their own portal account. To request
@@ -149,7 +161,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-bold text-foreground">9. Changes to this policy</h2>
+            <h2 className="text-[15px] font-bold text-foreground">10. Changes to this policy</h2>
             <p className="mt-2">
               We may update this Privacy Policy from time to time. If we make material changes,
               we&apos;ll provide reasonable notice (for example, by email or an in-app notice) before
@@ -158,7 +170,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-bold text-foreground">10. Contact</h2>
+            <h2 className="text-[15px] font-bold text-foreground">11. Contact</h2>
             <p className="mt-2">
               Questions about this policy? Reach us at{" "}
               <a href="mailto:sulosystems@gmail.com" className="font-semibold text-brand-ink underline">
