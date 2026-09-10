@@ -8,6 +8,7 @@ import {
   removeAvailabilityOverride,
 } from "./availability-actions";
 import { enableBookingLink, disableBookingLink, updateBookingSlug } from "./booking-link-actions";
+import { requestRecoveryEmailChange } from "./security-actions";
 
 const ROLE_LABEL: Record<string, string> = {
   practice_admin: "Practice Admin",
@@ -37,21 +38,24 @@ function initialsOf(name: string) {
 export default async function ProfilePage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; saved?: string }>;
+  searchParams: Promise<{ error?: string; saved?: string; recoveryEmailSent?: string }>;
 }) {
-  const { error, saved } = await searchParams;
+  const { error, saved, recoveryEmailSent } = await searchParams;
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
   const { data: profile } = await supabase
     .from("staff")
     .select(
-      "full_name, role, credential, license_number, license_province, license_expiry, specialty, bio, phone, email, notify_on_message, notify_on_booking_request, booking_enabled, booking_slug, created_at"
+      "full_name, role, credential, license_number, license_province, license_expiry, specialty, bio, phone, email, notify_on_message, notify_on_booking_request, booking_enabled, booking_slug, created_at, recovery_email, recovery_email_verified_at"
     )
     .eq("id", staff.id)
     .single();
 
   if (!profile) return null;
+
+  const { data: factorsData } = await supabase.auth.mfa.listFactors();
+  const mfaFactor = factorsData?.totp?.find((f) => f.status === "verified");
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
@@ -89,6 +93,11 @@ export default async function ProfilePage({
       {saved && (
         <p className="mb-4 rounded-lg bg-ok-tint px-3 py-2 text-[13px] text-ok">
           Profile saved.
+        </p>
+      )}
+      {recoveryEmailSent && (
+        <p className="mb-4 rounded-lg bg-ok-tint px-3 py-2 text-[13px] text-ok">
+          Check that inbox for a confirmation link.
         </p>
       )}
 
@@ -456,6 +465,70 @@ export default async function ProfilePage({
             Add custom date
           </button>
         </form>
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-border bg-surface p-6 shadow-sm">
+        <div className="mb-1 text-[13px] font-bold text-foreground">Security</div>
+        <p className="mb-4 text-[12.5px] text-text-2">
+          Two-factor authentication is required for every Willow staff account.
+        </p>
+
+        <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5">
+          <span className="text-[13.4px] text-foreground">Authenticator app</span>
+          <span className="rounded-full bg-ok-tint px-2.5 py-0.5 text-[11px] font-semibold text-ok">
+            {mfaFactor ? "Enabled" : "Not set up"}
+          </span>
+        </div>
+
+        <div className="mt-4 border-t border-border pt-4">
+          <div className="text-[12.5px] font-semibold text-text-2">Recovery email</div>
+          <p className="mt-1 text-[12px] text-text-3">
+            A personal email — separate from your login — used only if you ever lose access to your
+            authenticator and get locked out. Set this up now, before you need it.
+          </p>
+
+          {profile.recovery_email_verified_at ? (
+            <p className="mt-3 text-[13.4px] text-foreground">
+              <span className="font-semibold">{profile.recovery_email}</span>{" "}
+              <span className="text-[11.5px] text-text-3">
+                verified{" "}
+                {new Date(profile.recovery_email_verified_at).toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </span>
+            </p>
+          ) : profile.recovery_email ? (
+            <p className="mt-3 rounded-lg bg-warn-tint px-3 py-2 text-[12.5px] text-warn">
+              A confirmation was sent to {profile.recovery_email} — click the link in that email to
+              finish setting it up.
+            </p>
+          ) : (
+            <p className="mt-3 text-[12.5px] text-text-3">No recovery email on file yet.</p>
+          )}
+
+          <form action={requestRecoveryEmailChange} className="mt-3 flex flex-wrap items-end gap-3">
+            <div>
+              <label className="block text-[12px] font-semibold text-text-2">
+                {profile.recovery_email_verified_at ? "Change recovery email" : "Set a recovery email"}
+              </label>
+              <input
+                name="recoveryEmail"
+                type="email"
+                required
+                placeholder="you@personal-email.com"
+                className="mt-1 rounded-lg border border-border bg-surface px-3 py-2 text-[13.4px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              />
+            </div>
+            <button
+              type="submit"
+              className="rounded-lg border border-border px-3.5 py-2 text-[12.5px] font-semibold text-text-2 transition hover:bg-surface-2"
+            >
+              Send confirmation link
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

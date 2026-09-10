@@ -50,6 +50,16 @@ export async function getCurrentStaff(): Promise<CurrentStaff> {
     redirect(`/login?error=${encodeURIComponent("Your account has been deactivated. Contact your practice administrator.")}`);
   }
 
+  // MFA is required for every staff account. getAuthenticatorAssuranceLevel()
+  // reads straight off the current session's JWT (no network round trip) --
+  // aal2 means this session already passed a TOTP challenge; nextLevel tells
+  // us whether that's even possible yet (a verified factor exists) or not
+  // (nobody has enrolled one).
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (aal && aal.currentLevel !== "aal2") {
+    redirect(aal.nextLevel === "aal2" ? "/mfa/verify" : "/mfa/setup");
+  }
+
   return {
     id: data.id,
     fullName: data.full_name,

@@ -1,6 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
-import { revokeInvitation, updateStaffRole, reactivateStaff } from "./actions";
+import { revokeInvitation, updateStaffRole, reactivateStaff, resetStaffMfa } from "./actions";
 import { SettingsTabs } from "../tabs";
 import Link from "next/link";
 
@@ -20,9 +20,9 @@ function initialsOf(name: string) {
 export default async function StaffPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; updated?: string; offboarded?: string }>;
+  searchParams: Promise<{ error?: string; updated?: string; offboarded?: string; mfaReset?: string }>;
 }) {
-  const { error, updated, offboarded } = await searchParams;
+  const { error, updated, offboarded, mfaReset } = await searchParams;
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
@@ -58,6 +58,11 @@ export default async function StaffPage({
       {updated && <p className="mb-4 rounded-lg bg-ok-tint px-3 py-2 text-[13px] text-ok">Role updated.</p>}
       {offboarded && (
         <p className="mb-4 rounded-lg bg-ok-tint px-3 py-2 text-[13px] text-ok">Team member offboarded.</p>
+      )}
+      {mfaReset && (
+        <p className="mb-4 rounded-lg bg-ok-tint px-3 py-2 text-[13px] text-ok">
+          Two-factor authentication reset — they&apos;ll set it up again next time they log in.
+        </p>
       )}
 
       <div className="mb-6 flex justify-end">
@@ -114,12 +119,19 @@ export default async function StaffPage({
               )}
 
               {staff.role === "practice_admin" && !isSelf && (
-                <Link
-                  href={`/settings/staff/${s.id}/offboard`}
-                  className="mt-2 inline-block text-[11.5px] font-semibold text-bad"
-                >
-                  Offboard
-                </Link>
+                <div className="mt-2 flex items-center gap-3">
+                  <Link
+                    href={`/settings/staff/${s.id}/offboard`}
+                    className="text-[11.5px] font-semibold text-bad"
+                  >
+                    Offboard
+                  </Link>
+                  <form action={resetStaffMfa.bind(null, s.id)}>
+                    <button type="submit" className="text-[11.5px] font-semibold text-text-2 hover:text-foreground">
+                      Reset MFA
+                    </button>
+                  </form>
+                </div>
               )}
             </div>
           );

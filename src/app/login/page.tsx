@@ -5,9 +5,9 @@ import { BrandMark } from "@/components/brand-mark";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; notice?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, notice } = await searchParams;
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-surface-2 px-4 py-10">
@@ -26,6 +26,11 @@ export default async function LoginPage({
           {error && (
             <p className="mb-4 rounded-lg bg-bad-tint px-3 py-2 text-[13px] text-bad">
               {error}
+            </p>
+          )}
+          {notice && (
+            <p className="mb-4 rounded-lg bg-ok-tint px-3 py-2 text-[13px] text-ok">
+              {decodeURIComponent(notice)}
             </p>
           )}
 

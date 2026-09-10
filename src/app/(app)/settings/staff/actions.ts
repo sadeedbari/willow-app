@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
+import { createServiceRoleClient } from "@/utils/supabase/service-role";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
@@ -107,4 +108,33 @@ export async function reactivateStaff(staffId: string) {
   const supabase = await createClient();
   await supabase.from("staff").update({ active: true }).eq("id", staffId);
   revalidatePath("/settings/staff");
+}
+
+export async function resetStaffMfa(staffId: string) {
+  const staff = await getCurrentStaff();
+  if (staff.role !== "practice_admin") {
+    redirect("/settings/staff");
+  }
+
+  const supabase = await createClient();
+  const { data: target } = await supabase.from("staff").select("user_id").eq("id", staffId).single();
+  if (!target) {
+    redirect(`/settings/staff?error=${encodeURIComponent("Staff member not found")}`);
+  }
+
+  // Marks the audit_log entry and confirms staffId belongs to this practice
+  // before we touch anything via the service-role client below.
+  const { error } = await supabase.rpc("log_staff_mfa_reset", { p_target_staff_id: staffId });
+  if (error) {
+    redirect(`/settings/staff?error=${encodeURIComponent(error.message)}`);
+  }
+
+  const admin = createServiceRoleClient();
+  const { data: factorsData } = await admin.auth.admin.mfa.listFactors({ userId: target.user_id });
+  for (const factor of factorsData?.factors ?? []) {
+    await admin.auth.admin.mfa.deleteFactor({ id: factor.id, userId: target.user_id });
+  }
+
+  revalidatePath("/settings/staff");
+  redirect("/settings/staff?mfaReset=1");
 }
