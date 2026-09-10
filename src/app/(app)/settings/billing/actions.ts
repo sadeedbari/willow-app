@@ -8,6 +8,16 @@ import { friendlyErrorMessage } from "@/utils/friendly-error";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
+// True when Stripe rejects a customer id because it doesn't exist in the
+// current account/mode -- e.g. a stripe_customer_id saved back when the app
+// used test-mode keys, now invalid after a live-mode migration. Stripe's own
+// shape for this is a resource_missing error with param "customer"; we also
+// match on the message text since not every SDK error surfaces `param`.
+function isMissingCustomerError(err: unknown): boolean {
+  const e = err as { code?: string; param?: string; message?: string };
+  return e?.code === "resource_missing" && (e.param === "customer" || (e.message ?? "").includes("No such customer"));
+}
+
 export async function startCheckout() {
   const staff = await getCurrentStaff();
   if (staff.role !== "practice_admin") {
@@ -28,34 +38,48 @@ export async function startCheckout() {
   let checkoutUrl: string | null = null;
   let errorMessage: string | null = null;
   try {
-    let customerId = practice.stripe_customer_id;
-
-    if (!customerId) {
+    const createCustomer = async () => {
       const customer = await stripe.customers.create({
         name: practice.name,
         email: practice.primary_contact_email ?? undefined,
         metadata: { practice_id: practice.id },
       });
-      customerId = customer.id;
-
       // Written via the caller's own RLS-respecting session -- the existing
       // "practice_admin updates own practice" policy already covers this,
       // no service-role client needed here.
-      await supabase.from("practices").update({ stripe_customer_id: customerId }).eq("id", practice.id);
-    }
+      await supabase.from("practices").update({ stripe_customer_id: customer.id }).eq("id", practice.id);
+      return customer.id;
+    };
 
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      customer: customerId,
-      line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }],
-      subscription_data: { metadata: { practice_id: practice.id } },
-      success_url: `${SITE_URL}/settings/billing?checkout=success`,
-      cancel_url: `${SITE_URL}/settings/billing?checkout=cancelled`,
-      // Managed Payments (on by default on newer Stripe accounts) requires a
-      // tax code on the product, which we haven't set up -- disable it rather
-      // than block checkout on that.
-      managed_payments: { enabled: false },
-    });
+    let customerId = practice.stripe_customer_id ?? (await createCustomer());
+
+    const createSession = () =>
+      stripe.checkout.sessions.create({
+        mode: "subscription",
+        customer: customerId,
+        line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }],
+        subscription_data: { metadata: { practice_id: practice.id } },
+        success_url: `${SITE_URL}/settings/billing?checkout=success`,
+        cancel_url: `${SITE_URL}/settings/billing?checkout=cancelled`,
+        // Managed Payments (on by default on newer Stripe accounts) requires a
+        // tax code on the product, which we haven't set up -- disable it rather
+        // than block checkout on that.
+        managed_payments: { enabled: false },
+      });
+
+    let session;
+    try {
+      session = await createSession();
+    } catch (err) {
+      // A stripe_customer_id saved under different Stripe keys (e.g. before
+      // the live-mode migration) points to a customer that no longer exists
+      // in the account we're calling now. Rather than surface that as a raw
+      // "No such customer" error, create a fresh customer under the current
+      // keys and retry once.
+      if (!isMissingCustomerError(err)) throw err;
+      customerId = await createCustomer();
+      session = await createSession();
+    }
     checkoutUrl = session.url;
   } catch (err) {
     errorMessage = friendlyErrorMessage(err as { code?: string; message?: string }, "Could not start checkout");
@@ -96,7 +120,17 @@ export async function openBillingPortal() {
     });
     portalUrl = session.url;
   } catch (err) {
-    errorMessage = friendlyErrorMessage(err as { code?: string; message?: string }, "Could not open the billing portal");
+    if (isMissingCustomerError(err)) {
+      // Same stale-customer situation as startCheckout, but there's no
+      // active subscription to manage here either way -- clear the bad id
+      // so the next "Subscribe" click creates a fresh customer automatically,
+      // and point them there instead of at a portal for an account that no
+      // longer exists.
+      await supabase.from("practices").update({ stripe_customer_id: null }).eq("id", staff.practiceId);
+      errorMessage = "Your billing account needs to be reconnected — click Subscribe to set it up again.";
+    } else {
+      errorMessage = friendlyErrorMessage(err as { code?: string; message?: string }, "Could not open the billing portal");
+    }
   }
 
   if (errorMessage) {
