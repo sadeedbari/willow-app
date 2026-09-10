@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-const EFFECTIVE_DATE = "September 8, 2026";
+const EFFECTIVE_DATE = "September 10, 2026";
 
 export default function PrivacyPolicyPage() {
   return (
@@ -80,7 +80,47 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-bold text-foreground">5. Data security</h2>
+            <h2 className="text-[15px] font-bold text-foreground">5. Cross-border data storage</h2>
+            <p className="mt-2">
+              Some of the service providers listed in Section 4 store or process information outside
+              Canada. Specifically:
+            </p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              <li>
+                <span className="font-semibold text-foreground">Supabase</span> (database and
+                authentication): hosted in Canada.
+              </li>
+              <li>
+                <span className="font-semibold text-foreground">Vercel</span> (hosting): primarily the
+                United States.
+              </li>
+              <li>
+                <span className="font-semibold text-foreground">Stripe</span> (payments): the United
+                States, with international sub-processors as needed to provide the service.
+              </li>
+              <li>
+                <span className="font-semibold text-foreground">Resend</span> (transactional email):
+                the United States.
+              </li>
+              <li>
+                <span className="font-semibold text-foreground">Daily.co</span> (video calls): global
+                infrastructure operated on Amazon Web Services, not limited to a single country.
+              </li>
+            </ul>
+            <p className="mt-2">
+              This means personal information submitted to Willow — including personal health
+              information a Practice stores about its Clients — may be accessed, processed, or stored
+              outside Canada, where it is subject to the laws of that jurisdiction, including
+              potential access by that jurisdiction&apos;s courts, law enforcement, or national
+              security authorities under rules that may differ from Canadian law. We select service
+              providers that maintain industry-standard safeguards for cross-border transfers, such as
+              Standard Contractual Clauses or participation in the EU-U.S. Data Privacy Framework,
+              where applicable.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-[15px] font-bold text-foreground">6. Data security</h2>
             <p className="mt-2">
               We use industry-standard measures to protect information, including encryption in
               transit, access controls, and database-level isolation between Practices. No system is
@@ -89,7 +129,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-bold text-foreground">6. Data retention</h2>
+            <h2 className="text-[15px] font-bold text-foreground">7. Data retention</h2>
             <p className="mt-2">
               We retain Practice and Client data for as long as the Practice&apos;s account is active,
               plus a reasonable period afterward, unless a Practice requests earlier deletion or
@@ -98,7 +138,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-bold text-foreground">7. Your choices</h2>
+            <h2 className="text-[15px] font-bold text-foreground">8. Your choices</h2>
             <p className="mt-2">
               Practice staff can access and update their account information directly in Willow.
               Clients with portal access can do the same for their own portal account. To request
@@ -109,7 +149,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-bold text-foreground">8. Changes to this policy</h2>
+            <h2 className="text-[15px] font-bold text-foreground">9. Changes to this policy</h2>
             <p className="mt-2">
               We may update this Privacy Policy from time to time. If we make material changes,
               we&apos;ll provide reasonable notice (for example, by email or an in-app notice) before
@@ -118,7 +158,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-bold text-foreground">9. Contact</h2>
+            <h2 className="text-[15px] font-bold text-foreground">10. Contact</h2>
             <p className="mt-2">
               Questions about this policy? Reach us at{" "}
               <a href="mailto:sulosystems@gmail.com" className="font-semibold text-brand-ink underline">
