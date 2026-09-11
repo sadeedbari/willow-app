@@ -26,3 +26,27 @@ export async function verifyMfaSetup(formData: FormData) {
 
   redirect("/dashboard");
 }
+
+// Lets a brand-new staff account defer initial MFA setup for this one login
+// rather than blocking their first look at the app. Deliberately does not
+// use getCurrentStaff()/getCurrentStaffAllowExpiredTrial() -- at this point
+// the session is still aal1 with no verified factor, so either would just
+// redirect straight back to /mfa/setup before this could ever run.
+export async function skipMfaSetup() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { data: staffRow } = await supabase.rpc("get_my_staff_row").maybeSingle();
+  if (!staffRow) redirect("/onboarding");
+
+  await supabase
+    .from("staff")
+    .update({ mfa_skip_login_at: new Date().toISOString() })
+    .eq("id", (staffRow as { id: string }).id);
+
+  redirect("/dashboard");
+}

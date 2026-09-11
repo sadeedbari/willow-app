@@ -1,7 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { BrandMark } from "@/components/brand-mark";
-import { verifyMfaSetup } from "./actions";
+import { verifyMfaSetup, skipMfaSetup } from "./actions";
 import { logout } from "@/app/(app)/actions";
 
 export default async function MfaSetupPage({
@@ -69,7 +69,8 @@ export default async function MfaSetupPage({
             Set up two-factor authentication
           </h1>
           <p className="mt-1.5 text-[13.5px] text-text-2">
-            Willow requires every staff account to use an authenticator app. This only takes a minute.
+            Willow strongly recommends every staff account use an authenticator app to help keep client
+            records secure. This only takes a minute.
           </p>
         </div>
 
@@ -119,11 +120,18 @@ export default async function MfaSetupPage({
           </form>
         </div>
 
-        <form action={logout} className="mt-6 text-center">
-          <button type="submit" className="text-[13px] font-semibold text-text-2 hover:text-foreground">
-            Not you? Log out
-          </button>
-        </form>
+        <div className="mt-5 flex items-center justify-center gap-5">
+          <form action={skipMfaSetup}>
+            <button type="submit" className="text-[13px] font-semibold text-text-2 hover:text-foreground">
+              Skip for now
+            </button>
+          </form>
+          <form action={logout}>
+            <button type="submit" className="text-[13px] font-semibold text-text-2 hover:text-foreground">
+              Not you? Log out
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

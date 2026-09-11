@@ -36,6 +36,7 @@ async function getCurrentStaffInternal(opts: { enforceTrial: boolean }): Promise
       practice_name: string;
       subscription_status: string | null;
       trial_ends_at: string | null;
+      mfa_skip_login_at: string | null;
     } | null;
   };
 
@@ -56,7 +57,25 @@ async function getCurrentStaffInternal(opts: { enforceTrial: boolean }): Promise
   // first regardless of subscription state.
   const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
   if (aal && aal.currentLevel !== "aal2") {
-    redirect(aal.nextLevel === "aal2" ? "/mfa/verify" : "/mfa/setup");
+    if (aal.nextLevel === "aal2") {
+      // A verified factor already exists -- this per-login challenge is
+      // never skippable, unlike initial setup below.
+      redirect("/mfa/verify");
+    }
+
+    // Initial setup (no factor enrolled yet) can be skipped once per login
+    // via the "Skip for now" button -- but only for the same login that
+    // clicked it. A fresh sign-in advances last_sign_in_at past the skip
+    // timestamp, so the prompt reappears next time rather than being
+    // silenced forever.
+    const skippedThisLogin =
+      !!data.mfa_skip_login_at &&
+      !!user.last_sign_in_at &&
+      new Date(data.mfa_skip_login_at) >= new Date(user.last_sign_in_at);
+
+    if (!skippedThisLogin) {
+      redirect("/mfa/setup");
+    }
   }
 
   // A trial that's run out with no paid subscription blocks every page
