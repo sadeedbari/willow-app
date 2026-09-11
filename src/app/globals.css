@@ -148,6 +148,23 @@ body {
   font-family: var(--font-sans);
 }
 
+/* Chromium fills an autofilled input with its own forced text/background
+   colors instead of ours -- on some OS/browser combinations that renders as
+   pale/white text on our light surface (seen first on the signup practice-name
+   field, since it's the one input here left to the browser's autofill
+   guess). The oft-cited trick of an absurdly long background-color
+   transition is what suppresses Chromium's forced colors long enough for
+   ours to apply instead of a flash of its own. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--foreground);
+  caret-color: var(--foreground);
+  box-shadow: 0 0 0 1000px var(--surface) inset;
+  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 @keyframes hero-in {
   from {
     opacity: 0;

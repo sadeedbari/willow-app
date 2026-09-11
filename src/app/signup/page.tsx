@@ -40,8 +40,9 @@ export default async function SignupPage({
                 name="practiceName"
                 type="text"
                 required
+                autoComplete="organization"
                 placeholder="e.g. Willow Therapy Collective"
-                className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] text-foreground outline-none focus:border-brand focus:ring-1 focus:ring-brand"
               />
             </div>
             <div>

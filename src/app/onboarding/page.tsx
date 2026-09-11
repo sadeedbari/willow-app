@@ -53,8 +53,9 @@ export default async function OnboardingPage({
                 name="practiceName"
                 type="text"
                 required
+                autoComplete="organization"
                 placeholder="e.g. Willow Therapy Collective"
-                className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-sm shadow-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+                className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900 shadow-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
               />
             </div>
           )}
