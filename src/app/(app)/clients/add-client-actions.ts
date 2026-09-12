@@ -9,6 +9,8 @@ export async function createClientRecord(formData: FormData) {
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
+  const email = (formData.get("email") as string)?.trim().toLowerCase() || null;
+
   const { data, error } = await supabase
     .from("clients")
     .insert({
@@ -17,7 +19,7 @@ export async function createClientRecord(formData: FormData) {
       full_name: formData.get("fullName") as string,
       date_of_birth: (formData.get("dateOfBirth") as string) || null,
       phone: (formData.get("phone") as string) || null,
-      email: (formData.get("email") as string) || null,
+      email,
       presenting_concern: (formData.get("presentingConcern") as string) || null,
       payer: (formData.get("payer") as string) || null,
       status: "active",
