@@ -276,6 +276,12 @@ export default async function HomePage() {
             <span className="text-[13.5px] font-bold text-foreground">Willow</span>
           </div>
           <div className="flex items-center gap-5 text-[12.5px] text-text-3">
+            <Link href="/vs/jane-app" className="transition hover:text-text-2">
+              vs. Jane.app
+            </Link>
+            <Link href="/vs/owl-practice" className="transition hover:text-text-2">
+              vs. Owl Practice
+            </Link>
             <Link href="/terms" className="transition hover:text-text-2">
               Terms of Service
             </Link>

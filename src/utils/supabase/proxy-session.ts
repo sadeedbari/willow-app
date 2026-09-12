@@ -11,6 +11,7 @@ const PUBLIC_PATHS = [
   "/consent",
   "/pay",
   "/book",
+  "/vs",
   "/terms",
   "/privacy",
   "/forgot-password",
