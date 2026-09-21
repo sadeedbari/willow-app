@@ -31,8 +31,17 @@ export default async function HomePage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Only send an actual onboarded staff member straight to their dashboard.
+  // A signed-up-but-never-finished-onboarding session (e.g. someone who
+  // started signup, left, and comes back to the marketing site later) has a
+  // real auth user but no staff row yet -- redirecting *them* to /dashboard
+  // would just bounce straight through to /onboarding, trapping them out of
+  // the page they actually came here to see.
   if (user) {
-    redirect("/dashboard");
+    const { data: staffRow } = await supabase.rpc("get_my_staff_row").maybeSingle();
+    if (staffRow) {
+      redirect("/dashboard");
+    }
   }
 
   return (
