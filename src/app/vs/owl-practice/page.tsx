@@ -16,8 +16,14 @@ export default async function WillowVsOwlPracticePage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Only send an actual onboarded staff member straight to their dashboard --
+  // see src/app/page.tsx for why a signed-up-but-never-onboarded session
+  // must not be redirected here too.
   if (user) {
-    redirect("/dashboard");
+    const { data: staffRow } = await supabase.rpc("get_my_staff_row").maybeSingle();
+    if (staffRow) {
+      redirect("/dashboard");
+    }
   }
 
   return (
