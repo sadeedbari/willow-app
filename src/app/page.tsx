@@ -20,10 +20,18 @@ own "state the assumption" guidance for a failed tool call).
 FINISH: unreviewed and undocumented is unfinished; this build ends with
 the finish review, the verdict, and DESIGN.md.
 */}
+import type { Metadata } from "next";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { BrandMark } from "@/components/brand-mark";
+
+export const metadata: Metadata = {
+  title: "Willow — Practice Management Software for Therapists",
+  description:
+    "Scheduling, telehealth, session notes, billing, and a client portal — in one clean, fast app built for therapy practices in Ontario. 14-day free trial, no credit card required.",
+  alternates: { canonical: "/" },
+};
 
 export default async function HomePage() {
   const supabase = await createClient();

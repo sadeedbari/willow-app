@@ -3,9 +3,17 @@ import { cookies } from "next/headers";
 import { MarketingAnalytics } from "@/components/marketing-analytics";
 import "./globals.css";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://willow.sulosystems.com";
+
 export const metadata: Metadata = {
-  title: "Willow",
-  description: "Practice management for therapists.",
+  metadataBase: new URL(SITE_URL),
+  title: "Willow — Practice Management Software for Therapists",
+  description:
+    "Scheduling, telehealth, session notes, billing, and a client portal for therapy practices — all in one flat-priced plan.",
+  openGraph: {
+    siteName: "Willow",
+    type: "website",
+  },
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
