@@ -14,6 +14,8 @@ const PUBLIC_PATHS = [
   "/vs",
   "/terms",
   "/privacy",
+  "/sitemap.xml",
+  "/robots.txt",
   "/forgot-password",
   "/reset-password",
   "/portal/login",
