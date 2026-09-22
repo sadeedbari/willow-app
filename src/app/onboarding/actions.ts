@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { friendlyErrorMessage } from "@/utils/friendly-error";
+import { sendNewPracticeSignupEmail } from "@/utils/admin-notification-email";
 
 export async function createPractice(formData: FormData) {
   const practiceName = formData.get("practiceName") as string;
@@ -24,6 +25,14 @@ export async function createPractice(formData: FormData) {
 
   if (error) {
     redirect(`/onboarding?error=${encodeURIComponent(friendlyErrorMessage(error))}`);
+  }
+
+  if (user.email) {
+    await sendNewPracticeSignupEmail({
+      practiceName,
+      ownerFullName,
+      ownerEmail: user.email,
+    });
   }
 
   redirect("/dashboard");
