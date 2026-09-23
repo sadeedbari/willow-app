@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import { requestRecoveryEmailChange } from "../security-actions";
@@ -57,9 +58,20 @@ export default async function SecurityPage({
 
         <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5">
           <span className="text-[13.4px] text-foreground">Authenticator app</span>
-          <span className="rounded-full bg-ok-tint px-2.5 py-0.5 text-[11px] font-semibold text-ok">
-            {mfaFactor ? "Enabled" : "Not set up"}
-          </span>
+          <div className="flex items-center gap-3">
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                mfaFactor ? "bg-ok-tint text-ok" : "bg-warn-tint text-warn"
+              }`}
+            >
+              {mfaFactor ? "Enabled" : "Not set up"}
+            </span>
+            {!mfaFactor && (
+              <Link href="/mfa/setup" className="text-[12.5px] font-semibold text-brand-ink hover:underline">
+                Set up →
+              </Link>
+            )}
+          </div>
         </div>
 
         <div className="mt-4 border-t border-border pt-4">
