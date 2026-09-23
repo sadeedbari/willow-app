@@ -179,11 +179,57 @@ export default async function AppLayout({
     .select("id", { count: "exact", head: true })
     .eq("status", "pending");
 
-  const [{ data: threads }, { count: unreadNotifCount }, { count: pendingBookingRequestCount }] = await Promise.all([
+  const [
+    { data: threads },
+    { count: unreadNotifCount },
+    { count: pendingBookingRequestCount },
+    { data: profileFields },
+    { data: practiceFields },
+  ] = await Promise.all([
     supabase.from("message_threads").select("id, staff_last_read_at, updated_at"),
     supabase.from("notifications").select("id", { count: "exact", head: true }).eq("staff_id", staff.id).is("read_at", null),
     staff.role === "clinician" ? pendingBookingRequestsQuery.eq("staff_id", staff.id) : pendingBookingRequestsQuery,
+    supabase.from("staff").select("credential, license_number, license_province, phone, bio, specialty").eq("id", staff.id).single(),
+    supabase
+      .from("practices")
+      .select("logo_url, address, business_number, primary_contact_email, primary_contact_phone")
+      .eq("id", staff.practiceId)
+      .single(),
   ]);
+
+  // Drives the profile-completion ring next to Help & FAQ -- practice fields
+  // only count for a practice_admin, since only they can act on them (the
+  // settings page itself gates editing the same way).
+  const profileChecklist = [
+    { key: "credential", label: "Credential (e.g. RP, LMFT)", filled: !!profileFields?.credential },
+    {
+      key: "license",
+      label: "License number & province",
+      filled: !!(profileFields?.license_number && profileFields?.license_province),
+    },
+    { key: "phone", label: "Contact phone", filled: !!profileFields?.phone },
+    { key: "bio", label: "Display bio", filled: !!profileFields?.bio },
+    { key: "specialty", label: "Specialty", filled: !!profileFields?.specialty },
+  ];
+  const practiceChecklist =
+    staff.role === "practice_admin"
+      ? [
+          { key: "logo", label: "Practice logo", filled: !!practiceFields?.logo_url },
+          { key: "address", label: "Practice address", filled: !!practiceFields?.address },
+          { key: "businessNumber", label: "Business number", filled: !!practiceFields?.business_number },
+          { key: "contactEmail", label: "Contact email", filled: !!practiceFields?.primary_contact_email },
+          { key: "contactPhone", label: "Contact phone", filled: !!practiceFields?.primary_contact_phone },
+        ]
+      : [];
+  const completionFields = [...profileChecklist, ...practiceChecklist];
+  const missingFieldCount = completionFields.filter((f) => !f.filled).length;
+  const completionPercent =
+    completionFields.length === 0
+      ? 100
+      : Math.round(((completionFields.length - missingFieldCount) / completionFields.length) * 100);
+  const ringRadius = 12;
+  const ringCircumference = 2 * Math.PI * ringRadius;
+  const ringDash = (completionPercent / 100) * ringCircumference;
 
   const unreadMessages = (threads ?? []).filter((t) =>
     isThreadUnread(t.staff_last_read_at, t.updated_at)
@@ -314,6 +360,100 @@ export default async function AppLayout({
           </form>
 
           <div className="ml-auto flex flex-none items-center gap-1.5 sm:gap-2.5">
+            <div className="relative">
+              <input type="checkbox" id="profile-completion-toggle" className="peer hidden" />
+              <label
+                htmlFor="profile-completion-toggle"
+                aria-hidden="true"
+                className="fixed inset-0 z-20 hidden peer-checked:block"
+              />
+              <label
+                htmlFor="profile-completion-toggle"
+                title={`Profile ${completionPercent}% complete`}
+                className="relative z-30 flex h-8.5 w-8.5 flex-none cursor-pointer items-center justify-center rounded-[10px] border border-border bg-surface text-text-2 transition hover:bg-surface-2"
+              >
+                <svg viewBox="0 0 34 34" className="absolute inset-0 h-full w-full -rotate-90">
+                  <circle cx="17" cy="17" r={ringRadius} fill="none" stroke="var(--border)" strokeWidth="2.5" />
+                  {completionPercent > 0 && (
+                    <circle
+                      cx="17"
+                      cy="17"
+                      r={ringRadius}
+                      fill="none"
+                      stroke={completionPercent === 100 ? "var(--ok)" : "var(--brand)"}
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeDasharray={`${ringDash} ${ringCircumference}`}
+                    />
+                  )}
+                </svg>
+                <span className="relative text-[8.5px] font-bold text-foreground">{completionPercent}%</span>
+              </label>
+
+              <div className="invisible absolute right-0 top-full z-30 mt-2 w-72 origin-top-right scale-95 rounded-xl border border-border bg-surface p-4 opacity-0 shadow-lg transition peer-checked:visible peer-checked:scale-100 peer-checked:opacity-100">
+                <div className="flex items-center justify-between">
+                  <div className="text-[13px] font-bold text-foreground">Profile completion</div>
+                  <span className="text-[12px] font-semibold text-text-2">{completionPercent}%</span>
+                </div>
+                <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
+                  <div
+                    className={`h-full rounded-full ${completionPercent === 100 ? "bg-ok" : "bg-brand"}`}
+                    style={{ width: `${completionPercent}%` }}
+                  />
+                </div>
+
+                {profileChecklist.some((f) => !f.filled) && (
+                  <div className="mt-3">
+                    <div className="text-[11px] font-bold uppercase tracking-wide text-text-3">
+                      Practitioner Profile
+                    </div>
+                    <ul className="mt-1.5 space-y-1">
+                      {profileChecklist
+                        .filter((f) => !f.filled)
+                        .map((f) => (
+                          <li key={f.key}>
+                            <Link
+                              href="/profile"
+                              className="flex items-center gap-1.5 text-[12.5px] text-text-2 transition hover:text-brand-ink"
+                            >
+                              <span className="h-1.5 w-1.5 flex-none rounded-full border border-text-3" />
+                              {f.label}
+                            </Link>
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                )}
+
+                {practiceChecklist.some((f) => !f.filled) && (
+                  <div className="mt-3">
+                    <div className="text-[11px] font-bold uppercase tracking-wide text-text-3">
+                      Practice Settings
+                    </div>
+                    <ul className="mt-1.5 space-y-1">
+                      {practiceChecklist
+                        .filter((f) => !f.filled)
+                        .map((f) => (
+                          <li key={f.key}>
+                            <Link
+                              href="/settings"
+                              className="flex items-center gap-1.5 text-[12.5px] text-text-2 transition hover:text-brand-ink"
+                            >
+                              <span className="h-1.5 w-1.5 flex-none rounded-full border border-text-3" />
+                              {f.label}
+                            </Link>
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                )}
+
+                {missingFieldCount === 0 && (
+                  <p className="mt-3 text-[12.5px] text-ok">Your profile is fully complete.</p>
+                )}
+              </div>
+            </div>
+
             <Link
               href="/help"
               title="Help & FAQ"

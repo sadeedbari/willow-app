@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import { friendlyErrorMessage } from "@/utils/friendly-error";
 
@@ -30,5 +31,9 @@ export async function updateProfile(formData: FormData) {
     redirect(`/profile?error=${encodeURIComponent(friendlyErrorMessage(error))}`);
   }
 
+  // The profile-completion ring lives in the shared (app) layout, which
+  // Next.js otherwise keeps cached across this redirect -- without this the
+  // ring would show stale data until an unrelated full page load.
+  revalidatePath("/", "layout");
   redirect("/profile?saved=1");
 }

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import { friendlyErrorMessage } from "@/utils/friendly-error";
 import sharp from "sharp";
@@ -83,6 +84,10 @@ export async function updatePracticeSettings(formData: FormData) {
     redirect(`/settings?error=${encodeURIComponent(friendlyErrorMessage(error))}`);
   }
 
+  // The profile-completion ring lives in the shared (app) layout, which
+  // Next.js otherwise keeps cached across this redirect -- without this the
+  // ring would show stale data until an unrelated full page load.
+  revalidatePath("/", "layout");
   redirect("/settings?saved=1");
 }
 
@@ -96,5 +101,6 @@ export async function removePracticeLogo() {
   await supabase.storage.from("practice-logos").remove([`${staff.practiceId}/logo`]);
   await supabase.from("practices").update({ logo_url: null }).eq("id", staff.practiceId);
 
+  revalidatePath("/", "layout");
   redirect("/settings?saved=1");
 }
