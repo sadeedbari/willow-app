@@ -29,7 +29,7 @@ export async function buildInvoicePdf(
 
   if (!invoice) return null;
 
-  const [{ data: lineItems }, { data: practice }, { data: location }] = await Promise.all([
+  const [{ data: lineItems }, { data: practice }] = await Promise.all([
     supabase
       .from("invoice_line_items")
       .select("service_date, description, service_code, quantity, unit_amount_cents, amount_cents")
@@ -37,15 +37,9 @@ export async function buildInvoicePdf(
       .order("service_date"),
     supabase
       .from("practices")
-      .select("name, business_number, primary_contact_email, primary_contact_phone, logo_url")
+      .select("name, business_number, primary_contact_email, primary_contact_phone, logo_url, address")
       .eq("id", invoice.practice_id)
       .single(),
-    supabase
-      .from("practice_locations")
-      .select("address")
-      .eq("practice_id", invoice.practice_id)
-      .limit(1)
-      .maybeSingle(),
   ]);
 
   const client = invoice.clients as unknown as { full_name: string; email: string | null } | null;
@@ -71,7 +65,7 @@ export async function buildInvoicePdf(
       businessNumber: practice?.business_number ?? null,
       contactEmail: practice?.primary_contact_email ?? null,
       contactPhone: practice?.primary_contact_phone ?? null,
-      address: location?.address ?? null,
+      address: practice?.address ?? null,
       logoUrl: practice?.logo_url ?? null,
     },
     client: { fullName: client?.full_name ?? "Unknown client", email: client?.email ?? null },

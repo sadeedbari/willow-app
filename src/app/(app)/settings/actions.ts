@@ -71,6 +71,7 @@ export async function updatePracticeSettings(formData: FormData) {
     .from("practices")
     .update({
       name: formData.get("name") as string,
+      address: (formData.get("address") as string)?.trim() || null,
       business_number: (formData.get("businessNumber") as string) || null,
       primary_contact_email: (formData.get("contactEmail") as string) || null,
       primary_contact_phone: (formData.get("contactPhone") as string) || null,

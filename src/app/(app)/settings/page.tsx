@@ -15,7 +15,7 @@ export default async function SettingsPage({
   const supabase = await createClient();
   const { data: practice } = await supabase
     .from("practices")
-    .select("name, business_number, primary_contact_email, primary_contact_phone, logo_url")
+    .select("name, business_number, primary_contact_email, primary_contact_phone, logo_url, address")
     .eq("id", staff.practiceId)
     .single();
 
@@ -87,6 +87,17 @@ export default async function SettingsPage({
             />
           </div>
           <div className="mt-3">
+            <label className="block text-[12px] font-semibold text-text-2">Address</label>
+            <textarea
+              name="address"
+              rows={3}
+              defaultValue={practice.address ?? ""}
+              placeholder={"123 Main St\nToronto, ON M5V 1A1"}
+              className="mt-1 w-full resize-none rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+            />
+            <p className="mt-1 text-[11.5px] text-text-3">Shown on invoice PDFs, under your practice name.</p>
+          </div>
+          <div className="mt-3">
             <label className="block text-[12px] font-semibold text-text-2">Business number</label>
             <input
               name="businessNumber"
@@ -138,6 +149,10 @@ export default async function SettingsPage({
             <div className="flex justify-between">
               <dt className="text-text-3">Practice name</dt>
               <dd className="text-foreground">{practice.name}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-text-3">Address</dt>
+              <dd className="whitespace-pre-line text-right text-foreground">{practice.address ?? "—"}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-text-3">Contact email</dt>
