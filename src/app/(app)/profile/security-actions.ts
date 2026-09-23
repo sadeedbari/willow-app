@@ -13,7 +13,7 @@ export async function requestRecoveryEmailChange(formData: FormData) {
   const { data: token, error } = await supabase.rpc("request_recovery_email_change", { p_email: email });
 
   if (error || !token) {
-    redirect(`/profile?error=${encodeURIComponent(error?.message ?? "Enter a valid email address")}`);
+    redirect(`/profile/security?error=${encodeURIComponent(error?.message ?? "Enter a valid email address")}`);
   }
 
   const {
@@ -31,5 +31,5 @@ export async function requestRecoveryEmailChange(formData: FormData) {
     `,
   });
 
-  redirect("/profile?recoveryEmailSent=1");
+  redirect("/profile/security?recoveryEmailSent=1");
 }

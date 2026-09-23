@@ -11,7 +11,7 @@ const TABS = [
 
 export function SettingsTabs({ active }: { active: string }) {
   return (
-    <div className="mb-6 flex gap-4 overflow-x-auto border-b border-border sm:gap-1">
+    <div className="mb-6 flex gap-4 overflow-x-auto overflow-y-hidden border-b border-border sm:gap-1">
       {TABS.map((tab) => (
         <Link
           key={tab.href}

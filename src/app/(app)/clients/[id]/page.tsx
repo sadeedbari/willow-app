@@ -330,7 +330,7 @@ export default async function ClientDetailPage({
               </form>
             )}
 
-            <div className="mt-4 flex gap-1 overflow-x-auto border-t border-border pt-4">
+            <div className="mt-4 flex gap-1 overflow-x-auto overflow-y-hidden border-t border-border pt-4">
               {tabs.map((t) => (
                 <Link
                   key={t.key}

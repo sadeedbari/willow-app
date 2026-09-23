@@ -41,10 +41,10 @@ export async function enableBookingLink() {
   }
 
   if (error) {
-    redirect(`/profile?error=${encodeURIComponent(friendlyErrorMessage(error))}`);
+    redirect(`/profile/scheduling?error=${encodeURIComponent(friendlyErrorMessage(error))}`);
   }
 
-  redirect("/profile?saved=1");
+  redirect("/profile/scheduling?saved=1");
 }
 
 export async function disableBookingLink() {
@@ -53,7 +53,7 @@ export async function disableBookingLink() {
 
   await supabase.from("staff").update({ booking_enabled: false }).eq("id", staff.id);
 
-  redirect("/profile?saved=1");
+  redirect("/profile/scheduling?saved=1");
 }
 
 export async function updateBookingSlug(formData: FormData) {
@@ -64,18 +64,18 @@ export async function updateBookingSlug(formData: FormData) {
   const slug = slugify(raw);
 
   if (!slug) {
-    redirect(`/profile?error=${encodeURIComponent("Please enter a link name")}`);
+    redirect(`/profile/scheduling?error=${encodeURIComponent("Please enter a link name")}`);
   }
 
   const { error } = await supabase.from("staff").update({ booking_slug: slug }).eq("id", staff.id);
 
   if (error) {
     redirect(
-      `/profile?error=${encodeURIComponent(
+      `/profile/scheduling?error=${encodeURIComponent(
         error.code === "23505" ? "That link name is already taken — please choose another." : friendlyErrorMessage(error)
       )}`
     );
   }
 
-  redirect("/profile?saved=1");
+  redirect("/profile/scheduling?saved=1");
 }

@@ -19,11 +19,11 @@ export async function addAvailabilityBlock(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/profile?error=${encodeURIComponent(friendlyErrorMessage(error))}`);
+    redirect(`/profile/scheduling?error=${encodeURIComponent(friendlyErrorMessage(error))}`);
   }
 
-  revalidatePath("/profile");
-  redirect("/profile");
+  revalidatePath("/profile/scheduling");
+  redirect("/profile/scheduling");
 }
 
 export async function removeAvailabilityBlock(formData: FormData) {
@@ -36,8 +36,8 @@ export async function removeAvailabilityBlock(formData: FormData) {
     .eq("id", formData.get("blockId") as string)
     .eq("staff_id", staff.id);
 
-  revalidatePath("/profile");
-  redirect("/profile");
+  revalidatePath("/profile/scheduling");
+  redirect("/profile/scheduling");
 }
 
 export async function addAvailabilityOverride(formData: FormData) {
@@ -60,11 +60,11 @@ export async function addAvailabilityOverride(formData: FormData) {
   );
 
   if (error) {
-    redirect(`/profile?error=${encodeURIComponent(friendlyErrorMessage(error))}`);
+    redirect(`/profile/scheduling?error=${encodeURIComponent(friendlyErrorMessage(error))}`);
   }
 
-  revalidatePath("/profile");
-  redirect("/profile");
+  revalidatePath("/profile/scheduling");
+  redirect("/profile/scheduling");
 }
 
 export async function removeAvailabilityOverride(formData: FormData) {
@@ -77,6 +77,6 @@ export async function removeAvailabilityOverride(formData: FormData) {
     .eq("id", formData.get("overrideId") as string)
     .eq("staff_id", staff.id);
 
-  revalidatePath("/profile");
-  redirect("/profile");
+  revalidatePath("/profile/scheduling");
+  redirect("/profile/scheduling");
 }
