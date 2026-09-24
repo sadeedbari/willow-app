@@ -1,5 +1,7 @@
 import { login } from "./actions";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { createClient } from "@/utils/supabase/server";
 import { BrandMark } from "@/components/brand-mark";
 
 export default async function LoginPage({
@@ -8,6 +10,19 @@ export default async function LoginPage({
   searchParams: Promise<{ error?: string; notice?: string }>;
 }) {
   const { error, notice } = await searchParams;
+
+  // Already logged in -- skip straight past the form instead of asking them
+  // to log in again. Mirrors src/app/page.tsx's onboarding-gap reasoning: a
+  // user with no staff row yet (mid-signup) goes to /onboarding, not
+  // /dashboard, so they aren't bounced through it a second time for nothing.
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
+    const { data: staffRow } = await supabase.rpc("get_my_staff_row").maybeSingle();
+    redirect(staffRow ? "/dashboard" : "/onboarding");
+  }
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-surface-2 px-4 py-10">

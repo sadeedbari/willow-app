@@ -21,8 +21,6 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with
 the finish review, the verdict, and DESIGN.md.
 */}
 import type { Metadata } from "next";
-import { createClient } from "@/utils/supabase/server";
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import { BrandMark } from "@/components/brand-mark";
 
@@ -33,25 +31,12 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
+// Deliberately renders for every visitor regardless of session state -- an
+// already-logged-in staff member can still land here (a shared link, a
+// bookmark, checking the public pricing page) and must be able to see it
+// rather than get bounced straight to /dashboard with no way back. /login
+// is the one place that redirects an existing session onward.
 export default async function HomePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // Only send an actual onboarded staff member straight to their dashboard.
-  // A signed-up-but-never-finished-onboarding session (e.g. someone who
-  // started signup, left, and comes back to the marketing site later) has a
-  // real auth user but no staff row yet -- redirecting *them* to /dashboard
-  // would just bounce straight through to /onboarding, trapping them out of
-  // the page they actually came here to see.
-  if (user) {
-    const { data: staffRow } = await supabase.rpc("get_my_staff_row").maybeSingle();
-    if (staffRow) {
-      redirect("/dashboard");
-    }
-  }
-
   return (
     <div className="bg-surface">
       {/* Nav */}

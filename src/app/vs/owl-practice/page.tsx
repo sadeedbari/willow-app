@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import { createClient } from "@/utils/supabase/server";
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import { BrandMark } from "@/components/brand-mark";
 
@@ -10,22 +8,10 @@ export const metadata: Metadata = {
     "A side-by-side look at Willow and Owl Practice's Solo plans: pricing, session limits, telehealth, and what's actually included. Sourced from Owl Practice's own published pricing.",
 };
 
+// Renders for every visitor regardless of session state -- see
+// src/app/page.tsx for why a marketing page must not bounce an
+// already-logged-in staff member straight to /dashboard.
 export default async function WillowVsOwlPracticePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // Only send an actual onboarded staff member straight to their dashboard --
-  // see src/app/page.tsx for why a signed-up-but-never-onboarded session
-  // must not be redirected here too.
-  if (user) {
-    const { data: staffRow } = await supabase.rpc("get_my_staff_row").maybeSingle();
-    if (staffRow) {
-      redirect("/dashboard");
-    }
-  }
-
   return (
     <div className="bg-surface">
       <header className="sticky top-0 z-20 border-b border-border bg-surface/80 backdrop-blur">
