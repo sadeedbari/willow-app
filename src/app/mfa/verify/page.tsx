@@ -3,13 +3,15 @@ import { redirect } from "next/navigation";
 import { BrandMark } from "@/components/brand-mark";
 import { verifyMfaChallenge, sendMfaRecoveryEmail } from "./actions";
 import { logout } from "@/app/(app)/actions";
+import { resolveMfaNext } from "./next";
 
 export default async function MfaVerifyPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; recoverySent?: string }>;
+  searchParams: Promise<{ error?: string; recoverySent?: string; next?: string }>;
 }) {
-  const { error, recoverySent } = await searchParams;
+  const { error, recoverySent, next } = await searchParams;
+  const destination = resolveMfaNext(next);
   const supabase = await createClient();
 
   const {
@@ -20,7 +22,7 @@ export default async function MfaVerifyPage({
 
   const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
   if (aal?.currentLevel === "aal2") {
-    redirect("/dashboard");
+    redirect(destination);
   }
 
   const { data: factorsData } = await supabase.auth.mfa.listFactors();
@@ -58,6 +60,7 @@ export default async function MfaVerifyPage({
 
           <form action={verifyMfaChallenge} className="space-y-4">
             <input type="hidden" name="factorId" value={verifiedFactor.id} />
+            <input type="hidden" name="next" value={destination} />
             <div>
               <label htmlFor="code" className="block text-[12.5px] font-semibold text-text-2">
                 6-digit code
@@ -86,6 +89,7 @@ export default async function MfaVerifyPage({
 
         <div className="mt-6 flex flex-col items-center gap-2">
           <form action={sendMfaRecoveryEmail}>
+            <input type="hidden" name="next" value={destination} />
             <button type="submit" className="text-[13px] font-semibold text-brand-ink hover:underline">
               Lost access to your authenticator?
             </button>

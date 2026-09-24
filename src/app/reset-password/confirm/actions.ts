@@ -39,5 +39,15 @@ export async function confirmPasswordReset(formData: FormData) {
     redirect("/reset-password/confirm?error=1");
   }
 
+  // A recovery-token verification only ever grants aal1, but Supabase
+  // requires aal2 to actually update a password once MFA is enabled --
+  // client portal accounts never have MFA, so this only ever applies to
+  // staff. Route through the same challenge normal login uses rather than
+  // hitting that rejection only once the user has already filled the form.
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (aal?.currentLevel !== "aal2" && aal?.nextLevel === "aal2") {
+    redirect(`/mfa/verify?next=${encodeURIComponent(destination)}`);
+  }
+
   redirect(destination);
 }

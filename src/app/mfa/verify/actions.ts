@@ -3,16 +3,21 @@
 import { createClient } from "@/utils/supabase/server";
 import { sendEmail } from "@/utils/resend/send";
 import { redirect } from "next/navigation";
+import { resolveMfaNext } from "./next";
 
 export async function verifyMfaChallenge(formData: FormData) {
   const factorId = formData.get("factorId") as string;
   const code = formData.get("code") as string;
+  const next = resolveMfaNext(formData.get("next") as string);
+  const nextParam = `&next=${encodeURIComponent(next)}`;
 
   const supabase = await createClient();
 
   const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({ factorId });
   if (challengeError || !challenge) {
-    redirect(`/mfa/verify?error=${encodeURIComponent("Something went wrong starting verification — please try again.")}`);
+    redirect(
+      `/mfa/verify?error=${encodeURIComponent("Something went wrong starting verification — please try again.")}${nextParam}`,
+    );
   }
 
   const { error: verifyError } = await supabase.auth.mfa.verify({
@@ -22,15 +27,20 @@ export async function verifyMfaChallenge(formData: FormData) {
   });
 
   if (verifyError) {
-    redirect(`/mfa/verify?error=${encodeURIComponent("That code didn't match — check your authenticator app and try again.")}`);
+    redirect(
+      `/mfa/verify?error=${encodeURIComponent("That code didn't match — check your authenticator app and try again.")}${nextParam}`,
+    );
   }
 
-  redirect("/dashboard");
+  redirect(next);
 }
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
-export async function sendMfaRecoveryEmail() {
+export async function sendMfaRecoveryEmail(formData: FormData) {
+  const next = resolveMfaNext(formData.get("next") as string);
+  const nextParam = `&next=${encodeURIComponent(next)}`;
+
   const supabase = await createClient();
 
   const { data, error } = await supabase.rpc("request_mfa_recovery").maybeSingle();
@@ -39,7 +49,7 @@ export async function sendMfaRecoveryEmail() {
     redirect(
       `/mfa/verify?error=${encodeURIComponent(
         "No verified recovery email is on file for this account — ask your practice admin to reset your two-factor setup, or contact support."
-      )}`
+      )}${nextParam}`
     );
   }
 
@@ -57,5 +67,5 @@ export async function sendMfaRecoveryEmail() {
     `,
   });
 
-  redirect("/mfa/verify?recoverySent=1");
+  redirect(`/mfa/verify?recoverySent=1${nextParam}`);
 }
