@@ -598,7 +598,7 @@ export default async function ClientDetailPage({
               <div className="mb-3 flex items-center justify-between">
                 <div className="text-[13px] font-bold text-foreground">Invoices</div>
                 {canManageInvoices && (
-                  <Link href={`/invoices/new?clientId=${client.id}`} className="text-[12px] font-semibold text-brand-ink">
+                  <Link href={`/invoices?new=1&clientId=${client.id}`} className="text-[12px] font-semibold text-brand-ink">
                     + New invoice
                   </Link>
                 )}
