@@ -1,9 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-// /api/webhooks/* and /api/cron/* authenticate themselves (a webhook
-// signature or a shared secret), never via a Supabase session -- the caller
-// is a third-party service or Postgres itself, not a browser.
+// /api/webhooks/*, /api/cron/*, and /api/internal/* authenticate themselves
+// (a webhook signature or a shared secret), never via a Supabase session --
+// the caller is a third-party service, Postgres, or another one of Willow's
+// own backend processes (e.g. the stripe-webhook Edge Function), not a
+// browser.
 const PUBLIC_PATHS = [
   "/login",
   "/signup",
@@ -24,6 +26,7 @@ const PUBLIC_PATHS = [
   "/portal/reset-password",
   "/api/webhooks",
   "/api/cron",
+  "/api/internal",
 ];
 
 export async function updateSession(request: NextRequest) {
