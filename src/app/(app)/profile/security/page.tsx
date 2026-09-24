@@ -3,6 +3,7 @@ import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import { requestRecoveryEmailChange, changeMyPassword, resetMyMfa } from "../security-actions";
 import { ProfileTabs } from "../tabs";
+import { PasswordInput } from "@/components/password-input";
 import { PASSWORD_PATTERN, PASSWORD_REQUIREMENTS_HINT } from "@/utils/password";
 
 export default async function SecurityPage({
@@ -96,9 +97,8 @@ export default async function SecurityPage({
             <form action={resetMyMfa} className="mt-2 flex flex-wrap items-end gap-3">
               <div>
                 <label className="block text-[12px] font-semibold text-text-2">Current password</label>
-                <input
+                <PasswordInput
                   name="currentPassword"
-                  type="password"
                   required
                   autoComplete="current-password"
                   className="mt-1 rounded-lg border border-border bg-surface px-3 py-2 text-[13.4px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
@@ -168,9 +168,8 @@ export default async function SecurityPage({
           <form action={changeMyPassword} className="mt-3 flex flex-wrap items-end gap-3">
             <div>
               <label className="block text-[12px] font-semibold text-text-2">Current password</label>
-              <input
+              <PasswordInput
                 name="currentPassword"
-                type="password"
                 required
                 autoComplete="current-password"
                 className="mt-1 rounded-lg border border-border bg-surface px-3 py-2 text-[13.4px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
@@ -178,9 +177,8 @@ export default async function SecurityPage({
             </div>
             <div>
               <label className="block text-[12px] font-semibold text-text-2">New password</label>
-              <input
+              <PasswordInput
                 name="password"
-                type="password"
                 required
                 minLength={8}
                 pattern={PASSWORD_PATTERN}
@@ -191,9 +189,8 @@ export default async function SecurityPage({
             </div>
             <div>
               <label className="block text-[12px] font-semibold text-text-2">Confirm password</label>
-              <input
+              <PasswordInput
                 name="confirmPassword"
-                type="password"
                 required
                 minLength={8}
                 autoComplete="new-password"

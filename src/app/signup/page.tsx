@@ -1,6 +1,7 @@
 import { signup } from "./actions";
 import Link from "next/link";
 import { BrandMark } from "@/components/brand-mark";
+import { PasswordInput } from "@/components/password-input";
 import { PASSWORD_PATTERN, PASSWORD_REQUIREMENTS_HINT } from "@/utils/password";
 
 export default async function SignupPage({
@@ -62,10 +63,9 @@ export default async function SignupPage({
               <label htmlFor="password" className="block text-[12.5px] font-semibold text-text-2">
                 Password
               </label>
-              <input
+              <PasswordInput
                 id="password"
                 name="password"
-                type="password"
                 required
                 minLength={8}
                 pattern={PASSWORD_PATTERN}

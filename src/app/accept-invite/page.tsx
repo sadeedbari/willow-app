@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { acceptInvite } from "./actions";
+import { PasswordInput } from "@/components/password-input";
 import { PASSWORD_PATTERN, PASSWORD_REQUIREMENTS_HINT } from "@/utils/password";
 
 const ROLE_LABEL: Record<string, string> = {
@@ -70,9 +71,8 @@ export default async function AcceptInvitePage({
             <label className="block text-[12.5px] font-semibold text-text-2">
               Set a password
             </label>
-            <input
+            <PasswordInput
               name="password"
-              type="password"
               required
               minLength={8}
               pattern={PASSWORD_PATTERN}

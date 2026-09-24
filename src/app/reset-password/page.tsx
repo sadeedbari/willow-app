@@ -2,6 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { updatePassword } from "./actions";
 import { BrandMark } from "@/components/brand-mark";
 import { RecoverySessionBridge } from "@/components/recovery-session-bridge";
+import { PasswordInput } from "@/components/password-input";
 import { PASSWORD_PATTERN, PASSWORD_REQUIREMENTS_HINT } from "@/utils/password";
 
 export default async function ResetPasswordPage({
@@ -60,9 +61,8 @@ export default async function ResetPasswordPage({
               <label className="block text-[12.5px] font-semibold text-text-2">
                 New password
               </label>
-              <input
+              <PasswordInput
                 name="password"
-                type="password"
                 required
                 minLength={8}
                 pattern={PASSWORD_PATTERN}
@@ -76,9 +76,8 @@ export default async function ResetPasswordPage({
               <label className="block text-[12.5px] font-semibold text-text-2">
                 Confirm password
               </label>
-              <input
+              <PasswordInput
                 name="confirmPassword"
-                type="password"
                 required
                 minLength={8}
                 autoComplete="new-password"

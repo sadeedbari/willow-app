@@ -1,6 +1,7 @@
 import { portalLogin } from "./actions";
 import Link from "next/link";
 import { BrandMark } from "@/components/brand-mark";
+import { PasswordInput } from "@/components/password-input";
 
 export default async function PortalLoginPage({
   searchParams,
@@ -47,9 +48,8 @@ export default async function PortalLoginPage({
             <label className="block text-[12.5px] font-semibold text-text-2">
               Password
             </label>
-            <input
+            <PasswordInput
               name="password"
-              type="password"
               required
               autoComplete="current-password"
               className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"

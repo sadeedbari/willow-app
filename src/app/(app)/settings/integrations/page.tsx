@@ -4,6 +4,7 @@ import { SettingsTabs } from "../tabs";
 import { saveDailyApiKey, removeDailyApiKey } from "./daily-actions";
 import { connectStripe, disconnectStripe } from "./stripe-actions";
 import { stripe, isMissingConnectAccountError } from "@/utils/stripe/server";
+import { PasswordInput } from "@/components/password-input";
 
 export default async function IntegrationsSettingsPage({
   searchParams,
@@ -170,9 +171,8 @@ export default async function IntegrationsSettingsPage({
                   <label className="block text-[12px] font-semibold text-text-2">
                     {videoSettings ? "Replace API key" : "Daily.co API key"}
                   </label>
-                  <input
+                  <PasswordInput
                     name="apiKey"
-                    type="password"
                     autoComplete="off"
                     placeholder="Paste the API key from this practice's Daily.co dashboard"
                     className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"

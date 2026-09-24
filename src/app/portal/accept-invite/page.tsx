@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { acceptPortalInvite } from "./actions";
+import { PasswordInput } from "@/components/password-input";
 import { PASSWORD_PATTERN, PASSWORD_REQUIREMENTS_HINT } from "@/utils/password";
 
 export default async function PortalAcceptInvitePage({
@@ -66,9 +67,8 @@ export default async function PortalAcceptInvitePage({
             <label className="block text-[12.5px] font-semibold text-text-2">
               Set a password
             </label>
-            <input
+            <PasswordInput
               name="password"
-              type="password"
               required
               minLength={8}
               pattern={PASSWORD_PATTERN}
