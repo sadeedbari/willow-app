@@ -110,6 +110,35 @@ export async function reactivateStaff(staffId: string) {
   revalidatePath("/settings/staff");
 }
 
+// Per-account exemption from the site-wide "every staff account should have
+// MFA" policy -- doesn't change the login flow itself (setup has always been
+// skippable for anyone, every login, regardless of this flag). It only
+// changes how that account's own Security page describes the policy to
+// them, and lets a practice that's decided MFA isn't mandatory for a given
+// role record that decision explicitly instead of it just being implicit.
+export async function toggleStaffMfaRequired(formData: FormData) {
+  const staff = await getCurrentStaff();
+  if (staff.role !== "practice_admin") {
+    redirect("/settings/staff");
+  }
+
+  const targetId = formData.get("staffId") as string;
+  if (targetId === staff.id) {
+    redirect(`/settings/staff?error=${encodeURIComponent("You can't change this for your own account here.")}`);
+  }
+
+  const supabase = await createClient();
+  const { data: target } = await supabase.from("staff").select("mfa_required").eq("id", targetId).single();
+  if (!target) {
+    redirect("/settings/staff");
+  }
+
+  await supabase.from("staff").update({ mfa_required: !target.mfa_required }).eq("id", targetId);
+
+  revalidatePath("/settings/staff");
+  redirect("/settings/staff");
+}
+
 export async function resetStaffMfa(staffId: string) {
   const staff = await getCurrentStaff();
   if (staff.role !== "practice_admin") {

@@ -16,7 +16,7 @@ export default async function SecurityPage({
 
   const { data: profile } = await supabase
     .from("staff")
-    .select("recovery_email, recovery_email_verified_at")
+    .select("recovery_email, recovery_email_verified_at, mfa_required")
     .eq("id", staff.id)
     .single();
 
@@ -64,7 +64,9 @@ export default async function SecurityPage({
       <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
         <div className="mb-1 text-[13px] font-bold text-foreground">Security</div>
         <p className="mb-4 text-[12.5px] text-text-2">
-          Two-factor authentication is required for every Willow staff account.
+          {profile.mfa_required
+            ? "Two-factor authentication is required for your account."
+            : "Two-factor authentication is optional for your account, but still recommended."}
         </p>
 
         <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5">

@@ -1,6 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
-import { revokeInvitation, updateStaffRole, reactivateStaff, resetStaffMfa } from "./actions";
+import { revokeInvitation, updateStaffRole, reactivateStaff, resetStaffMfa, toggleStaffMfaRequired } from "./actions";
 import { SettingsTabs } from "../tabs";
 import Link from "next/link";
 import { getStaffLimit, UPGRADE_CONTACT_EMAIL } from "@/utils/staff-limits";
@@ -29,7 +29,7 @@ export default async function StaffPage({
 
   const { data: allStaff } = await supabase
     .from("staff")
-    .select("id, full_name, role, email, active")
+    .select("id, full_name, role, email, active, mfa_required")
     .order("full_name");
 
   const team = allStaff?.filter((s) => s.active) ?? [];
@@ -158,8 +158,14 @@ export default async function StaffPage({
                 <div className="text-[12.5px] text-text-3">{ROLE_LABEL[s.role]}</div>
               )}
 
+              {!s.mfa_required && (
+                <span className="mt-2 inline-flex rounded-full bg-warn-tint px-2 py-0.5 text-[10.5px] font-semibold text-warn">
+                  MFA optional
+                </span>
+              )}
+
               {staff.role === "practice_admin" && !isSelf && (
-                <div className="mt-2 flex items-center gap-3">
+                <div className="mt-2 flex flex-wrap items-center gap-3">
                   <Link
                     href={`/settings/staff/${s.id}/offboard`}
                     className="text-[11.5px] font-semibold text-bad"
@@ -169,6 +175,12 @@ export default async function StaffPage({
                   <form action={resetStaffMfa.bind(null, s.id)}>
                     <button type="submit" className="text-[11.5px] font-semibold text-text-2 hover:text-foreground">
                       Reset MFA
+                    </button>
+                  </form>
+                  <form action={toggleStaffMfaRequired}>
+                    <input type="hidden" name="staffId" value={s.id} />
+                    <button type="submit" className="text-[11.5px] font-semibold text-text-2 hover:text-foreground">
+                      {s.mfa_required ? "Make MFA optional" : "Require MFA"}
                     </button>
                   </form>
                 </div>
