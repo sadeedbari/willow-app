@@ -1,6 +1,8 @@
 import { createClient } from "@/utils/supabase/server";
 import { renderInvoicePdf } from "./InvoicePdf";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
 export type BuiltInvoicePdf = {
   pdfBuffer: Buffer;
   invoiceNumber: number;
@@ -69,6 +71,7 @@ export async function buildInvoicePdf(
       logoUrl: practice?.logo_url ?? null,
     },
     client: { fullName: client?.full_name ?? "Unknown client", email: client?.email ?? null },
+    paymentUrl: invoice.payment_token ? `${SITE_URL}/pay/${invoice.payment_token}` : null,
     issuer: issuer
       ? {
           fullName: issuer.full_name,

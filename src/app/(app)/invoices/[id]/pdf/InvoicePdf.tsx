@@ -1,4 +1,4 @@
-import { Document, Page, Text, View, Image, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
+import { Document, Page, Text, View, Image, Link, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
 
 const styles = StyleSheet.create({
   page: { padding: 40, fontSize: 10, fontFamily: "Helvetica", color: "#1a1a1a" },
@@ -32,6 +32,17 @@ const styles = StyleSheet.create({
   totalsRow: { flexDirection: "row", justifyContent: "space-between", width: 200, paddingVertical: 2 },
   totalsLabel: { color: "#666" },
   totalsValueBold: { fontWeight: 700, fontSize: 12 },
+  payLink: {
+    marginTop: 8,
+    width: 200,
+    textAlign: "center",
+    color: "#fff",
+    backgroundColor: "#1a7f5a",
+    borderRadius: 6,
+    paddingVertical: 8,
+    fontWeight: 700,
+    textDecoration: "none",
+  },
   footer: { marginTop: 32, fontSize: 9, color: "#666", borderTop: "1px solid #ddd", paddingTop: 10 },
 });
 
@@ -58,6 +69,7 @@ export type InvoicePdfProps = {
     logoUrl: string | null;
   };
   client: { fullName: string; email: string | null };
+  paymentUrl: string | null;
   issuer: {
     fullName: string;
     credential: string | null;
@@ -94,10 +106,15 @@ function InvoicePdf({
   notes,
   practice,
   client,
+  paymentUrl,
   issuer,
   lineItems,
 }: InvoicePdfProps) {
   const balance = totalCents - amountPaidCents;
+  // Payment link travels with the PDF itself, not just the covering email --
+  // once a client saves, prints, or forwards just the document (e.g. to
+  // submit it to insurance), the email text is gone but this isn't.
+  const owesBalance = status !== "paid" && status !== "void" && balance > 0;
 
   return (
     <Document>
@@ -196,6 +213,11 @@ function InvoicePdf({
               <Text>{new Date(paidAt).toLocaleDateString()}</Text>
             </View>
           )}
+          {owesBalance && paymentUrl && (
+            <Link src={paymentUrl} style={styles.payLink}>
+              Pay online
+            </Link>
+          )}
         </View>
 
         {notes && (
@@ -206,6 +228,11 @@ function InvoicePdf({
         )}
 
         <View style={styles.footer}>
+          {owesBalance && paymentUrl && (
+            <Text style={{ marginBottom: 4 }}>
+              Pay online: <Link src={paymentUrl}>{paymentUrl}</Link>
+            </Text>
+          )}
           <Text>
             This receipt may be submitted to your insurance provider for reimbursement of eligible
             expenses. Please retain a copy for your records.
