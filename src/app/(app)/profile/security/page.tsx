@@ -79,13 +79,7 @@ export default async function SecurityPage({
             >
               {mfaFactor ? "Enabled" : "Not set up"}
             </span>
-            {mfaFactor ? (
-              <form action={resetMyMfa}>
-                <button type="submit" className="text-[12.5px] font-semibold text-bad">
-                  Disable / Reset
-                </button>
-              </form>
-            ) : (
+            {!mfaFactor && (
               <Link href="/mfa/setup" className="text-[12.5px] font-semibold text-brand-ink hover:underline">
                 Set up →
               </Link>
@@ -93,10 +87,28 @@ export default async function SecurityPage({
           </div>
         </div>
         {mfaFactor && (
-          <p className="mt-2 text-[11.5px] text-text-3">
-            Removes your current authenticator so you can set up a new one — useful if you got a new phone or
-            lost access to the old one. You&apos;ll be asked to set it up again the next time it&apos;s required.
-          </p>
+          <>
+            <p className="mt-2 text-[11.5px] text-text-3">
+              Removes your current authenticator so you can set up a new one — useful if you got a new phone or
+              lost access to the old one. You&apos;ll be asked to set it up again the next time it&apos;s required.
+              Confirm your current password to continue.
+            </p>
+            <form action={resetMyMfa} className="mt-2 flex flex-wrap items-end gap-3">
+              <div>
+                <label className="block text-[12px] font-semibold text-text-2">Current password</label>
+                <input
+                  name="currentPassword"
+                  type="password"
+                  required
+                  autoComplete="current-password"
+                  className="mt-1 rounded-lg border border-border bg-surface px-3 py-2 text-[13.4px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                />
+              </div>
+              <button type="submit" className="rounded-lg border border-bad/40 px-3.5 py-2 text-[12.5px] font-semibold text-bad transition hover:bg-bad-tint">
+                Disable / Reset
+              </button>
+            </form>
+          </>
         )}
 
         <div className="mt-4 border-t border-border pt-4">
@@ -154,6 +166,16 @@ export default async function SecurityPage({
           <p className="mt-1 text-[12px] text-text-3">Change the password you use to log in.</p>
 
           <form action={changeMyPassword} className="mt-3 flex flex-wrap items-end gap-3">
+            <div>
+              <label className="block text-[12px] font-semibold text-text-2">Current password</label>
+              <input
+                name="currentPassword"
+                type="password"
+                required
+                autoComplete="current-password"
+                className="mt-1 rounded-lg border border-border bg-surface px-3 py-2 text-[13.4px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              />
+            </div>
             <div>
               <label className="block text-[12px] font-semibold text-text-2">New password</label>
               <input
