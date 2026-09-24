@@ -26,7 +26,12 @@ function StatCard({
   );
 }
 
-export default async function PracticeOverviewPage() {
+export default async function PracticeOverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ staffId?: string }>;
+}) {
+  const { staffId } = await searchParams;
   const staff = await getCurrentStaff();
 
   if (staff.role !== "practice_admin") {
@@ -34,24 +39,59 @@ export default async function PracticeOverviewPage() {
   }
 
   const supabase = await createClient();
-  const data = await getPracticeOverviewData(supabase, staff.id);
+
+  const [data, { count: activeStaffCount }, { data: clinicians }] = await Promise.all([
+    getPracticeOverviewData(supabase, staff.id, staffId || undefined),
+    supabase.from("staff").select("id", { count: "exact", head: true }).eq("active", true),
+    supabase.from("staff").select("id, full_name").in("role", ["clinician", "practice_admin"]).eq("active", true).order("full_name"),
+  ]);
+
+  const selectedClinicianName = staffId ? clinicians?.find((c) => c.id === staffId)?.full_name : undefined;
 
   return (
     <div className="mx-auto max-w-6xl">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-[26px] font-bold tracking-tight text-foreground">Practice Overview</h1>
-          <p className="mt-1 text-[13.5px] text-text-2">{staff.practiceName} · Solo practice</p>
+          <p className="mt-1 text-[13.5px] text-text-2">
+            {staff.practiceName}
+            {selectedClinicianName
+              ? ` · ${selectedClinicianName}`
+              : (activeStaffCount ?? 0) <= 1
+                ? " · Solo practice"
+                : ""}
+          </p>
         </div>
-        <a
-          href="/practice-overview/export"
-          className="flex w-fit items-center gap-1.5 rounded-lg border border-border bg-surface px-3.5 py-2 text-[13.4px] font-semibold text-text-2 transition hover:bg-surface-2"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
-            <path d="M12 3v13m0 0-4-4m4 4 4-4M4 19h16" />
-          </svg>
-          Export report
-        </a>
+        <div className="flex flex-wrap items-center gap-2">
+          {clinicians && clinicians.length > 1 && (
+            <form method="GET" className="flex items-center gap-1.5">
+              <select
+                name="staffId"
+                defaultValue={staffId ?? ""}
+                className="rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[12.5px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              >
+                <option value="">Whole practice</option>
+                {clinicians.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.full_name}
+                  </option>
+                ))}
+              </select>
+              <button type="submit" className="rounded-lg border border-border px-2.5 py-1.5 text-[12.5px] font-semibold text-text-2 transition hover:bg-surface-2">
+                Go
+              </button>
+            </form>
+          )}
+          <a
+            href={`/practice-overview/export${staffId ? `?staffId=${staffId}` : ""}`}
+            className="flex w-fit items-center gap-1.5 rounded-lg border border-border bg-surface px-3.5 py-2 text-[13.4px] font-semibold text-text-2 transition hover:bg-surface-2"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+              <path d="M12 3v13m0 0-4-4m4 4 4-4M4 19h16" />
+            </svg>
+            Export report
+          </a>
+        </div>
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">

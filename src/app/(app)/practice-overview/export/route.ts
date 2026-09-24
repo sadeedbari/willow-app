@@ -3,18 +3,25 @@ import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import { redirect } from "next/navigation";
 import { getPracticeOverviewData } from "../data";
 
-export async function GET() {
+export async function GET(request: Request) {
   const staff = await getCurrentStaff();
   if (staff.role !== "practice_admin") {
     redirect("/dashboard");
   }
 
+  const staffId = new URL(request.url).searchParams.get("staffId") || undefined;
+
   const supabase = await createClient();
-  const data = await getPracticeOverviewData(supabase, staff.id);
+  const data = await getPracticeOverviewData(supabase, staff.id, staffId);
+
+  const scopeLabel = staffId
+    ? (await supabase.from("staff").select("full_name").eq("id", staffId).single()).data?.full_name ?? "Selected practitioner"
+    : "Whole practice";
 
   const lines = [
     "Practice Overview Report",
     `Practice,${staff.practiceName}`,
+    `Scope,${scopeLabel}`,
     `Generated,${new Date().toISOString().slice(0, 10)}`,
     "",
     "Revenue by month",

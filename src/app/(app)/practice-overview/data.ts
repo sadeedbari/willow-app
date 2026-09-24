@@ -42,12 +42,61 @@ const TYPE_LABEL: Record<string, string> = {
   group: "Group",
 };
 
-export async function getPracticeOverviewData(supabase: SupabaseClient, staffId: string): Promise<PracticeOverviewData> {
+export async function getPracticeOverviewData(
+  supabase: SupabaseClient,
+  staffId: string,
+  filterStaffId?: string,
+): Promise<PracticeOverviewData> {
   const now = new Date();
   const monthStart = firstOfMonth(now);
   const sixMonthsAgo = firstOfMonth(now, -5);
   const thirtyDaysAgo = daysAgo(now, 30);
   const twoDaysAgo = daysAgo(now, 2);
+
+  // "Belongs to this clinician" is defined the same way it already is on the
+  // invoices page and its own RLS policy: the CLIENT's assigned clinician,
+  // not whoever happened to create a given invoice -- so a billing admin
+  // issuing an invoice on a clinician's behalf still counts under that
+  // clinician when filtered.
+  // Always embeds clients!inner(assigned_staff_id) (a static select string
+  // keeps Supabase's compile-time query parser happy -- a ternary between
+  // two different select strings doesn't type-check), and !inner is needed
+  // for the conditional .eq("clients.assigned_staff_id", ...) filter below
+  // to actually apply. Harmless when not filtering: every invoice has a
+  // real client (FK, not nullable), so the inner join never drops a row.
+  let invoicesQuery = supabase
+    .from("invoices")
+    .select("total_cents, issue_date, clients!inner(assigned_staff_id)")
+    .gte("issue_date", sixMonthsAgo.toISOString().slice(0, 10));
+  let outstandingQuery = supabase
+    .from("invoices")
+    .select("total_cents, amount_paid_cents, clients!inner(assigned_staff_id)")
+    .eq("status", "sent");
+  let activeClientsQuery = supabase.from("clients").select("id", { count: "exact", head: true }).eq("status", "active");
+  let newClientsQuery = supabase
+    .from("clients")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "active")
+    .gte("created_at", monthStart.toISOString());
+  let dischargedQuery = supabase
+    .from("clients")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "discharged")
+    .gte("updated_at", monthStart.toISOString());
+  let appointmentsQuery = supabase
+    .from("appointments")
+    .select("starts_at, ends_at, type, status")
+    .gte("starts_at", thirtyDaysAgo.toISOString())
+    .lt("starts_at", now.toISOString());
+
+  if (filterStaffId) {
+    invoicesQuery = invoicesQuery.eq("clients.assigned_staff_id", filterStaffId);
+    outstandingQuery = outstandingQuery.eq("clients.assigned_staff_id", filterStaffId);
+    activeClientsQuery = activeClientsQuery.eq("assigned_staff_id", filterStaffId);
+    newClientsQuery = newClientsQuery.eq("assigned_staff_id", filterStaffId);
+    dischargedQuery = dischargedQuery.eq("assigned_staff_id", filterStaffId);
+    appointmentsQuery = appointmentsQuery.eq("staff_id", filterStaffId);
+  }
 
   const [
     { data: invoicesLast6Months },
@@ -59,26 +108,17 @@ export async function getPracticeOverviewData(supabase: SupabaseClient, staffId:
     { data: notesOverview },
     { data: outstandingInvoices },
   ] = await Promise.all([
-    supabase.from("invoices").select("total_cents, issue_date").gte("issue_date", sixMonthsAgo.toISOString().slice(0, 10)),
-    supabase.from("clients").select("id", { count: "exact", head: true }).eq("status", "active"),
-    supabase
-      .from("clients")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "active")
-      .gte("created_at", monthStart.toISOString()),
-    supabase
-      .from("clients")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "discharged")
-      .gte("updated_at", monthStart.toISOString()),
-    supabase
-      .from("appointments")
-      .select("starts_at, ends_at, type, status")
-      .gte("starts_at", thirtyDaysAgo.toISOString())
-      .lt("starts_at", now.toISOString()),
-    supabase.from("staff_availability").select("start_time, end_time").eq("staff_id", staffId),
+    invoicesQuery,
+    activeClientsQuery,
+    newClientsQuery,
+    dischargedQuery,
+    appointmentsQuery,
+    // Unfiltered ("whole practice") view keeps its existing behavior of
+    // using the viewing admin's own availability -- unchanged from before
+    // this filter existed. Filtered to one practitioner, it's theirs.
+    supabase.from("staff_availability").select("start_time, end_time").eq("staff_id", filterStaffId ?? staffId),
     supabase.rpc("get_practice_notes_overview"),
-    supabase.from("invoices").select("total_cents, amount_paid_cents").eq("status", "sent"),
+    outstandingQuery,
   ]);
 
   // Revenue by month (last 6 calendar months, billed/issued basis).
@@ -149,8 +189,11 @@ export async function getPracticeOverviewData(supabase: SupabaseClient, staffId:
   // fraction were signed (vs. still sitting as an unsigned draft). Uses
   // get_practice_notes_overview() (metadata only, no clinical content) so
   // non-clinician roles see practice-wide counts instead of zero rows.
-  type NoteOverviewRow = { session_date: string; status: string };
-  const notes = (notesOverview as NoteOverviewRow[] | null) ?? [];
+  // Filtered to one practitioner in JS (the RPC has no staff param) --
+  // it already returns staff_id on every row for exactly this.
+  type NoteOverviewRow = { session_date: string; status: string; staff_id: string };
+  const allNotes = (notesOverview as NoteOverviewRow[] | null) ?? [];
+  const notes = filterStaffId ? allNotes.filter((n) => n.staff_id === filterStaffId) : allNotes;
   const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().slice(0, 10);
   const twoDaysAgoStr = twoDaysAgo.toISOString().slice(0, 10);
   const recentNotes = notes.filter((n) => n.session_date >= thirtyDaysAgoStr);
