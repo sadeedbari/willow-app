@@ -79,7 +79,7 @@ export default async function ClientDetailPage({
   const { data: client } = await supabase
     .from("clients")
     .select(
-      "id, full_name, date_of_birth, phone, email, presenting_concern, status, payer, balance_cents, assigned_staff_id, portal_user_id, default_appointment_type, session_frequency, created_at, stripe_card_brand, stripe_card_last4, staff:assigned_staff_id(full_name)"
+      "id, full_name, date_of_birth, phone, email, presenting_concern, status, payer, balance_cents, assigned_staff_id, portal_user_id, default_appointment_type, session_frequency, created_at, stripe_card_brand, stripe_card_last4, appointment_reminders_enabled, staff:assigned_staff_id(full_name)"
     )
     .eq("id", id)
     .single();
@@ -362,6 +362,12 @@ export default async function ClientDetailPage({
                     )}
                     In treatment since {new Date(client.created_at).toLocaleDateString(undefined, { month: "long", year: "numeric" })}
                     {client.session_frequency ? `, meeting ${client.session_frequency.toLowerCase()}.` : "."}
+                  </p>
+                  <p className="mt-2 text-[12px] text-text-3">
+                    Appointment reminder emails:{" "}
+                    <span className="font-semibold text-foreground">
+                      {client.appointment_reminders_enabled ? "On" : "Off"}
+                    </span>
                   </p>
                 </div>
 

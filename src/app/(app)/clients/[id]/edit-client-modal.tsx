@@ -22,6 +22,7 @@ type EditableClient = {
   session_frequency: string | null;
   assigned_staff_id: string | null;
   default_appointment_type: string | null;
+  appointment_reminders_enabled: boolean;
 };
 
 export async function EditClientModal({
@@ -183,6 +184,19 @@ export async function EditClientModal({
                 </select>
               </div>
             </div>
+
+            <label className="flex items-start gap-2.5 pt-1 text-[13px] text-foreground">
+              <input
+                type="checkbox"
+                name="appointmentRemindersEnabled"
+                defaultChecked={client.appointment_reminders_enabled}
+                className="mt-0.5"
+              />
+              <span>
+                Email this client a reminder 24 hours before their appointments
+                <span className="block text-[11.5px] text-text-3">The client can also change this for themselves from their portal.</span>
+              </span>
+            </label>
 
             <button
               type="submit"

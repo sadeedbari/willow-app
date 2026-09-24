@@ -29,6 +29,7 @@ export async function updateClient(formData: FormData) {
       session_frequency: (formData.get("sessionFrequency") as string) || null,
       assigned_staff_id: (formData.get("assignedStaffId") as string) || null,
       default_appointment_type: (formData.get("defaultAppointmentType") as string) || null,
+      appointment_reminders_enabled: formData.get("appointmentRemindersEnabled") === "on",
     })
     .eq("id", clientId);
 
