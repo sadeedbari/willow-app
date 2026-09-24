@@ -60,7 +60,7 @@ export default async function WillowVsJaneAppPage() {
             Willow vs. Jane.app
           </span>
           <h1 className="mt-4 text-[34px] font-bold leading-[1.12] tracking-[-0.02em] text-foreground sm:text-[42px]">
-            What Jane&apos;s Balance plan charges extra for, Willow just includes.
+            What Jane&apos;s Balance plan charges extra for, Willow just includes — for less.
           </h1>
           <p className="mx-auto mt-5 max-w-[56ch] text-[16px] leading-relaxed text-text-2">
             Both are built for solo practitioners. The difference shows up in the session cap, and in what you
@@ -86,8 +86,8 @@ export default async function WillowVsJaneAppPage() {
                 <tr className="border-b-2 border-foreground/80">
                   <th className="w-[30%] p-4 text-[13px] font-bold text-text-2"></th>
                   <th className="bg-brand-tint p-4">
-                    <div className="text-[15px] font-bold text-brand-ink">Willow</div>
-                    <div className="text-[11.5px] font-medium text-text-3">one plan, everything included</div>
+                    <div className="text-[15px] font-bold text-brand-ink">Willow Solo</div>
+                    <div className="text-[11.5px] font-medium text-text-3">everything included</div>
                   </th>
                   <th className="p-4">
                     <div className="text-[15px] font-bold text-foreground">Jane.app</div>
@@ -99,7 +99,7 @@ export default async function WillowVsJaneAppPage() {
                 <tr className="border-b border-border">
                   <td className="p-4 font-semibold text-foreground">Monthly price</td>
                   <td className="bg-brand-tint p-4">
-                    <span className="text-[19px] font-bold text-foreground">$49</span>{" "}
+                    <span className="text-[19px] font-bold text-foreground">$15.90</span>{" "}
                     <span className="text-[12px] text-text-3">CAD/mo</span>
                   </td>
                   <td className="p-4">

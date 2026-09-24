@@ -231,10 +231,19 @@ Deno.serve(async (req: Request) => {
   const status = event.type === "customer.subscription.deleted" ? "canceled" : subscription.status;
   const currentPeriodEnd = subscription.items?.data[0]?.current_period_end;
 
+  // Which of Willow's two plans (solo/team) this subscription is on -- read
+  // straight off the subscribed Price's own metadata (set when the price was
+  // created in Stripe), rather than a separate env var or lookup, so this
+  // stays correct across a portal-initiated plan switch with zero extra code.
+  // The Price object comes embedded on the subscription item already, no
+  // expand needed.
+  const plan = subscription.items?.data[0]?.price?.metadata?.plan ?? null;
+
   const { error } = await adminClient
     .from("practices")
     .update({
       subscription_status: status,
+      subscription_plan: plan,
       stripe_subscription_id: subscription.id,
       current_period_end: currentPeriodEnd ? new Date(currentPeriodEnd * 1000).toISOString() : null,
       cancel_at_period_end: subscription.cancel_at_period_end ?? false,

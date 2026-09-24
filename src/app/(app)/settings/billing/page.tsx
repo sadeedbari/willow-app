@@ -27,6 +27,23 @@ function daysUntil(isoDate: string): number {
   return Math.ceil((new Date(isoDate).getTime() - Date.now()) / 86400000);
 }
 
+const PLANS = [
+  {
+    key: "solo",
+    name: "Solo",
+    price: "$15.90",
+    tagline: "For a one-person practice",
+    detail: "1 staff account",
+  },
+  {
+    key: "team",
+    name: "Team",
+    price: "$49",
+    tagline: "For a small group practice",
+    detail: "Up to 6 staff accounts",
+  },
+] as const;
+
 export default async function BillingPage({
   searchParams,
 }: {
@@ -38,7 +55,9 @@ export default async function BillingPage({
 
   const { data: practice } = await supabase
     .from("practices")
-    .select("subscription_status, stripe_customer_id, current_period_end, cancel_at_period_end, trial_ends_at")
+    .select(
+      "subscription_status, subscription_plan, stripe_customer_id, current_period_end, cancel_at_period_end, trial_ends_at",
+    )
     .eq("id", staff.practiceId)
     .single();
 
@@ -48,9 +67,10 @@ export default async function BillingPage({
   const canCancel = hasSubscription && status !== "canceled" && !cancelAtPeriodEnd;
   const canResume = hasSubscription && status !== "canceled" && cancelAtPeriodEnd;
   const trialDaysLeft = practice?.trial_ends_at ? daysUntil(practice.trial_ends_at) : null;
+  const currentPlan = PLANS.find((p) => p.key === practice?.subscription_plan);
 
   return (
-    <div className="max-w-lg">
+    <div className="max-w-2xl">
       <div className="mb-6">
         <h1 className="text-[26px] font-bold tracking-tight text-foreground">Settings</h1>
         <p className="mt-1 text-[13.5px] text-text-2">Your practice&apos;s Willow subscription</p>
@@ -74,51 +94,51 @@ export default async function BillingPage({
         </p>
       )}
 
-      <div className="mt-6 rounded-2xl border border-border bg-surface p-6 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-[13px] font-semibold text-text-2">
-              Current plan
+      {status === "trialing" && practice?.trial_ends_at && trialDaysLeft !== null && (
+        <p className={`mt-4 text-[12.5px] ${trialDaysLeft <= 3 ? "font-semibold text-warn" : "text-text-3"}`}>
+          {trialDaysLeft > 0
+            ? `Trial ends in ${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} — `
+            : "Trial has ended — "}
+          {new Date(practice.trial_ends_at).toLocaleDateString(undefined, {
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+          })}
+        </p>
+      )}
+
+      {hasSubscription ? (
+        <div className="mt-6 rounded-2xl border border-border bg-surface p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-[13px] font-semibold text-text-2">Current plan</div>
+              <div className="mt-1 text-[17px] font-bold text-foreground">
+                Willow {currentPlan?.name ?? "Practice Subscription"}
+              </div>
+              <div className="text-[13px] text-text-3">
+                {currentPlan ? `${currentPlan.price}/month CAD · ${currentPlan.detail}` : "$49/month CAD"}
+              </div>
             </div>
-            <div className="mt-1 text-[17px] font-bold text-foreground">
-              Willow Practice Subscription
-            </div>
-            <div className="text-[13px] text-text-3">$49/month CAD</div>
+            <span
+              className={`inline-flex rounded-full px-3 py-1 text-[12px] font-semibold ${STATUS_STYLE[status]}`}
+            >
+              {STATUS_LABEL[status]}
+            </span>
           </div>
-          <span
-            className={`inline-flex rounded-full px-3 py-1 text-[12px] font-semibold ${STATUS_STYLE[status]}`}
-          >
-            {STATUS_LABEL[status]}
-          </span>
-        </div>
 
-        {practice?.current_period_end && (
-          <p className="mt-4 text-[12.5px] text-text-3">
-            {status === "canceled" ? "Access ends" : cancelAtPeriodEnd ? "Cancels" : "Renews"}{" "}
-            {new Date(practice.current_period_end).toLocaleDateString(undefined, {
-              month: "long",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </p>
-        )}
+          {practice?.current_period_end && (
+            <p className="mt-4 text-[12.5px] text-text-3">
+              {status === "canceled" ? "Access ends" : cancelAtPeriodEnd ? "Cancels" : "Renews"}{" "}
+              {new Date(practice.current_period_end).toLocaleDateString(undefined, {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </p>
+          )}
 
-        {status === "trialing" && practice?.trial_ends_at && trialDaysLeft !== null && (
-          <p className={`mt-4 text-[12.5px] ${trialDaysLeft <= 3 ? "font-semibold text-warn" : "text-text-3"}`}>
-            {trialDaysLeft > 0
-              ? `Trial ends in ${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} — `
-              : "Trial has ended — "}
-            {new Date(practice.trial_ends_at).toLocaleDateString(undefined, {
-              month: "long",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </p>
-        )}
-
-        {staff.role === "practice_admin" ? (
-          <div className="mt-5 flex flex-wrap items-center gap-3">
-            {hasSubscription ? (
+          {staff.role === "practice_admin" ? (
+            <div className="mt-5 flex flex-wrap items-center gap-3">
               <form action={openBillingPortal}>
                 <button
                   type="submit"
@@ -127,38 +147,63 @@ export default async function BillingPage({
                   Manage billing
                 </button>
               </form>
-            ) : (
-              <form action={startCheckout}>
-                <button
-                  type="submit"
-                  className="rounded-lg bg-brand px-4 py-2 text-[13.6px] font-semibold text-white transition hover:bg-brand-ink"
-                >
-                  Subscribe
-                </button>
-              </form>
-            )}
+              <p className="text-[11.5px] text-text-3">Change plans, update your card, or view invoices.</p>
 
-            {canCancel && (
-              <form action={cancelSubscription}>
-                <button type="submit" className="text-[12.5px] font-semibold text-bad">
-                  Cancel subscription
-                </button>
-              </form>
-            )}
-            {canResume && (
-              <form action={resumeSubscription}>
-                <button type="submit" className="text-[12.5px] font-semibold text-brand-ink">
-                  Resume subscription
-                </button>
-              </form>
-            )}
+              {canCancel && (
+                <form action={cancelSubscription}>
+                  <button type="submit" className="text-[12.5px] font-semibold text-bad">
+                    Cancel subscription
+                  </button>
+                </form>
+              )}
+              {canResume && (
+                <form action={resumeSubscription}>
+                  <button type="submit" className="text-[12.5px] font-semibold text-brand-ink">
+                    Resume subscription
+                  </button>
+                </form>
+              )}
+            </div>
+          ) : (
+            <p className="mt-5 text-[12.5px] text-text-3">
+              Only your practice admin can manage billing.
+            </p>
+          )}
+        </div>
+      ) : (
+        <div className="mt-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {PLANS.map((plan) => (
+              <div key={plan.key} className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
+                <div className="text-[13px] font-semibold text-text-2">{plan.name}</div>
+                <div className="mt-1 text-[28px] font-bold tracking-tight text-foreground">
+                  {plan.price}
+                  <span className="text-[13px] font-semibold text-text-2">/month CAD</span>
+                </div>
+                <p className="mt-1 text-[12.5px] text-text-3">{plan.tagline}</p>
+                <p className="mt-3 text-[13px] font-semibold text-foreground">{plan.detail}</p>
+
+                {staff.role === "practice_admin" && (
+                  <form action={startCheckout} className="mt-5">
+                    <input type="hidden" name="plan" value={plan.key} />
+                    <button
+                      type="submit"
+                      className="w-full rounded-lg bg-brand px-4 py-2 text-[13.6px] font-semibold text-white transition hover:bg-brand-ink"
+                    >
+                      Subscribe
+                    </button>
+                  </form>
+                )}
+              </div>
+            ))}
           </div>
-        ) : (
-          <p className="mt-5 text-[12.5px] text-text-3">
-            Only your practice admin can manage billing.
-          </p>
-        )}
-      </div>
+          {staff.role !== "practice_admin" && (
+            <p className="mt-4 text-[12.5px] text-text-3">
+              Only your practice admin can manage billing.
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

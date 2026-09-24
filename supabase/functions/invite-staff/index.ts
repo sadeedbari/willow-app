@@ -18,6 +18,16 @@ function json(body: unknown, status = 200) {
 
 const VALID_ROLES = ["practice_admin", "clinician", "front_desk", "billing_admin"];
 
+// Willow's two plans cap how many staff accounts a practice can have.
+// `null` (still trialing, no plan chosen yet) gets the generous Team cap so a
+// prospective practice can fully evaluate multi-staff features before ever
+// having to decide between the two -- the real cap only bites once they've
+// actually subscribed to Solo.
+const PLAN_STAFF_LIMITS: Record<string, number> = { solo: 1, team: 6 };
+const DEFAULT_STAFF_LIMIT = 6;
+
+const UPGRADE_CONTACT_EMAIL = "info@sulosystems.com";
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -50,6 +60,45 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Only practice admins can invite staff" }, 403);
     }
 
+    // Admin client -- bypasses RLS. Only reached after the authorization
+    // check above, and never exposed to the caller.
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    const { data: practice } = await adminClient
+      .from("practices")
+      .select("subscription_plan")
+      .eq("id", staffRow.practice_id)
+      .single();
+
+    const staffLimit = practice?.subscription_plan
+      ? (PLAN_STAFF_LIMITS[practice.subscription_plan] ?? DEFAULT_STAFF_LIMIT)
+      : DEFAULT_STAFF_LIMIT;
+
+    const [{ count: activeStaffCount }, { count: pendingInviteCount }] = await Promise.all([
+      adminClient
+        .from("staff")
+        .select("id", { count: "exact", head: true })
+        .eq("practice_id", staffRow.practice_id)
+        .eq("active", true),
+      adminClient
+        .from("staff_invitations")
+        .select("id", { count: "exact", head: true })
+        .eq("practice_id", staffRow.practice_id)
+        .eq("status", "pending"),
+    ]);
+
+    const currentCount = (activeStaffCount ?? 0) + (pendingInviteCount ?? 0);
+    if (currentCount >= staffLimit) {
+      const message =
+        practice?.subscription_plan === "solo"
+          ? "Your plan only supports 1 staff account. Upgrade to the Team plan to add more."
+          : `Your subscription only allows up to ${staffLimit} staff accounts. To add more, contact Sulo Systems at ${UPGRADE_CONTACT_EMAIL}.`;
+      return json({ error: message }, 403);
+    }
+
     const body = await req.json();
     const email = (body.email ?? "").trim().toLowerCase();
     const fullName = (body.fullName ?? "").trim();
@@ -62,13 +111,6 @@ Deno.serve(async (req: Request) => {
     if (!VALID_ROLES.includes(role)) {
       return json({ error: "Invalid role" }, 400);
     }
-
-    // Admin client -- bypasses RLS. Only reached after the authorization
-    // check above, and never exposed to the caller.
-    const adminClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
 
     const { error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(email, {
       redirectTo,

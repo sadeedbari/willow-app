@@ -60,7 +60,7 @@ export default async function WillowVsOwlPracticePage() {
             Willow vs. Owl Practice
           </span>
           <h1 className="mt-4 text-[34px] font-bold leading-[1.12] tracking-[-0.02em] text-foreground sm:text-[42px]">
-            To match what Willow includes at $49, Owl&apos;s own pricing page says you need their $100 plan.
+            To match what Willow includes at $15.90, Owl&apos;s own pricing page says you need their $100 plan.
           </h1>
           <p className="mx-auto mt-5 max-w-[56ch] text-[16px] leading-relaxed text-text-2">
             Owl Practice is a well-known, Toronto-built option for Ontario therapists. Its cheaper tiers,
@@ -87,8 +87,8 @@ export default async function WillowVsOwlPracticePage() {
                 <tr className="border-b-2 border-foreground/80">
                   <th className="w-[26%] p-4 text-[13px] font-bold text-text-2"></th>
                   <th className="bg-brand-tint p-4">
-                    <div className="text-[15px] font-bold text-brand-ink">Willow</div>
-                    <div className="text-[11.5px] font-medium text-text-3">one plan, everything included</div>
+                    <div className="text-[15px] font-bold text-brand-ink">Willow Solo</div>
+                    <div className="text-[11.5px] font-medium text-text-3">everything included</div>
                   </th>
                   <th className="p-4">
                     <div className="text-[15px] font-bold text-foreground">Owl Growth</div>
@@ -104,7 +104,7 @@ export default async function WillowVsOwlPracticePage() {
                 <tr className="border-b border-border">
                   <td className="p-4 font-semibold text-foreground">Monthly price</td>
                   <td className="bg-brand-tint p-4">
-                    <span className="text-[19px] font-bold text-foreground">$49</span>{" "}
+                    <span className="text-[19px] font-bold text-foreground">$15.90</span>{" "}
                     <span className="text-[12px] text-text-3">CAD/mo</span>
                   </td>
                   <td className="p-4">

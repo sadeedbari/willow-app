@@ -1,7 +1,9 @@
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
+import { createClient } from "@/utils/supabase/server";
 import { inviteStaff } from "./actions";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getStaffLimit, UPGRADE_CONTACT_EMAIL } from "@/utils/staff-limits";
 
 export default async function InviteStaffPage({
   searchParams,
@@ -13,6 +15,48 @@ export default async function InviteStaffPage({
 
   if (staff.role !== "practice_admin") {
     redirect("/settings/staff");
+  }
+
+  const supabase = await createClient();
+  const [{ count: activeStaffCount }, { count: pendingInviteCount }, { data: practice }] = await Promise.all([
+    supabase.from("staff").select("id", { count: "exact", head: true }).eq("active", true),
+    supabase.from("staff_invitations").select("id", { count: "exact", head: true }).eq("status", "pending"),
+    supabase.from("practices").select("subscription_plan").eq("id", staff.practiceId).single(),
+  ]);
+
+  const staffLimit = getStaffLimit(practice?.subscription_plan ?? null);
+  const atStaffLimit = (activeStaffCount ?? 0) + (pendingInviteCount ?? 0) >= staffLimit;
+
+  if (atStaffLimit) {
+    return (
+      <div className="max-w-lg">
+        <Link href="/settings/staff" className="text-[13px] font-semibold text-brand-ink">
+          ← Back to staff
+        </Link>
+        <h1 className="mt-3 text-[22px] font-bold tracking-tight text-foreground">
+          Invite team member
+        </h1>
+        <p className="mt-4 rounded-lg bg-warn-tint px-3 py-2.5 text-[13px] text-warn">
+          You&apos;ve reached your plan&apos;s limit of {staffLimit} staff account{staffLimit === 1 ? "" : "s"}.{" "}
+          {staffLimit === 1 ? (
+            <>
+              <Link href="/settings/billing" className="font-semibold underline">
+                Upgrade to the Team plan
+              </Link>{" "}
+              to add more.
+            </>
+          ) : (
+            <>
+              To add more, contact Sulo Systems at{" "}
+              <a href={`mailto:${UPGRADE_CONTACT_EMAIL}`} className="font-semibold underline">
+                {UPGRADE_CONTACT_EMAIL}
+              </a>
+              .
+            </>
+          )}
+        </p>
+      </div>
+    );
   }
 
   return (

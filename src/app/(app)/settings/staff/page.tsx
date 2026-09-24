@@ -3,6 +3,7 @@ import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import { revokeInvitation, updateStaffRole, reactivateStaff, resetStaffMfa } from "./actions";
 import { SettingsTabs } from "../tabs";
 import Link from "next/link";
+import { getStaffLimit, UPGRADE_CONTACT_EMAIL } from "@/utils/staff-limits";
 
 const ROLE_LABEL: Record<string, string> = {
   practice_admin: "Practice Admin",
@@ -43,6 +44,16 @@ export default async function StaffPage({
           .order("created_at", { ascending: false })
       : { data: null };
 
+  const { data: practice } = await supabase
+    .from("practices")
+    .select("subscription_plan")
+    .eq("id", staff.practiceId)
+    .single();
+
+  const staffLimit = getStaffLimit(practice?.subscription_plan ?? null);
+  const staffCount = team.length + (invitations?.length ?? 0);
+  const atStaffLimit = staffCount >= staffLimit;
+
   return (
     <div className="max-w-2xl">
       <div className="mb-6">
@@ -65,16 +76,45 @@ export default async function StaffPage({
         </p>
       )}
 
-      <div className="mb-6 flex justify-end">
-        {staff.role === "practice_admin" && (
-          <Link
-            href="/settings/staff/invite"
-            className="rounded-lg bg-brand px-3.5 py-2 text-[13.4px] font-semibold text-white transition hover:bg-brand-ink"
-          >
-            + Invite team member
-          </Link>
-        )}
-      </div>
+      {staff.role === "practice_admin" && (
+        <div className="mb-6 flex items-center justify-between gap-3">
+          {atStaffLimit ? (
+            <p className="text-[12.5px] text-text-2">
+              You&apos;ve reached your plan&apos;s limit of {staffLimit} staff account{staffLimit === 1 ? "" : "s"}.{" "}
+              {staffLimit === 1 ? (
+                <Link href="/settings/billing" className="font-semibold text-brand-ink hover:underline">
+                  Upgrade to the Team plan
+                </Link>
+              ) : (
+                <>
+                  Contact Sulo Systems at{" "}
+                  <a href={`mailto:${UPGRADE_CONTACT_EMAIL}`} className="font-semibold text-brand-ink hover:underline">
+                    {UPGRADE_CONTACT_EMAIL}
+                  </a>
+                </>
+              )}{" "}
+              to add more.
+            </p>
+          ) : (
+            <span />
+          )}
+          {atStaffLimit ? (
+            <span
+              aria-disabled="true"
+              className="cursor-not-allowed rounded-lg bg-surface-2 px-3.5 py-2 text-[13.4px] font-semibold text-text-3"
+            >
+              + Invite team member
+            </span>
+          ) : (
+            <Link
+              href="/settings/staff/invite"
+              className="rounded-lg bg-brand px-3.5 py-2 text-[13.4px] font-semibold text-white transition hover:bg-brand-ink"
+            >
+              + Invite team member
+            </Link>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {team.map((s) => {

@@ -8,6 +8,26 @@ import { friendlyErrorMessage } from "@/utils/friendly-error";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
+// Willow's two plans, each its own Stripe Product/Price (a portal-driven
+// plan switch needs separate products -- Stripe's subscription_update
+// "switch plan" feature requires every listed product to have a distinct
+// billing interval, which two same-interval tiers under one product can't
+// satisfy). Looked up by lookup_key at request time rather than a hardcoded
+// price id env var, so a price can be rotated in Stripe with no redeploy.
+const PLAN_LOOKUP_KEYS = { solo: "willow_solo_monthly", team: "willow_team_monthly" } as const;
+type Plan = keyof typeof PLAN_LOOKUP_KEYS;
+
+function isPlan(value: unknown): value is Plan {
+  return value === "solo" || value === "team";
+}
+
+// A Willow-scoped Billing Portal configuration (created once via the Stripe
+// API) enabling self-serve plan switching between the two prices above. Not
+// the account-wide default -- this Stripe account also hosts other unrelated
+// Sulo Systems products, so portal sessions for them must keep using their
+// own default configuration untouched.
+const BILLING_PORTAL_CONFIGURATION_ID = "bpc_1UJ2Uw8nJOCbrtNYDurVpN1W";
+
 // True when Stripe rejects a customer id because it doesn't exist in the
 // current account/mode -- e.g. a stripe_customer_id saved back when the app
 // used test-mode keys, now invalid after a live-mode migration. Stripe's own
@@ -18,7 +38,7 @@ function isMissingCustomerError(err: unknown): boolean {
   return e?.code === "resource_missing" && (e.param === "customer" || (e.message ?? "").includes("No such customer"));
 }
 
-export async function startCheckout() {
+export async function startCheckout(formData: FormData) {
   // Uses the trial-tolerant variant -- this is the one action that must
   // keep working even after a trial has expired, since it's exactly how a
   // practice escapes that state. It's only ever linked to from either
@@ -27,6 +47,11 @@ export async function startCheckout() {
   const staff = await getCurrentStaffAllowExpiredTrial();
   if (staff.role !== "practice_admin") {
     redirect("/settings/billing?error=Only+practice+admins+can+manage+billing");
+  }
+
+  const plan = formData.get("plan");
+  if (!isPlan(plan)) {
+    redirect("/settings/billing?error=Choose+a+plan+to+subscribe+to");
   }
 
   const supabase = await createClient();
@@ -45,6 +70,26 @@ export async function startCheckout() {
     !!practice.trial_ends_at &&
     new Date(practice.trial_ends_at) < new Date();
   const returnPath = trialExpired ? "/trial-expired" : "/settings/billing";
+
+  // Resolved before the try/catch below (which is scoped to the
+  // customer/session creation flow and would otherwise swallow this
+  // redirect() call's own throw as a generic Stripe error -- see the
+  // redirect()-inside-try/catch note below).
+  let priceId: string | undefined;
+  try {
+    const prices = await stripe.prices.list({ lookup_keys: [PLAN_LOOKUP_KEYS[plan]], active: true });
+    priceId = prices.data[0]?.id;
+  } catch {
+    priceId = undefined;
+  }
+  if (!priceId) {
+    redirect(`${returnPath}?error=${encodeURIComponent("That plan isn't available right now — please try again shortly.")}`);
+  }
+  // Reassigned to a const so it stays narrowed to `string` (not
+  // `string | undefined`) once captured inside the createSession closure
+  // below -- TS doesn't carry control-flow narrowing of a `let` into a
+  // closure, since it could in principle be reassigned before the closure runs.
+  const resolvedPriceId: string = priceId;
 
   let checkoutUrl: string | null = null;
   let errorMessage: string | null = null;
@@ -68,8 +113,8 @@ export async function startCheckout() {
       stripe.checkout.sessions.create({
         mode: "subscription",
         customer: customerId,
-        line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }],
-        subscription_data: { metadata: { practice_id: practice.id } },
+        line_items: [{ price: resolvedPriceId, quantity: 1 }],
+        subscription_data: { metadata: { practice_id: practice.id, plan } },
         success_url: `${SITE_URL}${returnPath}?checkout=success`,
         cancel_url: `${SITE_URL}${returnPath}?checkout=cancelled`,
         // Managed Payments (on by default on newer Stripe accounts) requires a
@@ -128,6 +173,7 @@ export async function openBillingPortal() {
     const session = await stripe.billingPortal.sessions.create({
       customer: practice.stripe_customer_id,
       return_url: `${SITE_URL}/settings/billing`,
+      configuration: BILLING_PORTAL_CONFIGURATION_ID,
     });
     portalUrl = session.url;
   } catch (err) {

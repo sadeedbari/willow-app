@@ -367,8 +367,18 @@ export const FAQS: FaqItem[] = [
     question: "How do I manage or cancel my Willow subscription?",
     steps: [
       "Go to Settings → Subscription.",
-      "Click Subscribe to start a paid plan, or Manage billing to update your card.",
+      "Choose Solo ($15.90/month, 1 staff account) or Team ($49/month, up to 6 staff accounts) to start a paid plan.",
+      "Once subscribed, click Manage billing to update your card, switch plans, or view past invoices.",
       "Click Cancel subscription to stop auto-renewal — you'll keep access until the end of the current billing period. Resume subscription undoes a scheduled cancellation.",
+    ],
+  },
+  {
+    category: "Settings & Integrations",
+    question: "How many staff accounts can I have?",
+    steps: [
+      "The Solo plan ($15.90/month) supports 1 staff account — you.",
+      "The Team plan ($49/month) supports up to 6 staff accounts.",
+      "Trying to invite past your plan's limit shows a message instead of sending the invite — upgrade to Team from Settings → Subscription, or if you're already on Team and need more than 6, contact Sulo Systems at info@sulosystems.com.",
     ],
   },
 

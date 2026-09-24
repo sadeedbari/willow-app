@@ -105,7 +105,7 @@ export default async function HomePage() {
               </Link>
             </div>
             <p className="mt-4 text-[12.5px] text-text-3">
-              $49/month CAD · no setup fees · cancel anytime
+              From $15.90/month CAD · no setup fees · cancel anytime
             </p>
           </div>
 
@@ -245,20 +245,48 @@ export default async function HomePage() {
 
       {/* Pricing */}
       <section className="border-t border-border bg-surface-2">
-        <div className="mx-auto max-w-6xl px-6 py-16 text-center sm:py-20">
-          <h2 className="text-[26px] font-bold tracking-tight text-foreground sm:text-[30px]">
-            One plan. Everything included.
-          </h2>
-          <div className="mt-6 text-[48px] font-bold tracking-tight text-foreground">
-            $49<span className="text-[18px] font-semibold text-text-2">/month CAD</span>
+        <div className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
+          <div className="text-center">
+            <h2 className="text-[26px] font-bold tracking-tight text-foreground sm:text-[30px]">
+              Simple pricing, either way
+            </h2>
+            <p className="mt-3 text-[13.5px] text-text-3">Everything is included on both plans — cancel anytime.</p>
           </div>
-          <p className="mt-2 text-[13.5px] text-text-3">per practice · cancel anytime</p>
-          <Link
-            href="/signup"
-            className="mt-7 inline-block rounded-lg bg-brand px-6 py-3 text-[14.5px] font-semibold text-white shadow-sm transition hover:bg-brand-ink"
-          >
-            Get started
-          </Link>
+
+          <div className="mx-auto mt-10 grid max-w-3xl gap-6 sm:grid-cols-2">
+            <div className="rounded-2xl border border-border bg-surface p-7 shadow-sm">
+              <div className="text-[13px] font-semibold text-text-2">Solo</div>
+              <div className="mt-2 text-[38px] font-bold tracking-tight text-foreground">
+                $15.90<span className="text-[15px] font-semibold text-text-2">/month CAD</span>
+              </div>
+              <p className="mt-1 text-[13px] text-text-3">For a one-person practice</p>
+              <p className="mt-4 text-[13.5px] font-semibold text-foreground">1 staff account</p>
+              <Link
+                href="/signup"
+                className="mt-6 block rounded-lg border border-border bg-surface px-5 py-2.5 text-center text-[13.6px] font-semibold text-text-2 transition hover:bg-surface-2 hover:text-foreground"
+              >
+                Get started
+              </Link>
+            </div>
+
+            <div className="rounded-2xl border-2 border-brand bg-surface p-7 shadow-sm">
+              <div className="text-[13px] font-semibold text-brand-ink">Team</div>
+              <div className="mt-2 text-[38px] font-bold tracking-tight text-foreground">
+                $49<span className="text-[15px] font-semibold text-text-2">/month CAD</span>
+              </div>
+              <p className="mt-1 text-[13px] text-text-3">For a small group practice</p>
+              <p className="mt-4 text-[13.5px] font-semibold text-foreground">Up to 6 staff accounts</p>
+              <Link
+                href="/signup"
+                className="mt-6 block rounded-lg bg-brand px-5 py-2.5 text-center text-[13.6px] font-semibold text-white shadow-sm transition hover:bg-brand-ink"
+              >
+                Get started
+              </Link>
+            </div>
+          </div>
+          <p className="mt-6 text-center text-[12.5px] text-text-3">
+            Need more than 6 staff accounts? Contact us at info@sulosystems.com.
+          </p>
         </div>
       </section>
 
