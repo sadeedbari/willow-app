@@ -55,16 +55,30 @@ const STATUS_FILTERS = [
 export default async function InvoicesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; new?: string; error?: string; clientId?: string }>;
+  searchParams: Promise<{ status?: string; new?: string; error?: string; clientId?: string; staffId?: string }>;
 }) {
-  const { status, new: showNew, error, clientId } = await searchParams;
+  const { status, new: showNew, error, clientId, staffId } = await searchParams;
   const activeStatus = STATUS_FILTERS.some((s) => s.key === status) ? status! : "all";
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
+  // Same audience as "invoices across your practice" below -- a clinician's
+  // own view is already scoped to their own caseload by RLS, so the filter
+  // would just be a confusing no-op for them.
+  const canFilterByClinician = staff.role !== "clinician";
+  const staffIdParam = staffId ? `&staffId=${staffId}` : "";
+
+  const { data: clinicians } = canFilterByClinician
+    ? await supabase.from("staff").select("id, full_name").in("role", ["clinician", "practice_admin"]).eq("active", true).order("full_name")
+    : { data: null };
+
+  const selectedClinicianName = staffId ? clinicians?.find((c) => c.id === staffId)?.full_name : undefined;
+
   const { data } = await supabase
     .from("invoices")
-    .select("id, invoice_number, status, issue_date, due_date, total_cents, amount_paid_cents, paid_at, client_id, clients(full_name)")
+    .select(
+      "id, invoice_number, status, issue_date, due_date, total_cents, amount_paid_cents, paid_at, client_id, clients(full_name, assigned_staff_id)"
+    )
     .order("issue_date", { ascending: false })
     .order("invoice_number", { ascending: false });
 
@@ -78,9 +92,13 @@ export default async function InvoicesPage({
     amount_paid_cents: number;
     paid_at: string | null;
     client_id: string;
-    clients: { full_name: string } | null;
+    clients: { full_name: string; assigned_staff_id: string | null } | null;
   };
-  const invoices = (data ?? []) as unknown as Row[];
+  const allInvoices = (data ?? []) as unknown as Row[];
+  const invoices =
+    canFilterByClinician && staffId
+      ? allInvoices.filter((inv) => inv.clients?.assigned_staff_id === staffId)
+      : allInvoices;
 
   const today = new Date().toISOString().slice(0, 10);
   const now = new Date();
@@ -113,17 +131,39 @@ export default async function InvoicesPage({
           <p className="mt-1 text-[13.5px] text-text-2">
             {staff.role === "clinician"
               ? "Invoices for your own caseload"
-              : "Client invoices across your practice"}
+              : `Client invoices across your practice${selectedClinicianName ? ` · ${selectedClinicianName}` : ""}`}
           </p>
         </div>
-        {canCreate && (
-          <Link
-            href="/invoices?new=1"
-            className="rounded-lg bg-brand px-3.5 py-2 text-[13.4px] font-semibold text-white transition hover:bg-brand-ink"
-          >
-            + New invoice
-          </Link>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {canFilterByClinician && clinicians && clinicians.length > 0 && (
+            <form method="GET" className="flex items-center gap-1.5">
+              {activeStatus !== "all" && <input type="hidden" name="status" value={activeStatus} />}
+              <select
+                name="staffId"
+                defaultValue={staffId ?? ""}
+                className="rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[12.5px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              >
+                <option value="">All clinicians</option>
+                {clinicians.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.full_name}
+                  </option>
+                ))}
+              </select>
+              <button type="submit" className="rounded-lg border border-border px-2.5 py-1.5 text-[12.5px] font-semibold text-text-2 transition hover:bg-surface-2">
+                Go
+              </button>
+            </form>
+          )}
+          {canCreate && (
+            <Link
+              href="/invoices?new=1"
+              className="rounded-lg bg-brand px-3.5 py-2 text-[13.4px] font-semibold text-white transition hover:bg-brand-ink"
+            >
+              + New invoice
+            </Link>
+          )}
+        </div>
       </div>
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -151,7 +191,7 @@ export default async function InvoicesPage({
         {STATUS_FILTERS.map((s) => (
           <Link
             key={s.key}
-            href={s.key === "all" ? "/invoices" : `/invoices?status=${s.key}`}
+            href={s.key === "all" ? `/invoices${staffIdParam ? `?${staffIdParam.slice(1)}` : ""}` : `/invoices?status=${s.key}${staffIdParam}`}
             className={`-mb-px border-b-2 px-2.5 pb-2 text-[13.4px] font-semibold transition ${
               activeStatus === s.key
                 ? "border-brand text-foreground"
