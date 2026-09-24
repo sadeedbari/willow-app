@@ -15,7 +15,7 @@ export default async function SettingsPage({
   const supabase = await createClient();
   const { data: practice } = await supabase
     .from("practices")
-    .select("name, business_number, primary_contact_email, primary_contact_phone, logo_url, address")
+    .select("name, business_number, primary_contact_email, primary_contact_phone, logo_url, address, appointment_reminders_enabled")
     .eq("id", staff.practiceId)
     .single();
 
@@ -125,6 +125,21 @@ export default async function SettingsPage({
             </div>
           </div>
 
+          <div className="mt-4 border-t border-border pt-4">
+            <div className="mb-3 text-[13px] font-bold text-foreground">Notifications</div>
+            <label className="flex items-center gap-2 text-[13px] text-text-2">
+              <input
+                type="checkbox"
+                name="appointmentRemindersEnabled"
+                defaultChecked={practice.appointment_reminders_enabled}
+              />
+              Email clients a reminder 24 hours before their appointments
+            </label>
+            <p className="mt-1 text-[11.5px] text-text-3">
+              A client can still turn these off for themselves from their client portal.
+            </p>
+          </div>
+
           <button
             type="submit"
             className="mt-5 rounded-lg bg-brand px-4 py-2 text-[13.6px] font-semibold text-white transition hover:bg-brand-ink"
@@ -162,6 +177,10 @@ export default async function SettingsPage({
               <dt className="text-text-3">Contact phone</dt>
               <dd className="text-foreground">{practice.primary_contact_phone ?? "—"}</dd>
             </div>
+            <div className="flex justify-between">
+              <dt className="text-text-3">Appointment reminder emails</dt>
+              <dd className="text-foreground">{practice.appointment_reminders_enabled ? "On" : "Off"}</dd>
+            </div>
           </dl>
           <p className="mt-4 text-[12px] text-text-3">
             Only your practice admin can edit the practice profile.
@@ -174,7 +193,7 @@ export default async function SettingsPage({
         <a href="/profile" className="font-semibold text-brand-ink">
           Therapist Profile
         </a>
-        . More practice-wide preferences (appointment reminder emails, consent re-signature policy) are on the roadmap.
+        . More practice-wide preferences (consent re-signature policy) are on the roadmap.
       </p>
     </div>
   );

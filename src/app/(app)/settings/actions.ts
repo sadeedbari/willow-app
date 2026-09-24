@@ -76,6 +76,7 @@ export async function updatePracticeSettings(formData: FormData) {
       business_number: (formData.get("businessNumber") as string) || null,
       primary_contact_email: (formData.get("contactEmail") as string) || null,
       primary_contact_phone: (formData.get("contactPhone") as string) || null,
+      appointment_reminders_enabled: formData.get("appointmentRemindersEnabled") === "on",
       ...(logoUrl ? { logo_url: logoUrl } : {}),
     })
     .eq("id", staff.practiceId);

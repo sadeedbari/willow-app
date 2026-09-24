@@ -4,6 +4,7 @@ const TABS = [
   { href: "/portal", label: "Messages" },
   { href: "/portal/appointments", label: "Appointments" },
   { href: "/portal/book", label: "Book Appointment" },
+  { href: "/portal/notifications", label: "Notifications" },
 ];
 
 export function PortalTabs({ active, unreadMessages }: { active: string; unreadMessages?: boolean }) {
