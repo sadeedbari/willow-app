@@ -27,7 +27,7 @@ import { BrandMark } from "@/components/brand-mark";
 export const metadata: Metadata = {
   title: "Willow — Practice Management Software for Therapists",
   description:
-    "Scheduling, telehealth, session notes, billing, and a client portal — in one clean, fast app built for therapy practices in Ontario. 14-day free trial, no credit card required.",
+    "Scheduling, telehealth, session notes, billing, secure client messaging, and a client portal — in one clean, fast app built for therapy practices in Ontario. 14-day free trial, no credit card required.",
   alternates: { canonical: "/" },
 };
 
@@ -204,32 +204,54 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Team + messaging */}
+      {/* Messaging */}
       <section className="border-t border-border">
-        <div className="mx-auto grid max-w-6xl gap-10 px-6 py-16 sm:py-20 md:grid-cols-2 md:gap-14">
-          <div>
-            <h3 className="text-[18px] font-bold tracking-tight text-foreground">
-              Built for your practice, whatever size it is
-            </h3>
-            <p className="mt-3 max-w-[42ch] text-[14.5px] leading-relaxed text-text-2">
-              Solo today, a small team tomorrow. Invite clinicians, front-desk staff, or a billing
-              admin whenever you&apos;re ready — each with exactly the access their role needs.
-            </p>
-          </div>
-          <div>
-            <h3 className="text-[18px] font-bold tracking-tight text-foreground">
-              One inbox, however clients reply
-            </h3>
-            <p className="mt-3 max-w-[42ch] text-[14.5px] leading-relaxed text-text-2">
-              Clients can message you securely from the portal, or just reply to an email — either
-              way, it lands in the same conversation.
-            </p>
+        <div className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
+          <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+            <div>
+              <span className="text-[12px] font-bold uppercase tracking-[0.08em] text-brand-ink">
+                The part clients love
+              </span>
+              <h2 className="mt-2 text-[26px] font-bold tracking-tight text-foreground sm:text-[30px]">
+                Clients don&apos;t need a login to message you back.
+              </h2>
+              <p className="mt-4 max-w-[48ch] text-[15px] leading-relaxed text-text-2">
+                Secure messaging lives right in their client portal — but if they just hit reply on
+                an email notification instead, without ever logging in anywhere, that reply lands
+                in the exact same conversation automatically.
+              </p>
+              <p className="mt-4 max-w-[48ch] text-[15px] leading-relaxed text-text-2">
+                One inbox, however they respond. No second app for clients to figure out, no portal
+                password for them to forget, no message ever falls through the cracks.
+              </p>
+            </div>
+            <div className="overflow-hidden rounded-2xl border border-border shadow-sm">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/marketing/messages-shot.png"
+                alt="A secure conversation with a client in Willow's Messages inbox"
+                className="block w-full"
+              />
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Pricing */}
+      {/* Team */}
       <section className="border-t border-border bg-surface-2">
+        <div className="mx-auto max-w-3xl px-6 py-16 text-center sm:py-20">
+          <h3 className="text-[20px] font-bold tracking-tight text-foreground">
+            Built for your practice, whatever size it is
+          </h3>
+          <p className="mx-auto mt-3 max-w-[48ch] text-[14.5px] leading-relaxed text-text-2">
+            Solo today, a small team tomorrow. Invite clinicians, front-desk staff, or a billing
+            admin whenever you&apos;re ready — each with exactly the access their role needs.
+          </p>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section className="border-t border-border">
         <div className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
           <div className="text-center">
             <h2 className="text-[26px] font-bold tracking-tight text-foreground sm:text-[30px]">
@@ -276,7 +298,7 @@ export default async function HomePage() {
       </section>
 
       {/* Final CTA */}
-      <section className="border-t border-border">
+      <section className="border-t border-border bg-surface-2">
         <div className="mx-auto max-w-6xl px-6 py-16 text-center sm:py-20">
           <h2 className="text-[26px] font-bold tracking-tight text-foreground sm:text-[30px]">
             Spend less time on software. More time with clients.
