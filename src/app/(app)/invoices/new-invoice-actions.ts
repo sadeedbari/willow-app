@@ -23,6 +23,15 @@ export async function createInvoiceWithLineItems(formData: FormData) {
     redirect(`/invoices?new=1&error=${encodeURIComponent("Select a client to create an invoice.")}`);
   }
 
+  // The clinician who actually provided the service -- NOT necessarily
+  // whoever is creating this invoice (a practice_admin or billing_admin may
+  // be issuing it on a clinician's behalf). This is who shows up as
+  // "Provided by", with their license number, on the invoice PDF.
+  const clinicianStaffId = formData.get("clinicianStaffId") as string;
+  if (!clinicianStaffId) {
+    redirect(`/invoices?new=1&clientId=${clientId}&error=${encodeURIComponent("Select which clinician provided this service.")}`);
+  }
+
   const supabase = await createClient();
 
   const { data: invoice, error } = await supabase
@@ -30,7 +39,7 @@ export async function createInvoiceWithLineItems(formData: FormData) {
     .insert({
       practice_id: staff.practiceId,
       client_id: clientId,
-      issued_by_staff_id: staff.id,
+      issued_by_staff_id: clinicianStaffId,
       due_date: (formData.get("dueDate") as string) || null,
       notes: (formData.get("notes") as string) || null,
     })

@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
+import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import { createInvoiceWithLineItems } from "./new-invoice-actions";
 
 function formatMoney(cents: number) {
@@ -7,11 +8,16 @@ function formatMoney(cents: number) {
 }
 
 export async function NewInvoiceModal({ error, clientId }: { error?: string; clientId?: string }) {
+  const staff = await getCurrentStaff();
   const supabase = await createClient();
 
-  const [{ data: clients }, { data: serviceCodes }] = await Promise.all([
+  const [{ data: clients }, { data: serviceCodes }, { data: clinicians }] = await Promise.all([
     supabase.from("clients").select("id, full_name").order("full_name"),
     supabase.from("service_codes").select("id, code, description, default_rate_cents").eq("active", true).order("code"),
+    // Includes practice_admin -- a solo practice's owner is always
+    // "practice_admin" and IS the treating clinician, so a "clinician"-only
+    // query would leave this dropdown with no options but themselves absent.
+    supabase.from("staff").select("id, full_name").in("role", ["clinician", "practice_admin"]).eq("active", true).order("full_name"),
   ]);
 
   return (
@@ -59,6 +65,28 @@ export async function NewInvoiceModal({ error, clientId }: { error?: string; cli
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label className="block text-[12.5px] font-semibold text-text-2">Clinician</label>
+              <select
+                name="clinicianStaffId"
+                required
+                defaultValue={staff.role === "clinician" || staff.role === "practice_admin" ? staff.id : ""}
+                className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              >
+                <option value="" disabled>
+                  {clinicians?.length ? "Who provided this service?" : "No clinicians on staff yet"}
+                </option>
+                {clinicians?.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.full_name}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-[11.5px] text-text-3">
+                Shown as &ldquo;Provided by&rdquo; on the invoice, with their license number.
+              </p>
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
