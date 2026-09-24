@@ -33,6 +33,13 @@ const adminClient = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
+// The Next.js app, not this Deno function, sends the "paid" receipt email --
+// PDF rendering (@react-pdf/renderer) needs a Node runtime this edge function
+// doesn't have. Hardcoded rather than an env var: this function only ever
+// receives events from the live Stripe account, so it only ever needs to
+// reach the one real deployment, never a local dev server.
+const APP_URL = "https://willow.sulosystems.com";
+
 const RELEVANT_EVENTS = [
   "customer.subscription.created",
   "customer.subscription.updated",
@@ -45,8 +52,10 @@ const RELEVANT_EVENTS = [
 // Shared by checkout.session.completed and payment_intent.succeeded --
 // exactly the same "already paid is a no-op" idempotent update, just
 // reached via two different Stripe flows (a one-off Checkout session vs a
-// saved-card off-session charge).
-async function markInvoicePaid(invoiceId: string) {
+// saved-card off-session charge). `updated` tells the caller whether this
+// call was the one that actually transitioned the invoice to paid, so the
+// receipt email fires exactly once even if Stripe retries the event.
+async function markInvoicePaid(invoiceId: string): Promise<{ updated: boolean; error?: string }> {
   const { data: invoice } = await adminClient
     .from("invoices")
     .select("id, status, total_cents")
@@ -54,7 +63,7 @@ async function markInvoicePaid(invoiceId: string) {
     .maybeSingle();
 
   if (!invoice || invoice.status === "paid") {
-    return { skipped: "invoice missing or already paid" };
+    return { updated: false };
   }
 
   const { error } = await adminClient
@@ -67,7 +76,26 @@ async function markInvoicePaid(invoiceId: string) {
     })
     .eq("id", invoiceId);
 
-  return { error };
+  return error ? { updated: false, error: error.message } : { updated: true };
+}
+
+// Best-effort, like sendEmail() elsewhere -- a failed receipt email must
+// never turn a successful payment into a 500 back to Stripe (which would
+// just make Stripe retry the whole event, including the charge-side effects
+// that already happened).
+async function sendPaidReceiptEmail(invoiceId: string) {
+  try {
+    await fetch(`${APP_URL}/api/internal/invoice-paid-email`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ invoiceId }),
+    });
+  } catch (err) {
+    console.error("Failed to trigger paid-receipt email:", err);
+  }
 }
 
 Deno.serve(async (req: Request) => {
@@ -126,9 +154,12 @@ Deno.serve(async (req: Request) => {
       .eq("id", invoiceId)
       .maybeSingle();
 
-    const { error } = await markInvoicePaid(invoiceId);
+    const { updated, error } = await markInvoicePaid(invoiceId);
     if (error) {
-      return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+      return new Response(JSON.stringify({ error }), { status: 500 });
+    }
+    if (updated) {
+      await sendPaidReceiptEmail(invoiceId);
     }
 
     // If the client opted in to Stripe's "save my payment info" checkbox
@@ -176,9 +207,12 @@ Deno.serve(async (req: Request) => {
       return new Response(JSON.stringify({ received: true, skipped: "no invoice_id in metadata" }), { status: 200 });
     }
 
-    const { error } = await markInvoicePaid(invoiceId);
+    const { updated, error } = await markInvoicePaid(invoiceId);
     if (error) {
-      return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+      return new Response(JSON.stringify({ error }), { status: 500 });
+    }
+    if (updated) {
+      await sendPaidReceiptEmail(invoiceId);
     }
 
     return new Response(JSON.stringify({ received: true }), { status: 200 });

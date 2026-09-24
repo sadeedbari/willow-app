@@ -76,7 +76,7 @@ export async function recordPayment(formData: FormData) {
   const supabase = await createClient();
   const { data: invoice } = await supabase
     .from("invoices")
-    .select("total_cents, amount_paid_cents")
+    .select("status, total_cents, amount_paid_cents")
     .eq("id", invoiceId)
     .single();
 
@@ -84,6 +84,7 @@ export async function recordPayment(formData: FormData) {
     redirect(`/invoices/${invoiceId}`);
   }
 
+  const wasAlreadyPaid = invoice.status === "paid";
   const additionalPaid = dollarsToCents(formData.get("amountPaid"));
   const newAmountPaid = invoice.amount_paid_cents + additionalPaid;
   const isPaidInFull = newAmountPaid >= invoice.total_cents;
@@ -97,6 +98,26 @@ export async function recordPayment(formData: FormData) {
       paid_at: isPaidInFull ? new Date().toISOString() : null,
     })
     .eq("id", invoiceId);
+
+  // Only on the transition into "paid" -- not on a resubmit of an
+  // already-paid invoice -- same as the Stripe webhook's own guard against
+  // sending the receipt more than once.
+  if (isPaidInFull && !wasAlreadyPaid) {
+    const built = await buildInvoicePdf(supabase, invoiceId);
+    if (built?.clientEmail) {
+      await sendInvoiceEmail({
+        clientEmail: built.clientEmail,
+        clientName: built.clientFullName,
+        practiceName: built.practiceName,
+        invoiceNumber: built.invoiceNumber,
+        status: built.status,
+        totalCents: built.totalCents,
+        balanceCents: built.totalCents - built.amountPaidCents,
+        pdfBuffer: built.pdfBuffer,
+        paymentToken: built.paymentToken,
+      });
+    }
+  }
 
   revalidatePath(`/invoices/${invoiceId}`);
   redirect(`/invoices/${invoiceId}`);
