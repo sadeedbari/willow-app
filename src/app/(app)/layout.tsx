@@ -185,6 +185,7 @@ export default async function AppLayout({
     { count: pendingBookingRequestCount },
     { data: profileFields },
     { data: practiceFields },
+    { data: factorsData },
   ] = await Promise.all([
     supabase.from("message_threads").select("id, staff_last_read_at, updated_at"),
     supabase.from("notifications").select("id", { count: "exact", head: true }).eq("staff_id", staff.id).is("read_at", null),
@@ -195,30 +196,35 @@ export default async function AppLayout({
       .select("logo_url, address, business_number, primary_contact_email, primary_contact_phone")
       .eq("id", staff.practiceId)
       .single(),
+    supabase.auth.mfa.listFactors(),
   ]);
+
+  const mfaEnabled = !!factorsData?.totp?.some((f) => f.status === "verified");
 
   // Drives the profile-completion ring next to Help & FAQ -- practice fields
   // only count for a practice_admin, since only they can act on them (the
   // settings page itself gates editing the same way).
   const profileChecklist = [
-    { key: "credential", label: "Credential (e.g. RP, LMFT)", filled: !!profileFields?.credential },
+    { key: "credential", label: "Credential (e.g. RP, LMFT)", href: "/profile", filled: !!profileFields?.credential },
     {
       key: "license",
       label: "License number & province",
+      href: "/profile",
       filled: !!(profileFields?.license_number && profileFields?.license_province),
     },
-    { key: "phone", label: "Contact phone", filled: !!profileFields?.phone },
-    { key: "bio", label: "Display bio", filled: !!profileFields?.bio },
-    { key: "specialty", label: "Specialty", filled: !!profileFields?.specialty },
+    { key: "phone", label: "Contact phone", href: "/profile", filled: !!profileFields?.phone },
+    { key: "bio", label: "Display bio", href: "/profile", filled: !!profileFields?.bio },
+    { key: "specialty", label: "Specialty", href: "/profile", filled: !!profileFields?.specialty },
+    { key: "mfa", label: "Two-factor authentication", href: "/profile/security", filled: mfaEnabled },
   ];
   const practiceChecklist =
     staff.role === "practice_admin"
       ? [
-          { key: "logo", label: "Practice logo", filled: !!practiceFields?.logo_url },
-          { key: "address", label: "Practice address", filled: !!practiceFields?.address },
-          { key: "businessNumber", label: "Business number", filled: !!practiceFields?.business_number },
-          { key: "contactEmail", label: "Contact email", filled: !!practiceFields?.primary_contact_email },
-          { key: "contactPhone", label: "Contact phone", filled: !!practiceFields?.primary_contact_phone },
+          { key: "logo", label: "Practice logo", href: "/settings", filled: !!practiceFields?.logo_url },
+          { key: "address", label: "Practice address", href: "/settings", filled: !!practiceFields?.address },
+          { key: "businessNumber", label: "Business number", href: "/settings", filled: !!practiceFields?.business_number },
+          { key: "contactEmail", label: "Contact email", href: "/settings", filled: !!practiceFields?.primary_contact_email },
+          { key: "contactPhone", label: "Contact phone", href: "/settings", filled: !!practiceFields?.primary_contact_phone },
         ]
       : [];
   const completionFields = [...profileChecklist, ...practiceChecklist];
@@ -413,7 +419,7 @@ export default async function AppLayout({
                         .map((f) => (
                           <li key={f.key}>
                             <Link
-                              href="/profile"
+                              href={f.href}
                               className="flex items-center gap-1.5 text-[12.5px] text-text-2 transition hover:text-brand-ink"
                             >
                               <span className="h-1.5 w-1.5 flex-none rounded-full border border-text-3" />
@@ -436,7 +442,7 @@ export default async function AppLayout({
                         .map((f) => (
                           <li key={f.key}>
                             <Link
-                              href="/settings"
+                              href={f.href}
                               className="flex items-center gap-1.5 text-[12.5px] text-text-2 transition hover:text-brand-ink"
                             >
                               <span className="h-1.5 w-1.5 flex-none rounded-full border border-text-3" />
