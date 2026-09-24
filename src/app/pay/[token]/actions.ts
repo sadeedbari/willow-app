@@ -2,7 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import { stripe } from "@/utils/stripe/server";
+import { stripe, isMissingConnectAccountError } from "@/utils/stripe/server";
 import { friendlyErrorMessage } from "@/utils/friendly-error";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -89,7 +89,13 @@ export async function startInvoicePayment(formData: FormData) {
     checkoutUrl = session.url;
     await supabase.rpc("set_invoice_checkout_session", { p_token: token, p_session_id: session.id });
   } catch (err) {
-    errorMessage = friendlyErrorMessage(err as { code?: string; message?: string }, "Could not start payment");
+    // A practice's connect account can go stale after the "pay online"
+    // button was already showing (e.g. a test-mode account orphaned by a
+    // platform-wide live-mode migration) -- never surface Stripe's internal
+    // account-plumbing language to the paying client.
+    errorMessage = isMissingConnectAccountError(err)
+      ? "Online payment isn't set up for this practice right now — please contact them directly to pay this invoice."
+      : friendlyErrorMessage(err as { code?: string; message?: string }, "Could not start payment");
   }
 
   // redirect() must never be called inside a try/catch -- Next.js implements

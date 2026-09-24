@@ -3,7 +3,7 @@ import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import { SettingsTabs } from "../tabs";
 import { saveDailyApiKey, removeDailyApiKey } from "./daily-actions";
 import { connectStripe, disconnectStripe } from "./stripe-actions";
-import { stripe } from "@/utils/stripe/server";
+import { stripe, isMissingConnectAccountError } from "@/utils/stripe/server";
 
 export default async function IntegrationsSettingsPage({
   searchParams,
@@ -45,9 +45,25 @@ export default async function IntegrationsSettingsPage({
           .update({ stripe_connect_charges_enabled: chargesEnabled, stripe_connect_details_submitted: detailsSubmitted })
           .eq("id", staff.practiceId);
       }
-    } catch {
-      // Stripe unreachable or account no longer valid -- fall back to the
-      // last-known DB values rather than failing the whole page.
+    } catch (err) {
+      if (isMissingConnectAccountError(err)) {
+        // The id on file no longer resolves under our current Stripe key --
+        // most commonly a test-mode account left over from before a
+        // platform-wide live-mode migration. Forget it so the page falls
+        // back to a clean "Connect Stripe" instead of a "Continue setup"
+        // that would just fail the exact same way.
+        await supabase
+          .from("practices")
+          .update({
+            stripe_connect_account_id: null,
+            stripe_connect_details_submitted: false,
+            stripe_connect_charges_enabled: false,
+          })
+          .eq("id", staff.practiceId);
+        practice.stripe_connect_account_id = null;
+      }
+      // Otherwise: Stripe unreachable -- fall back to the last-known DB
+      // values rather than failing the whole page.
     }
   }
 

@@ -3,7 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
-import { stripe } from "@/utils/stripe/server";
+import { stripe, isMissingConnectAccountError } from "@/utils/stripe/server";
 import { friendlyErrorMessage } from "@/utils/friendly-error";
 
 function stripeErrorMessage(err: unknown, fallback: string): string {
@@ -38,14 +38,37 @@ export async function connectStripe() {
     redirect("/settings/integrations?error=Practice+not+found");
   }
 
+  const practiceId = practice.id;
   let accountId = practice.stripe_connect_account_id;
   let errorMessage: string | null = null;
 
+  async function createFreshAccount() {
+    const account = await stripe.accounts.create({ type: "standard" });
+    accountId = account.id;
+    // Reset the status flags too -- they'd otherwise still describe whatever
+    // the previous (now-abandoned) account had gotten to.
+    await supabase
+      .from("practices")
+      .update({
+        stripe_connect_account_id: accountId,
+        stripe_connect_details_submitted: false,
+        stripe_connect_charges_enabled: false,
+      })
+      .eq("id", practiceId);
+  }
+
+  async function createLink() {
+    return stripe.accountLinks.create({
+      account: accountId!,
+      refresh_url: `${SITE_URL}/settings/integrations`,
+      return_url: `${SITE_URL}/settings/integrations`,
+      type: "account_onboarding",
+    });
+  }
+
   if (!accountId) {
     try {
-      const account = await stripe.accounts.create({ type: "standard" });
-      accountId = account.id;
-      await supabase.from("practices").update({ stripe_connect_account_id: accountId }).eq("id", practice.id);
+      await createFreshAccount();
     } catch (err) {
       errorMessage = stripeErrorMessage(err, "Could not start Stripe connection");
     }
@@ -54,15 +77,24 @@ export async function connectStripe() {
   let accountLinkUrl: string | null = null;
   if (!errorMessage) {
     try {
-      const accountLink = await stripe.accountLinks.create({
-        account: accountId!,
-        refresh_url: `${SITE_URL}/settings/integrations`,
-        return_url: `${SITE_URL}/settings/integrations`,
-        type: "account_onboarding",
-      });
-      accountLinkUrl = accountLink.url;
+      accountLinkUrl = (await createLink()).url;
     } catch (err) {
-      errorMessage = stripeErrorMessage(err, "Could not open Stripe onboarding");
+      // The id on file can go stale -- most commonly a test-mode account
+      // left over from before a platform-wide live-mode migration (test and
+      // live accounts are separate namespaces on Stripe's side, so switching
+      // the platform key silently orphans every previously-connected
+      // account). Rather than surfacing that as a raw Stripe error, quietly
+      // start over with a brand new account exactly once.
+      if (isMissingConnectAccountError(err)) {
+        try {
+          await createFreshAccount();
+          accountLinkUrl = (await createLink()).url;
+        } catch (retryErr) {
+          errorMessage = stripeErrorMessage(retryErr, "Could not open Stripe onboarding");
+        }
+      } else {
+        errorMessage = stripeErrorMessage(err, "Could not open Stripe onboarding");
+      }
     }
   }
 
