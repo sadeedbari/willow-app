@@ -1,15 +1,16 @@
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
-import { requestRecoveryEmailChange } from "../security-actions";
+import { requestRecoveryEmailChange, changeMyPassword, resetMyMfa } from "../security-actions";
 import { ProfileTabs } from "../tabs";
+import { PASSWORD_PATTERN, PASSWORD_REQUIREMENTS_HINT } from "@/utils/password";
 
 export default async function SecurityPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; recoveryEmailSent?: string }>;
+  searchParams: Promise<{ error?: string; recoveryEmailSent?: string; passwordChanged?: string; mfaReset?: string }>;
 }) {
-  const { error, recoveryEmailSent } = await searchParams;
+  const { error, recoveryEmailSent, passwordChanged, mfaReset } = await searchParams;
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
@@ -49,6 +50,16 @@ export default async function SecurityPage({
           Check that inbox for a confirmation link.
         </p>
       )}
+      {passwordChanged && (
+        <p className="mb-4 rounded-lg bg-ok-tint px-3 py-2 text-[13px] text-ok">
+          Password changed.
+        </p>
+      )}
+      {mfaReset && (
+        <p className="mb-4 rounded-lg bg-ok-tint px-3 py-2 text-[13px] text-ok">
+          Two-factor authentication reset — you&apos;ll set it up again the next time it&apos;s required.
+        </p>
+      )}
 
       <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
         <div className="mb-1 text-[13px] font-bold text-foreground">Security</div>
@@ -66,13 +77,25 @@ export default async function SecurityPage({
             >
               {mfaFactor ? "Enabled" : "Not set up"}
             </span>
-            {!mfaFactor && (
+            {mfaFactor ? (
+              <form action={resetMyMfa}>
+                <button type="submit" className="text-[12.5px] font-semibold text-bad">
+                  Disable / Reset
+                </button>
+              </form>
+            ) : (
               <Link href="/mfa/setup" className="text-[12.5px] font-semibold text-brand-ink hover:underline">
                 Set up →
               </Link>
             )}
           </div>
         </div>
+        {mfaFactor && (
+          <p className="mt-2 text-[11.5px] text-text-3">
+            Removes your current authenticator so you can set up a new one — useful if you got a new phone or
+            lost access to the old one. You&apos;ll be asked to set it up again the next time it&apos;s required.
+          </p>
+        )}
 
         <div className="mt-4 border-t border-border pt-4">
           <div className="text-[12.5px] font-semibold text-text-2">Recovery email</div>
@@ -122,6 +145,45 @@ export default async function SecurityPage({
               Send confirmation link
             </button>
           </form>
+        </div>
+
+        <div className="mt-4 border-t border-border pt-4">
+          <div className="text-[12.5px] font-semibold text-text-2">Password</div>
+          <p className="mt-1 text-[12px] text-text-3">Change the password you use to log in.</p>
+
+          <form action={changeMyPassword} className="mt-3 flex flex-wrap items-end gap-3">
+            <div>
+              <label className="block text-[12px] font-semibold text-text-2">New password</label>
+              <input
+                name="password"
+                type="password"
+                required
+                minLength={8}
+                pattern={PASSWORD_PATTERN}
+                title={PASSWORD_REQUIREMENTS_HINT}
+                autoComplete="new-password"
+                className="mt-1 rounded-lg border border-border bg-surface px-3 py-2 text-[13.4px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              />
+            </div>
+            <div>
+              <label className="block text-[12px] font-semibold text-text-2">Confirm password</label>
+              <input
+                name="confirmPassword"
+                type="password"
+                required
+                minLength={8}
+                autoComplete="new-password"
+                className="mt-1 rounded-lg border border-border bg-surface px-3 py-2 text-[13.4px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              />
+            </div>
+            <button
+              type="submit"
+              className="rounded-lg border border-border px-3.5 py-2 text-[12.5px] font-semibold text-text-2 transition hover:bg-surface-2"
+            >
+              Change password
+            </button>
+          </form>
+          <p className="mt-1 text-[11.5px] text-text-3">{PASSWORD_REQUIREMENTS_HINT}</p>
         </div>
       </div>
     </div>

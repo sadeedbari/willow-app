@@ -2,9 +2,47 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { sendEmail } from "@/utils/resend/send";
+import { friendlyErrorMessage } from "@/utils/friendly-error";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
+export async function changeMyPassword(formData: FormData) {
+  const password = formData.get("password") as string;
+  const confirmPassword = formData.get("confirmPassword") as string;
+
+  if (password !== confirmPassword) {
+    redirect(`/profile/security?error=${encodeURIComponent("Passwords don't match")}`);
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    redirect(`/profile/security?error=${encodeURIComponent(friendlyErrorMessage(error))}`);
+  }
+
+  redirect("/profile/security?passwordChanged=1");
+}
+
+// Removes every TOTP factor on the CALLER's OWN account. Unlike
+// settings/staff/actions.ts's resetStaffMfa (an admin acting on someone
+// else's account, which needs the service-role client to bypass the normal
+// "you can only manage your own factors" boundary), this runs entirely
+// through the caller's own session -- mfa.unenroll() only ever touches the
+// calling user's own factors, so no elevated client is needed here.
+export async function resetMyMfa() {
+  const supabase = await createClient();
+  const { data: factorsData } = await supabase.auth.mfa.listFactors();
+
+  for (const factor of factorsData?.totp ?? []) {
+    await supabase.auth.mfa.unenroll({ factorId: factor.id });
+  }
+
+  revalidatePath("/profile/security");
+  redirect("/profile/security?mfaReset=1");
+}
 
 export async function requestRecoveryEmailChange(formData: FormData) {
   const email = formData.get("recoveryEmail") as string;
