@@ -18,6 +18,7 @@ const PUBLIC_PATHS = [
   "/privacy",
   "/sitemap.xml",
   "/robots.txt",
+  "/manifest.webmanifest",
   "/forgot-password",
   "/reset-password",
   "/portal/login",

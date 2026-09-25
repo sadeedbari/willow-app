@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import { MarketingAnalytics } from "@/components/marketing-analytics";
 import "./globals.css";
@@ -14,6 +14,14 @@ export const metadata: Metadata = {
     siteName: "Willow",
     type: "website",
   },
+  appleWebApp: {
+    title: "Willow",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#4f9e8c",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
