@@ -467,7 +467,7 @@ export const FAQS: FaqItem[] = [
       "Log in so the shortcut opens straight into your account.",
       "Tap the Share icon in the toolbar — the square with an arrow pointing up.",
       "Scroll down in the share sheet and tap Add to Home Screen.",
-      "Tap Add in the top-right corner. A Willow icon now appears on your home screen for quick, one-tap access.",
+      "Tap Add in the top-right corner. A Willow icon now appears on your home screen, opening full-screen like an installed app (no Safari address bar) and landing you on your dashboard or portal, not the public marketing page.",
     ],
   },
   {
@@ -477,8 +477,8 @@ export const FAQS: FaqItem[] = [
       "Open Chrome and go to your Willow dashboard, or the client portal if you're a client.",
       "Log in so the shortcut opens straight into your account.",
       "Tap the three-dot menu in the top-right corner.",
-      "Tap Add to Home screen (some versions of Chrome show this as Install app).",
-      "Tap Add (or Install) to confirm. A Willow icon now appears on your home screen for quick, one-tap access.",
+      "Tap Install app (some versions of Chrome show this as Add to Home screen).",
+      "Tap Install to confirm. Willow now shows up as a real installed app — its own icon in your app drawer and app switcher, opening in its own window, not just a bookmark shortcut.",
     ],
   },
 
