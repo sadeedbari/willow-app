@@ -68,6 +68,12 @@ export async function updatePracticeSettings(formData: FormData) {
     logoUrl = `${publicUrl}?v=${Date.now()}`;
   }
 
+  const rescheduleNoticeHoursRaw = formData.get("rescheduleNoticeHours") as string;
+  const rescheduleNoticeHours = Number.parseInt(rescheduleNoticeHoursRaw, 10);
+  if (!Number.isInteger(rescheduleNoticeHours) || rescheduleNoticeHours < 0) {
+    redirect(`/settings?error=${encodeURIComponent("Reschedule notice must be a whole number of hours, 0 or more.")}`);
+  }
+
   const { error } = await supabase
     .from("practices")
     .update({
@@ -77,6 +83,7 @@ export async function updatePracticeSettings(formData: FormData) {
       primary_contact_email: (formData.get("contactEmail") as string) || null,
       primary_contact_phone: (formData.get("contactPhone") as string) || null,
       appointment_reminders_enabled: formData.get("appointmentRemindersEnabled") === "on",
+      reschedule_notice_hours: rescheduleNoticeHours,
       ...(logoUrl ? { logo_url: logoUrl } : {}),
     })
     .eq("id", staff.practiceId);

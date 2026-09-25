@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentClient } from "@/utils/supabase/current-client";
 import { isThreadUnread } from "@/utils/messaging";
+import Link from "next/link";
 import { PortalTabs } from "../tabs";
 import { cancelMyAppointment } from "./actions";
 import { portalLogout } from "../actions";
@@ -22,6 +23,7 @@ type UpcomingAppointment = {
   status: string;
   staff_name: string;
   video_client_url: string | null;
+  reschedule_notice_hours: number;
 };
 
 function formatDateTime(iso: string) {
@@ -38,9 +40,9 @@ function formatDateTime(iso: string) {
 export default async function PortalAppointmentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; cancelled?: string }>;
+  searchParams: Promise<{ error?: string; cancelled?: string; rescheduled?: string }>;
 }) {
-  const { error, cancelled } = await searchParams;
+  const { error, cancelled, rescheduled } = await searchParams;
   const client = await getCurrentClient();
   const supabase = await createClient();
 
@@ -81,42 +83,65 @@ export default async function PortalAppointmentsPage({
             Appointment cancelled.
           </p>
         )}
+        {rescheduled && (
+          <p className="mt-4 rounded-lg bg-ok-tint px-3 py-2 text-[13px] text-ok">
+            Appointment rescheduled.
+          </p>
+        )}
 
         <div className="mt-4 flex-1 space-y-3">
           {appointments?.length ? (
-            appointments.map((appt) => (
-              <div
-                key={appt.id}
-                className="rounded-2xl border border-border bg-surface p-4 shadow-sm"
-              >
-                <div className="text-[13.6px] font-bold text-foreground">
-                  {formatDateTime(appt.starts_at)}
-                </div>
-                <div className="mt-1 text-[12.5px] text-text-3">
-                  {TYPE_LABEL[appt.type] ?? appt.type} with {appt.staff_name} ·{" "}
-                  {appt.location_type === "telehealth" ? "Video call" : "In office"}
-                </div>
+            appointments.map((appt) => {
+              const noticeMs = appt.reschedule_notice_hours * 60 * 60 * 1000;
+              const canReschedule = new Date(appt.starts_at).getTime() - new Date().getTime() > noticeMs;
 
-                <div className="mt-3 flex items-center gap-3">
-                  {appt.location_type === "telehealth" && appt.video_client_url && (
-                    <a
-                      href={appt.video_client_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-lg bg-brand px-3 py-1.5 text-[12.5px] font-semibold text-white transition hover:bg-brand-ink"
-                    >
-                      Join video call
-                    </a>
+              return (
+                <div
+                  key={appt.id}
+                  className="rounded-2xl border border-border bg-surface p-4 shadow-sm"
+                >
+                  <div className="text-[13.6px] font-bold text-foreground">
+                    {formatDateTime(appt.starts_at)}
+                  </div>
+                  <div className="mt-1 text-[12.5px] text-text-3">
+                    {TYPE_LABEL[appt.type] ?? appt.type} with {appt.staff_name} ·{" "}
+                    {appt.location_type === "telehealth" ? "Video call" : "In office"}
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    {appt.location_type === "telehealth" && appt.video_client_url && (
+                      <a
+                        href={appt.video_client_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-lg bg-brand px-3 py-1.5 text-[12.5px] font-semibold text-white transition hover:bg-brand-ink"
+                      >
+                        Join video call
+                      </a>
+                    )}
+                    {canReschedule && (
+                      <Link
+                        href={`/portal/appointments/${appt.id}/reschedule`}
+                        className="text-[12.5px] font-semibold text-brand-ink"
+                      >
+                        Reschedule
+                      </Link>
+                    )}
+                    <form action={cancelMyAppointment}>
+                      <input type="hidden" name="appointmentId" value={appt.id} />
+                      <button type="submit" className="text-[12.5px] font-semibold text-bad">
+                        Cancel
+                      </button>
+                    </form>
+                  </div>
+                  {!canReschedule && (
+                    <p className="mt-2 text-[11.5px] text-text-3">
+                      Too close to reschedule online — contact your practice directly to change this time.
+                    </p>
                   )}
-                  <form action={cancelMyAppointment}>
-                    <input type="hidden" name="appointmentId" value={appt.id} />
-                    <button type="submit" className="text-[12.5px] font-semibold text-bad">
-                      Cancel
-                    </button>
-                  </form>
                 </div>
-              </div>
-            ))
+              );
+            })
           ) : (
             <p className="rounded-2xl border border-border bg-surface p-6 text-center text-[13px] text-text-3">
               No upcoming appointments — book one from the Book Appointment tab.
