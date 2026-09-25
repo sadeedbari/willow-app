@@ -21,7 +21,7 @@ export default async function PortalLoginPage({
             Client Portal
           </h1>
           <p className="mt-1 text-[13.5px] text-text-2">
-            Log in to message your practice.
+            Log in to book appointments, message your practice, and manage your preferences.
           </p>
         </div>
 
