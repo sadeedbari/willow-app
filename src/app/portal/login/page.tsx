@@ -6,9 +6,9 @@ import { PasswordInput } from "@/components/password-input";
 export default async function PortalLoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; next?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, next } = await searchParams;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-surface-2 px-4">
@@ -32,6 +32,7 @@ export default async function PortalLoginPage({
         )}
 
         <form action={portalLogin} className="space-y-4">
+          {next && <input type="hidden" name="next" value={next} />}
           <div>
             <label className="block text-[12.5px] font-semibold text-text-2">
               Email

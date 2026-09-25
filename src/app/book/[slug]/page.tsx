@@ -186,6 +186,16 @@ export default async function PublicBookingPage({
         </Link>
       </header>
 
+      <div className="flex items-center justify-between gap-3 border-b border-border bg-hue-cal-tint px-5 py-2.5">
+        <span className="text-[12.5px] text-text-2">Already a client here?</span>
+        <Link
+          href="/portal/login?next=%2Fportal%2Fbook"
+          className="flex-none rounded-full bg-surface px-3 py-1.5 text-[12px] font-semibold text-hue-cal shadow-sm transition hover:bg-brand-tint hover:text-brand-ink"
+        >
+          Log in to book a return visit →
+        </Link>
+      </div>
+
       <section
         className="border-b border-border"
         style={{
