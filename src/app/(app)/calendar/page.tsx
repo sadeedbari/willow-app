@@ -44,6 +44,10 @@ const FINE_SLOT_MINUTES = 10;
 const FINE_ROWS_PER_HOUR = 60 / FINE_SLOT_MINUTES;
 const TOTAL_FINE_ROWS = HOUR_COUNT * FINE_ROWS_PER_HOUR;
 const FINE_ROW_PX = 8;
+// Mobile only ever renders one day column instead of seven, so there's
+// room to give each row more height -- taller appointment blocks read much
+// more easily on a phone than the desktop grid's compact 8px rows.
+const MOBILE_FINE_ROW_PX = 11;
 
 function mondayOf(date: Date) {
   const d = new Date(date);
@@ -70,9 +74,10 @@ export default async function CalendarPage({
     date?: string;
     time?: string;
     clientId?: string;
+    day?: string;
   }>;
 }) {
-  const { week, staffId, event, error, new: isNew, date: newDate, time: newTime, clientId } = await searchParams;
+  const { week, staffId, event, error, new: isNew, date: newDate, time: newTime, clientId, day } = await searchParams;
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
@@ -112,14 +117,27 @@ export default async function CalendarPage({
   const appointments = (data ?? []) as unknown as ApptRow[];
 
   const days = Array.from({ length: 7 }, (_, i) => new Date(weekStart.getTime() + i * 24 * 60 * 60 * 1000));
+  const dayStrs = days.map(toDateParam);
 
   const hourLabels = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
 
   function bookLink(dayIndex: number, hourIndex: number) {
     const d = days[dayIndex];
     const hh = String(START_HOUR + hourIndex).padStart(2, "0");
-    return `${baseCalendarHref}&new=1&date=${toDateParam(d)}&time=${hh}:00`;
+    return `${baseCalendarHref}&day=${toDateParam(d)}&new=1&date=${toDateParam(d)}&time=${hh}:00`;
   }
+
+  // Mobile view shows one day at a time -- pick whichever day the `day`
+  // param points to, falling back to today if it's in the displayed week,
+  // or Monday otherwise (mirrors the day-strip pattern already used on the
+  // public booking, client self-booking, and reschedule pages).
+  const todayStr = toDateParam(new Date());
+  const requestedDayStr = day && dayStrs.includes(day) ? day : dayStrs.includes(todayStr) ? todayStr : dayStrs[0];
+  const mobileDayIndex = dayStrs.indexOf(requestedDayStr);
+
+  const apptCountByDay = days.map(
+    (d) => appointments.filter((a) => new Date(a.starts_at).toDateString() === d.toDateString()).length
+  );
 
   return (
     <div>
@@ -202,7 +220,7 @@ export default async function CalendarPage({
         ))}
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-border bg-surface shadow-sm">
+      <div className="hidden overflow-x-auto rounded-2xl border border-border bg-surface shadow-sm md:block">
         <div
           className="grid min-w-[820px]"
           style={{
@@ -282,11 +300,101 @@ export default async function CalendarPage({
         </div>
       </div>
 
-      {event && <AppointmentModal appointmentId={event} closeHref={baseCalendarHref} error={error} />}
+      {/* Mobile: one day at a time, picked from a swipeable day strip, so
+          the whole schedule only ever needs a vertical scroll -- the full
+          week grid above needs both directions on a phone-width screen. */}
+      <div className="md:hidden">
+        <div className="grid grid-cols-7 gap-1.5">
+          {days.map((d, i) => {
+            const isSelected = i === mobileDayIndex;
+            const isToday = dayStrs[i] === todayStr;
+            return (
+              <Link
+                key={i}
+                href={`${baseCalendarHref}&day=${dayStrs[i]}`}
+                className={`flex flex-col items-center gap-0.5 rounded-xl border px-1 py-2 transition ${
+                  isSelected ? "border-brand bg-brand text-white shadow-sm" : "border-border bg-surface text-foreground hover:bg-surface-2"
+                }`}
+              >
+                <span className={`text-[10px] font-semibold uppercase tracking-wide ${isSelected ? "text-white/80" : "text-text-3"}`}>
+                  {d.toLocaleDateString(undefined, { weekday: "short" })}
+                </span>
+                <span className="text-[15px] font-bold">{d.getDate()}</span>
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    apptCountByDay[i] === 0 ? "bg-transparent" : isSelected ? "bg-white" : isToday ? "bg-brand" : "bg-text-3"
+                  }`}
+                />
+              </Link>
+            );
+          })}
+        </div>
+
+        <div className="mt-3 overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
+          <div
+            className="grid"
+            style={{
+              gridTemplateColumns: `52px 1fr`,
+              gridTemplateRows: `repeat(${TOTAL_FINE_ROWS}, ${MOBILE_FINE_ROW_PX}px)`,
+            }}
+          >
+            {/* Hour labels */}
+            {hourLabels.map((h, i) => (
+              <div
+                key={h}
+                className="border-t border-border px-1.5 pt-0.5 text-right text-[10px] text-text-3"
+                style={{ gridColumn: 1, gridRow: `${1 + i * FINE_ROWS_PER_HOUR} / span ${FINE_ROWS_PER_HOUR}` }}
+              >
+                {h === 12 ? "12pm" : h > 12 ? `${h - 12}pm` : `${h}am`}
+              </div>
+            ))}
+
+            {/* Background slot grid (tap to book), one hour-tall cell per hour */}
+            {hourLabels.map((_, hourIndex) => (
+              <Link
+                key={hourIndex}
+                href={bookLink(mobileDayIndex, hourIndex)}
+                className="border-t border-l border-border transition hover:bg-surface-2"
+                style={{ gridColumn: 2, gridRow: `${1 + hourIndex * FINE_ROWS_PER_HOUR} / span ${FINE_ROWS_PER_HOUR}` }}
+              />
+            ))}
+
+            {/* Appointment blocks for the selected day only */}
+            {appointments
+              .filter((a) => new Date(a.starts_at).toDateString() === days[mobileDayIndex].toDateString())
+              .map((a) => {
+                const start = new Date(a.starts_at);
+                const end = new Date(a.ends_at);
+                const startMinutes = start.getHours() * 60 + start.getMinutes() - START_HOUR * 60;
+                const durationMinutes = Math.max(FINE_SLOT_MINUTES, (end.getTime() - start.getTime()) / 60000);
+                const rowStart = 1 + Math.max(0, Math.round(startMinutes / FINE_SLOT_MINUTES));
+                const rowSpan = Math.max(1, Math.round(durationMinutes / FINE_SLOT_MINUTES));
+                const isPast = a.status === "completed" || a.status === "no_show";
+                const color = TYPE_COLOR[a.type] ?? TYPE_COLOR.individual;
+
+                return (
+                  <Link
+                    key={a.id}
+                    href={`${baseCalendarHref}&day=${requestedDayStr}&event=${a.id}`}
+                    className={`m-0.5 overflow-hidden rounded-md border-l-[3px] px-2 py-1 text-[12.5px] leading-tight shadow-sm transition hover:shadow-md ${color.bg} ${color.text} ${color.border} ${isPast ? "opacity-50" : ""}`}
+                    style={{ gridColumn: 2, gridRow: `${rowStart} / span ${rowSpan}` }}
+                  >
+                    <div className="truncate font-semibold">{a.clients?.full_name ?? "Unknown client"}</div>
+                    <div className="truncate opacity-80">
+                      {start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} · {TYPE_LABEL[a.type] ?? a.type}
+                    </div>
+                  </Link>
+                );
+              })}
+          </div>
+        </div>
+      </div>
+
+      {event && <AppointmentModal appointmentId={event} closeHref={`${baseCalendarHref}&day=${requestedDayStr}`} error={error} />}
       {!event && isNew && (
         <NewAppointmentModal
-          closeHref={baseCalendarHref}
-          reopenHref={`${baseCalendarHref}&new=1&date=${newDate ?? toDateParam(new Date())}&time=${newTime ?? "14:00"}${clientId ? `&clientId=${clientId}` : ""}`}
+          closeHref={`${baseCalendarHref}&day=${requestedDayStr}`}
+          reopenHref={`${baseCalendarHref}&day=${requestedDayStr}&new=1&date=${newDate ?? toDateParam(new Date())}&time=${newTime ?? "14:00"}${clientId ? `&clientId=${clientId}` : ""}`}
           date={newDate}
           time={newTime}
           clientId={clientId}
