@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-const EFFECTIVE_DATE = "September 10, 2026";
+const EFFECTIVE_DATE = "September 25, 2026";
 
 export default function PrivacyPolicyPage() {
   return (
@@ -40,8 +40,8 @@ export default function PrivacyPolicyPage() {
               </li>
               <li>
                 <span className="font-semibold text-foreground">Practice data:</span> client records,
-                appointments, session/clinical notes, forms, messages, and invoices, entered by a
-                Practice or its Clients.
+                appointments, session/clinical notes, forms, messages, invoices, and appointment/notification
+                preferences, entered by a Practice or its Clients.
               </li>
               <li>
                 <span className="font-semibold text-foreground">Payment information:</span> handled
@@ -63,6 +63,13 @@ export default function PrivacyPolicyPage() {
               video calls), to communicate with users about their account, to process payments, to
               maintain security and prevent abuse, and to comply with legal obligations. We do not
               sell personal information, and we do not use client health data for advertising.
+            </p>
+            <p className="mt-2">
+              This includes sending automated appointment-reminder emails on a Practice&apos;s behalf
+              (by default, 24 hours before an appointment). These emails deliberately don&apos;t
+              mention the type of session, to stay discreet in an inbox or notification preview. A
+              Practice can turn reminders off entirely, and a Client can independently turn off
+              reminders just for themselves — see Section 9.
             </p>
           </section>
 
@@ -153,10 +160,11 @@ export default function PrivacyPolicyPage() {
             <h2 className="text-[15px] font-bold text-foreground">9. Your choices</h2>
             <p className="mt-2">
               Practice staff can access and update their account information directly in Willow.
-              Clients with portal access can do the same for their own portal account. To request
-              access to, correction of, or deletion of personal information, contact your Practice
-              directly (as the data controller for your health information) or reach us at the email
-              below.
+              Clients with portal access can do the same for their own portal account, including
+              turning appointment-reminder emails on or off from their portal&apos;s Notifications
+              tab (independently of their Practice&apos;s practice-wide setting). To request access
+              to, correction of, or deletion of personal information, contact your Practice directly
+              (as the data controller for your health information) or reach us at the email below.
             </p>
           </section>
 

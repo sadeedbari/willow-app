@@ -109,6 +109,15 @@ export const FAQS: FaqItem[] = [
       "Practice Admin, Front Desk, and Billing Admin see all clients practice-wide.",
     ],
   },
+  {
+    category: "Clients",
+    question: "Can I turn off appointment reminder emails for one specific client?",
+    steps: [
+      "Open the client's page and click Edit.",
+      "Uncheck Email this client a reminder 24 hours before their appointments, then Save changes.",
+      "This only affects that one client — it doesn't change your practice-wide reminder setting, and the client can also control this themselves from their client portal.",
+    ],
+  },
 
   // Calendar & Appointments
   {
@@ -165,6 +174,17 @@ export const FAQS: FaqItem[] = [
       "Go to Calendar and click the appointment.",
       "Use Cancel to cancel it, or edit the date/time to reschedule.",
       "The client is notified by email of the change.",
+      "This works regardless of your practice's cancellation/reschedule notice window — that window only limits what a client can do themselves from their portal, not staff.",
+    ],
+  },
+  {
+    category: "Calendar & Appointments",
+    question: "Do clients get an email reminder before their appointment?",
+    steps: [
+      "Yes, by default — clients get a reminder email 24 hours before each upcoming appointment.",
+      "Your practice can turn this off entirely under Settings → Practice Profile → Notifications.",
+      "A client can also turn reminders off just for themselves from the Notifications tab in their client portal, and you can do the same for one specific client from their client page.",
+      "The reminder email just says an appointment is coming up — it doesn't mention the session type, to keep it discreet in an inbox or notification preview.",
     ],
   },
   {
@@ -337,6 +357,16 @@ export const FAQS: FaqItem[] = [
   },
   {
     category: "Settings & Integrations",
+    question: "How do I set how far in advance clients can cancel or reschedule online?",
+    steps: [
+      "Go to Settings → Practice Profile → Booking.",
+      "Set Cancellation & reschedule notice (hours) to however many hours' notice you require — 24 by default.",
+      "Inside that window, a client can no longer cancel or reschedule an appointment themselves from the client portal — they'll see a note asking them to contact your practice directly, and the Cancel/Reschedule options disappear from their Appointments tab.",
+      "This never limits what staff can do — you can always cancel or reschedule any appointment from Calendar.",
+    ],
+  },
+  {
+    category: "Settings & Integrations",
     question: "How do I set up service codes and pricing?",
     steps: [
       "Go to Settings → Services.",
@@ -389,7 +419,18 @@ export const FAQS: FaqItem[] = [
     steps: [
       "They log in at the client portal and go to Book Appointment.",
       "The first time, they'll choose a session type (Individual, Couples, Family, or Intake).",
-      "They then pick an open time slot from their assigned practitioner's real availability (weekly hours, minus any custom dates blocked off).",
+      "They pick an open time slot from their assigned practitioner's real availability (weekly hours, minus any custom dates blocked off).",
+      "They'll see a summary of the date, time, and duration and need to click Confirm booking — picking a time doesn't book it immediately.",
+      "A returning client can also get here straight from your public booking page — it has a \"Log in to book a return visit\" button that takes them to their portal instead of the new-client request form.",
+    ],
+  },
+  {
+    category: "Client Portal",
+    question: "Can a client cancel or reschedule their own appointment?",
+    steps: [
+      "Yes, from their Appointments tab — as long as it's outside your practice's cancellation/reschedule notice window (24 hours by default, set under Settings → Practice Profile → Booking).",
+      "Reschedule opens the same kind of time picker as booking, keeping the same session type and duration, and asks them to confirm the new time before it moves.",
+      "Once an appointment is inside that notice window, both Cancel and Reschedule disappear from their portal and they're told to contact your practice directly instead.",
     ],
   },
   {
@@ -398,6 +439,14 @@ export const FAQS: FaqItem[] = [
     steps: [
       "Yes, if your practice has Stripe connected (Settings → Integrations).",
       "Clients get a payment link on their invoice emails, or can pay directly from their portal account.",
+    ],
+  },
+  {
+    category: "Client Portal",
+    question: "Can clients control their own appointment reminder emails?",
+    steps: [
+      "Yes — from the Notifications tab in their client portal, they can turn off the 24-hour reminder email just for themselves.",
+      "This works independently of your practice-wide reminder setting — a client can opt out even if reminders are on for everyone else.",
     ],
   },
   {
@@ -416,6 +465,24 @@ export const FAQS: FaqItem[] = [
       "On the login page, click Forgot password?.",
       "Enter your email and check your inbox for a reset link.",
       "Follow the link to set a new password.",
+    ],
+  },
+  {
+    category: "Account & Security",
+    question: "How do I change my password while logged in?",
+    steps: [
+      "Go to Practitioner Profile → Security.",
+      "Under Password, enter your current password, then your new password twice.",
+      "Click Change password. You'll need your current password to confirm the change, even if you're already logged in.",
+    ],
+  },
+  {
+    category: "Account & Security",
+    question: "How do I reset my two-factor authenticator (new phone, lost access, etc.)?",
+    steps: [
+      "Go to Practitioner Profile → Security.",
+      "Under Authenticator app, enter your current password and click Disable / Reset.",
+      "You'll be asked to set up a new authenticator the next time two-factor authentication is required.",
     ],
   },
   {

@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-const EFFECTIVE_DATE = "September 8, 2026";
+const EFFECTIVE_DATE = "September 25, 2026";
 
 export default function TermsOfServicePage() {
   return (
@@ -69,7 +69,23 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-bold text-foreground">5. Termination</h2>
+            <h2 className="text-[15px] font-bold text-foreground">5. Scheduling, cancellation &amp; rescheduling</h2>
+            <p className="mt-2">
+              Appointments booked through Willow are between a Client and their Practice, and are
+              subject to that Practice&apos;s own scheduling and cancellation policies. A Practice
+              can set how many hours&apos; notice a Client needs to cancel or reschedule an
+              appointment online through the client portal (24 hours by default); within that
+              window, self-service cancellation and rescheduling are unavailable online, and the
+              Client must contact the Practice directly. This limit applies only to a Client&apos;s
+              own self-service actions — a Practice&apos;s staff can always cancel or reschedule any
+              appointment. Sulo Systems does not set, enforce, or collect any cancellation or
+              late-notice fees; any such fee is a matter between the Practice and its Client, under
+              the Practice&apos;s own policies.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-[15px] font-bold text-foreground">6. Termination</h2>
             <p className="mt-2">
               We may suspend or terminate access to the Service for a Practice that breaches these
               Terms, doesn&apos;t pay its subscription, or uses the Service in a way that puts other
@@ -79,7 +95,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-bold text-foreground">6. Disclaimers &amp; limitation of liability</h2>
+            <h2 className="text-[15px] font-bold text-foreground">7. Disclaimers &amp; limitation of liability</h2>
             <p className="mt-2">
               The Service is provided &quot;as is,&quot; without warranties of any kind. To the
               maximum extent permitted by law, Sulo Systems will not be liable for indirect,
@@ -89,7 +105,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-bold text-foreground">7. Changes to these Terms</h2>
+            <h2 className="text-[15px] font-bold text-foreground">8. Changes to these Terms</h2>
             <p className="mt-2">
               We may update these Terms from time to time. If we make material changes, we&apos;ll
               provide reasonable notice (for example, by email or an in-app notice) before they take
@@ -98,7 +114,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-bold text-foreground">8. Governing law</h2>
+            <h2 className="text-[15px] font-bold text-foreground">9. Governing law</h2>
             <p className="mt-2">
               These Terms are governed by the laws of the Province of Ontario and the federal laws of
               Canada applicable therein, without regard to conflict-of-law principles.
@@ -106,7 +122,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-bold text-foreground">9. Contact</h2>
+            <h2 className="text-[15px] font-bold text-foreground">10. Contact</h2>
             <p className="mt-2">
               Questions about these Terms? Reach us at{" "}
               <a href="mailto:sulosystems@gmail.com" className="font-semibold text-brand-ink underline">
