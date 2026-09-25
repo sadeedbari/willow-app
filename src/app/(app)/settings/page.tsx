@@ -145,7 +145,7 @@ export default async function SettingsPage({
           <div className="mt-4 border-t border-border pt-4">
             <div className="mb-3 text-[13px] font-bold text-foreground">Booking</div>
             <label className="block text-[12px] font-semibold text-text-2">
-              Reschedule notice (hours)
+              Cancellation &amp; reschedule notice (hours)
             </label>
             <input
               name="rescheduleNoticeHours"
@@ -157,8 +157,8 @@ export default async function SettingsPage({
               className="mt-1 w-32 rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             />
             <p className="mt-1 text-[11.5px] text-text-3">
-              Clients can reschedule their own appointments online up until this many hours before
-              they start. Closer than that, they&apos;ll need to contact you directly.
+              Clients can cancel or reschedule their own appointments online up until this many
+              hours before they start. Closer than that, they&apos;ll need to contact you directly.
             </p>
           </div>
 
@@ -204,7 +204,7 @@ export default async function SettingsPage({
               <dd className="text-foreground">{practice.appointment_reminders_enabled ? "On" : "Off"}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-text-3">Reschedule notice</dt>
+              <dt className="text-text-3">Cancellation &amp; reschedule notice</dt>
               <dd className="text-foreground">{practice.reschedule_notice_hours} hours</dd>
             </div>
           </dl>

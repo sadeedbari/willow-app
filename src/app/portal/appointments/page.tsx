@@ -93,7 +93,7 @@ export default async function PortalAppointmentsPage({
           {appointments?.length ? (
             appointments.map((appt) => {
               const noticeMs = appt.reschedule_notice_hours * 60 * 60 * 1000;
-              const canReschedule = new Date(appt.starts_at).getTime() - new Date().getTime() > noticeMs;
+              const canModify = new Date(appt.starts_at).getTime() - new Date().getTime() > noticeMs;
 
               return (
                 <div
@@ -119,7 +119,7 @@ export default async function PortalAppointmentsPage({
                         Join video call
                       </a>
                     )}
-                    {canReschedule && (
+                    {canModify && (
                       <Link
                         href={`/portal/appointments/${appt.id}/reschedule`}
                         className="text-[12.5px] font-semibold text-brand-ink"
@@ -127,16 +127,18 @@ export default async function PortalAppointmentsPage({
                         Reschedule
                       </Link>
                     )}
-                    <form action={cancelMyAppointment}>
-                      <input type="hidden" name="appointmentId" value={appt.id} />
-                      <button type="submit" className="text-[12.5px] font-semibold text-bad">
-                        Cancel
-                      </button>
-                    </form>
+                    {canModify && (
+                      <form action={cancelMyAppointment}>
+                        <input type="hidden" name="appointmentId" value={appt.id} />
+                        <button type="submit" className="text-[12.5px] font-semibold text-bad">
+                          Cancel
+                        </button>
+                      </form>
+                    )}
                   </div>
-                  {!canReschedule && (
+                  {!canModify && (
                     <p className="mt-2 text-[11.5px] text-text-3">
-                      Too close to reschedule online — contact your practice directly to change this time.
+                      Too close to cancel or reschedule online — contact your practice directly to change this appointment.
                     </p>
                   )}
                 </div>

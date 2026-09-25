@@ -75,9 +75,9 @@ function shiftDate(date: string, days: number) {
 export default async function BookAppointmentPage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string; type?: string; error?: string; booked?: string }>;
+  searchParams: Promise<{ date?: string; type?: string; start?: string; error?: string; booked?: string }>;
 }) {
-  const { date, type, error, booked } = await searchParams;
+  const { date, type, start, error, booked } = await searchParams;
   const client = await getCurrentClient();
   const supabase = await createClient();
 
@@ -150,6 +150,8 @@ export default async function BookAppointmentPage({
               Continue
             </button>
           </form>
+        ) : start ? (
+          <ConfirmBooking effectiveType={effectiveType} startsAt={start} date={selectedDate} />
         ) : (
           <BookingSlots
             client={client}
@@ -224,17 +226,13 @@ async function BookingSlots({
 
       <div className="mt-3 grid grid-cols-3 gap-2">
         {slots.map((slot) => (
-          <form key={slot.toISOString()} action={bookAppointment}>
-            <input type="hidden" name="startsAt" value={slot.toISOString()} />
-            <input type="hidden" name="type" value={effectiveType} />
-            <input type="hidden" name="date" value={selectedDate} />
-            <button
-              type="submit"
-              className="w-full rounded-lg border border-border bg-surface px-2 py-2 text-[12.5px] font-semibold text-text-2 transition hover:border-brand hover:bg-brand-tint hover:text-brand-ink"
-            >
-              {slot.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
-            </button>
-          </form>
+          <Link
+            key={slot.toISOString()}
+            href={`/portal/book?date=${selectedDate}&type=${effectiveType}&start=${encodeURIComponent(slot.toISOString())}`}
+            className="rounded-lg border border-border bg-surface px-2 py-2 text-center text-[12.5px] font-semibold text-text-2 transition hover:border-brand hover:bg-brand-tint hover:text-brand-ink"
+          >
+            {slot.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+          </Link>
         ))}
         {!slots.length && (
           <p className="col-span-3 rounded-2xl border border-border bg-surface p-6 text-center text-[13px] text-text-3">
@@ -251,6 +249,52 @@ async function BookingSlots({
           ← Choose a different session type
         </Link>
       )}
+    </div>
+  );
+}
+
+function ConfirmBooking({
+  effectiveType,
+  startsAt,
+  date,
+}: {
+  effectiveType: SelfBookableType;
+  startsAt: string;
+  date: string;
+}) {
+  const durationMinutes = APPOINTMENT_TYPE_DURATION_MINUTES[effectiveType];
+  const when = new Date(startsAt).toLocaleString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+  return (
+    <div className="mt-5 rounded-2xl border border-border bg-surface p-4 shadow-sm">
+      <Link
+        href={`/portal/book?date=${date}&type=${effectiveType}`}
+        className="text-[12px] font-semibold text-brand-ink"
+      >
+        ← Choose a different time
+      </Link>
+      <div className="mt-2 text-[13.4px] font-semibold text-foreground">Confirm this appointment</div>
+      <p className="mt-1 text-[12.5px] text-text-2">
+        {APPOINTMENT_TYPE_LABEL[effectiveType]} · {when} · {durationMinutes} minutes
+      </p>
+
+      <form action={bookAppointment} className="mt-4">
+        <input type="hidden" name="startsAt" value={startsAt} />
+        <input type="hidden" name="type" value={effectiveType} />
+        <input type="hidden" name="date" value={date} />
+        <button
+          type="submit"
+          className="w-full rounded-lg bg-brand px-4 py-2.5 text-[13.6px] font-semibold text-white transition hover:bg-brand-ink"
+        >
+          Confirm booking
+        </button>
+      </form>
     </div>
   );
 }
