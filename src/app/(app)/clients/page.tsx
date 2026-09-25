@@ -97,95 +97,67 @@ export default async function ClientsPage({
         </div>
       )}
 
-      <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
-        <table className="w-full text-[13.4px]">
-          <thead>
-            <tr className="border-b border-border text-left text-[11px] font-semibold uppercase tracking-wide text-text-3">
-              <th className="px-4 py-3">Client</th>
-              <th className="px-4 py-3">Presenting concern</th>
-              <th className="px-4 py-3">Next session</th>
-              <th className="px-4 py-3">Consent</th>
-              <th className="px-4 py-3">Balance</th>
-              <th className="px-4 py-3" />
-            </tr>
-          </thead>
-          <tbody>
-            {clients?.map((c) => {
-              const color = avatarColorFor(c.id);
-              const nextSession = nextSessionByClient.get(c.id);
-              const consentStatus = consentByClient.get(c.id);
+      <div className="space-y-2">
+        {clients?.map((c) => {
+          const color = avatarColorFor(c.id);
+          const nextSession = nextSessionByClient.get(c.id);
+          const consentStatus = consentByClient.get(c.id);
 
-              return (
-                <tr
-                  key={c.id}
-                  data-client-row
-                  data-search={`${c.full_name} ${c.presenting_concern ?? ""}`.toLowerCase()}
-                  className="border-b border-border last:border-0 hover:bg-surface-2"
+          return (
+            <Link
+              key={c.id}
+              href={`/clients/${c.id}`}
+              data-client-row
+              data-search={`${c.full_name} ${c.presenting_concern ?? ""}`.toLowerCase()}
+              className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4 shadow-sm transition hover:border-brand"
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <span
+                  className={`flex h-9 w-9 flex-none items-center justify-center rounded-full text-[12.5px] font-bold ${color.bg} ${color.text}`}
                 >
-                  <td className="px-4 py-3">
-                    <Link href={`/clients/${c.id}`} className="flex items-center gap-3">
-                      <span
-                        className={`flex h-9 w-9 flex-none items-center justify-center rounded-full text-[12.5px] font-bold ${color.bg} ${color.text}`}
-                      >
-                        {initialsOf(c.full_name)}
-                      </span>
-                      <span>
-                        <span className="block font-semibold text-foreground">{c.full_name}</span>
-                        <span className="block text-[12px] text-text-3">
-                          {c.session_frequency ?? "—"} · since {formatSince(c.created_at)}
-                        </span>
-                      </span>
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-text-2">{c.presenting_concern ?? "—"}</td>
-                  <td className="px-4 py-3 text-text-2">
-                    {nextSession ? formatNextSession(nextSession) : "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    {consentStatus ? (
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold ${CONSENT_STATUS_STYLE[consentStatus]}`}
-                      >
-                        {CONSENT_STATUS_LABEL[consentStatus]}
-                      </span>
-                    ) : (
-                      <span className="text-text-3">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 tabular-nums">
+                  {initialsOf(c.full_name)}
+                </span>
+                <div className="min-w-0">
+                  <div className="truncate text-[13.4px] font-semibold text-foreground">{c.full_name}</div>
+                  <div className="truncate text-[12px] text-text-3">
+                    {c.presenting_concern ?? (c.session_frequency ? `${c.session_frequency} · since ${formatSince(c.created_at)}` : `Since ${formatSince(c.created_at)}`)}
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-none items-center gap-4">
+                <div className="text-right">
+                  <div className="text-[12.5px] text-text-2">
+                    {nextSession ? formatNextSession(nextSession) : "No upcoming session"}
+                  </div>
+                  <div className="text-[13.4px] tabular-nums">
                     {c.balance_cents > 0 ? (
-                      <span className="font-semibold text-warn">${(c.balance_cents / 100).toFixed(2)}</span>
+                      <span className="font-semibold text-warn">${(c.balance_cents / 100).toFixed(2)} due</span>
                     ) : (
                       <span className="text-text-3">$0.00</span>
                     )}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/clients/${c.id}`}
-                      className="inline-flex rounded-lg border border-border px-3 py-1.5 text-[12px] font-semibold text-text-2 transition hover:bg-surface-3"
-                    >
-                      Open →
-                    </Link>
-                  </td>
-                </tr>
-              );
-            })}
-            {!!clients?.length && (
-              <tr data-no-search-results style={{ display: "none" }}>
-                <td colSpan={6} className="px-4 py-10 text-center text-text-3">
-                  No clients match your search.
-                </td>
-              </tr>
-            )}
-            {!clients?.length && (
-              <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-text-3">
-                  No clients yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                  </div>
+                </div>
+                {consentStatus && (
+                  <span
+                    className={`inline-flex flex-none rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold ${CONSENT_STATUS_STYLE[consentStatus]}`}
+                  >
+                    {CONSENT_STATUS_LABEL[consentStatus]}
+                  </span>
+                )}
+              </div>
+            </Link>
+          );
+        })}
+        {!!clients?.length && (
+          <p data-no-search-results style={{ display: "none" }} className="rounded-2xl border border-border bg-surface p-8 text-center text-[13px] text-text-3">
+            No clients match your search.
+          </p>
+        )}
+        {!clients?.length && (
+          <p className="rounded-2xl border border-border bg-surface p-8 text-center text-[13px] text-text-3">
+            No clients yet.
+          </p>
+        )}
       </div>
 
       {canAdd && showNew && <AddClientModal error={error} />}
