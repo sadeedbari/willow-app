@@ -237,6 +237,37 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Mobile */}
+      <section className="border-t border-border bg-surface-2">
+        <div className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
+          <div className="grid items-center gap-10 lg:grid-cols-[1fr_360px] lg:gap-16">
+            <div>
+              <h2 className="text-[26px] font-bold tracking-tight text-foreground sm:text-[30px]">
+                Check your day without opening a laptop
+              </h2>
+              <p className="mt-4 max-w-[48ch] text-[15px] leading-relaxed text-text-2">
+                Your calendar switches to one day at a time on a phone, with a quick strip to jump
+                between days — not a shrunk-down desktop grid you have to pinch and scroll to read.
+                Clients, session notes, and invoices work the same way: real, readable information,
+                not a table that gets cut off at the edge of the screen.
+              </p>
+              <p className="mt-4 max-w-[48ch] text-[15px] leading-relaxed text-text-2">
+                Add Willow to your home screen and it opens like a real app — no browser bar, no
+                digging for a bookmark, just tap the icon and you&apos;re at your dashboard.
+              </p>
+            </div>
+            <div className="mx-auto w-full max-w-[280px] overflow-hidden rounded-[20px] border border-border shadow-sm">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/marketing/mobile-calendar-shot.png"
+                alt="Willow's calendar on a phone, showing one day at a time with a day-picker strip above it"
+                className="block w-full"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Team */}
       <section className="border-t border-border bg-surface-2">
         <div className="mx-auto max-w-3xl px-6 py-16 text-center sm:py-20">
