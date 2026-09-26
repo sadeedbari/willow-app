@@ -353,6 +353,17 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Founder / trust signal */}
+      <section className="border-t border-border">
+        <div className="mx-auto max-w-3xl px-6 py-16 text-center sm:py-20">
+          <p className="mx-auto max-w-[52ch] text-[14.5px] leading-relaxed text-text-2">
+            Willow is built in Toronto by Sadeed Bari at Sulo Systems Inc. It&apos;s already used
+            every day by a real Ontario therapy practice — and if you email us, a person who
+            actually built the product answers.
+          </p>
+        </div>
+      </section>
+
       {/* Pricing */}
       <section className="border-t border-border">
         <div className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
