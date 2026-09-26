@@ -6,9 +6,9 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://willow.sulosystems
 const PAGE_URL = `${SITE_URL}/vs/jane-app`;
 
 export const metadata: Metadata = {
-  title: "Willow vs. Jane.app — Pricing & Feature Comparison for Ontario Therapists",
+  title: "Jane App Alternative for Ontario Therapists | Willow",
   description:
-    "A side-by-side look at Willow and Jane.app's Balance plan: pricing, session limits, telehealth, and what's actually included. Sourced from Jane's own published pricing.",
+    "Looking for a Jane App alternative? See Willow vs. Jane.app's Balance plan: pricing, session limits, telehealth, and what's actually included. Sourced from Jane's own published pricing.",
   alternates: { canonical: "/vs/jane-app" },
 };
 
@@ -29,9 +29,9 @@ const jsonLd = {
       "@type": "WebPage",
       "@id": PAGE_URL,
       url: PAGE_URL,
-      name: "Willow vs. Jane.app — Pricing & Feature Comparison for Ontario Therapists",
+      name: "Jane App Alternative for Ontario Therapists | Willow",
       description:
-        "A side-by-side look at Willow and Jane.app's Balance plan: pricing, session limits, telehealth, and what's actually included. Sourced from Jane's own published pricing.",
+        "Looking for a Jane App alternative? See Willow vs. Jane.app's Balance plan: pricing, session limits, telehealth, and what's actually included. Sourced from Jane's own published pricing.",
       isPartOf: { "@type": "WebSite", name: "Willow", url: SITE_URL },
     },
   ],
@@ -56,6 +56,9 @@ export default async function WillowVsJaneAppPage() {
             <span className="text-[16px] font-bold tracking-tight text-foreground">Willow</span>
           </Link>
           <nav className="ml-auto flex items-center gap-5">
+            <Link href="/pricing" className="text-[13.5px] font-semibold text-text-2 transition hover:text-foreground">
+              Pricing
+            </Link>
             <Link href="/login" className="text-[13.5px] font-semibold text-text-2 transition hover:text-foreground">
               Log in
             </Link>
@@ -84,8 +87,10 @@ export default async function WillowVsJaneAppPage() {
             Jane&apos;s Balance plan caps you at 20 sessions a month. Willow doesn&apos;t cap you at all — for less.
           </h1>
           <p className="mx-auto mt-5 max-w-[56ch] text-[16px] leading-relaxed text-text-2">
-            Both are built for solo practitioners. The difference shows up in the session cap, and in what you
-            have to upgrade to unlock. Numbers below are pulled directly from Jane&apos;s own published pricing.
+            Looking for a Jane App alternative built for Ontario therapists? Both are built for solo
+            practitioners. The difference shows up in the session cap, and in what you have to
+            upgrade to unlock. Numbers below are pulled directly from Jane&apos;s own published
+            pricing.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
@@ -238,6 +243,9 @@ export default async function WillowVsJaneAppPage() {
             <span className="text-[13.5px] font-bold text-foreground">Willow</span>
           </div>
           <div className="flex items-center gap-5 text-[12.5px] text-text-3">
+            <Link href="/pricing" className="transition hover:text-text-2">
+              Pricing
+            </Link>
             <Link href="/vs/owl-practice" className="transition hover:text-text-2">
               Willow vs. Owl Practice
             </Link>

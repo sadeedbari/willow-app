@@ -28,7 +28,7 @@ import { BrandMark } from "@/components/brand-mark";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://willow.sulosystems.com";
 
 export const metadata: Metadata = {
-  title: "Willow — Practice Management Software for Therapists",
+  title: "Willow — Practice Management Software for Ontario Therapists",
   description:
     "Scheduling, telehealth, session notes, billing, secure client messaging, and a client portal — in one clean, fast app built for therapy practices in Ontario. 14-day free trial, no credit card required.",
   alternates: { canonical: "/" },
@@ -158,6 +158,9 @@ export default async function HomePage() {
           <BrandMark size={32} />
           <span className="text-[16px] font-bold tracking-tight text-foreground">Willow</span>
           <nav className="ml-auto flex items-center gap-5">
+            <Link href="/pricing" className="text-[13.5px] font-semibold text-text-2 transition hover:text-foreground">
+              Pricing
+            </Link>
             <Link href="/login" className="text-[13.5px] font-semibold text-text-2 transition hover:text-foreground">
               Log in
             </Link>
@@ -614,6 +617,9 @@ export default async function HomePage() {
             <span className="text-[13.5px] font-bold text-foreground">Willow</span>
           </div>
           <div className="flex items-center gap-5 text-[12.5px] text-text-3">
+            <Link href="/pricing" className="transition hover:text-text-2">
+              Pricing
+            </Link>
             <Link href="/vs/jane-app" className="transition hover:text-text-2">
               vs. Jane.app
             </Link>

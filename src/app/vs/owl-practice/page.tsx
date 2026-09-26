@@ -6,9 +6,9 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://willow.sulosystems
 const PAGE_URL = `${SITE_URL}/vs/owl-practice`;
 
 export const metadata: Metadata = {
-  title: "Willow vs. Owl Practice — Pricing & Feature Comparison for Ontario Therapists",
+  title: "Owl Practice Alternative for Ontario Therapists | Willow",
   description:
-    "A side-by-side look at Willow and Owl Practice's Solo plans: pricing, session limits, telehealth, and what's actually included. Sourced from Owl Practice's own published pricing.",
+    "Looking for an Owl Practice alternative? See Willow vs. Owl Practice's Growth and Professional plans: pricing, session limits, telehealth, and what's actually included. Sourced from Owl's own published pricing.",
   alternates: { canonical: "/vs/owl-practice" },
 };
 
@@ -29,9 +29,9 @@ const jsonLd = {
       "@type": "WebPage",
       "@id": PAGE_URL,
       url: PAGE_URL,
-      name: "Willow vs. Owl Practice — Pricing & Feature Comparison for Ontario Therapists",
+      name: "Owl Practice Alternative for Ontario Therapists | Willow",
       description:
-        "A side-by-side look at Willow and Owl Practice's Solo plans: pricing, session limits, telehealth, and what's actually included. Sourced from Owl Practice's own published pricing.",
+        "Looking for an Owl Practice alternative? See Willow vs. Owl Practice's Growth and Professional plans: pricing, session limits, telehealth, and what's actually included. Sourced from Owl's own published pricing.",
       isPartOf: { "@type": "WebSite", name: "Willow", url: SITE_URL },
     },
   ],
@@ -56,6 +56,9 @@ export default async function WillowVsOwlPracticePage() {
             <span className="text-[16px] font-bold tracking-tight text-foreground">Willow</span>
           </Link>
           <nav className="ml-auto flex items-center gap-5">
+            <Link href="/pricing" className="text-[13.5px] font-semibold text-text-2 transition hover:text-foreground">
+              Pricing
+            </Link>
             <Link href="/login" className="text-[13.5px] font-semibold text-text-2 transition hover:text-foreground">
               Log in
             </Link>
@@ -84,9 +87,10 @@ export default async function WillowVsOwlPracticePage() {
             To match what Willow includes at $15.90, Owl&apos;s own pricing page says you need their $100 plan.
           </h1>
           <p className="mx-auto mt-5 max-w-[56ch] text-[16px] leading-relaxed text-text-2">
-            Owl Practice is a well-known, Toronto-built option for Ontario therapists. Its cheaper tiers,
-            though, don&apos;t include telehealth, online booking, or secure messaging at all — those are
-            gated behind its top plan. Numbers below are pulled directly from Owl&apos;s own published pricing.
+            Looking for an Owl Practice alternative? Owl is a well-known, Toronto-built option for
+            Ontario therapists. Its cheaper tiers, though, don&apos;t include telehealth, online
+            booking, or secure messaging at all — those are gated behind its top plan. Numbers below
+            are pulled directly from Owl&apos;s own published pricing.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
@@ -237,6 +241,9 @@ export default async function WillowVsOwlPracticePage() {
             <span className="text-[13.5px] font-bold text-foreground">Willow</span>
           </div>
           <div className="flex items-center gap-5 text-[12.5px] text-text-3">
+            <Link href="/pricing" className="transition hover:text-text-2">
+              Pricing
+            </Link>
             <Link href="/vs/jane-app" className="transition hover:text-text-2">
               Willow vs. Jane.app
             </Link>
