@@ -146,8 +146,7 @@ export default async function WillowVsJaneAppPage() {
                 <tr className="border-b border-border">
                   <td className="p-4 font-semibold text-foreground">Telehealth video</td>
                   <td className="bg-brand-tint p-4">
-                    <span className="font-bold text-ok">✓ Included</span>{" "}
-                    <span className="block text-[11.5px] text-text-3">Requires connecting a free Daily.co account</span>
+                    <span className="font-bold text-ok">✓ Included</span>
                   </td>
                   <td className="p-4">
                     <span className="font-bold text-ok">✓ Included</span>{" "}

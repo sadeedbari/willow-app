@@ -122,7 +122,7 @@ const jsonLd = {
           name: "Does telehealth need separate software?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "Your clients don't install anything — they join by clicking a link. You'll connect a free Daily.co account once, in Settings, and every session after that gets its own secure video room automatically.",
+            text: "No. Every telehealth appointment gets its own secure video room automatically, right inside Willow — your clients just click a link to join, and there's nothing for you to set up.",
           },
         },
         {
@@ -130,7 +130,7 @@ const jsonLd = {
           name: "Can I switch from Jane, Owl Practice, or another platform?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "Yes — there's no automated import today, so you'll add your active clients yourself as you bring them over. Most solo practitioners find this quick, since you're only bringing across who you're currently seeing, not years of history.",
+            text: "Yes. There's no self-serve import today, but the Willow team can help migrate your existing clients and history for you — pricing depends on the size of your practice and is quoted case by case.",
           },
         },
       ],
@@ -183,9 +183,9 @@ const FAQ_ITEMS = [
     question: "Does telehealth need separate software?",
     answer: (
       <>
-        Your clients don&apos;t install anything — they join by clicking a link. You&apos;ll
-        connect a free Daily.co account once, in Settings, and every session after that gets its
-        own secure video room automatically.
+        No. Every telehealth appointment gets its own secure video room automatically, right
+        inside Willow — your clients just click a link to join, and there&apos;s nothing for you
+        to set up.
       </>
     ),
   },
@@ -193,9 +193,9 @@ const FAQ_ITEMS = [
     question: "Can I switch from Jane, Owl Practice, or another platform?",
     answer: (
       <>
-        Yes — there&apos;s no automated import today, so you&apos;ll add your active clients
-        yourself as you bring them over. Most solo practitioners find this quick, since
-        you&apos;re only bringing across who you&apos;re currently seeing, not years of history.
+        Yes. There&apos;s no self-serve import today, but the Willow team can help migrate your
+        existing clients and history for you — pricing depends on the size of your practice and
+        is quoted case by case.
       </>
     ),
   },
@@ -318,9 +318,8 @@ export default async function HomePage() {
                 straight into the times you&apos;re actually free.
               </p>
               <p className="mt-4 max-w-[48ch] text-[15px] leading-relaxed text-text-2">
-                Connect a free Daily.co account once, and every telehealth session after that gets
-                its own secure video room automatically — no extra software to install, no links
-                to go hunting for.
+                Every telehealth session gets its own secure video room automatically — no extra
+                software to install, no accounts to connect, no links to go hunting for.
               </p>
             </div>
             <div className="overflow-hidden rounded-2xl border border-border shadow-sm">
