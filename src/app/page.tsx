@@ -461,7 +461,7 @@ export default async function HomePage() {
       </section>
 
       {/* Team */}
-      <section className="border-t border-border bg-surface-2">
+      <section className="border-t border-border">
         <div className="mx-auto max-w-3xl px-6 py-16 text-center sm:py-20">
           <h3 className="text-[20px] font-bold tracking-tight text-foreground">
             Built for your practice, whatever size it is
