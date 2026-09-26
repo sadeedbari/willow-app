@@ -1,9 +1,18 @@
+import type { Metadata } from "next";
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
 import { requestBooking } from "./actions";
 import { BrandMark } from "@/components/brand-mark";
 import { APPOINTMENT_TYPE_DURATION_MINUTES, APPOINTMENT_TYPE_LABEL } from "@/utils/appointment-types";
 import { parseDateParamString } from "@/utils/parse-date-param";
+
+// Each slug is a real, legitimate link a clinician embeds on their own site
+// -- so this stays crawlable (no robots.ts disallow) but never indexed,
+// since the rendered content is a specific person's name/practice, not a
+// generic page worth a search result.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 const SLOT_MINUTES = 30;
 const DURATION_MINUTES = APPOINTMENT_TYPE_DURATION_MINUTES.intake;

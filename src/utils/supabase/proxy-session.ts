@@ -30,6 +30,33 @@ const PUBLIC_PATHS = [
   "/api/internal",
 ];
 
+// The actual app surface that requires a signed-in session -- anything that
+// falls under neither this list nor PUBLIC_PATHS above (a typo, a dead
+// backlink, a deleted page) now falls through untouched to Next's own
+// routing instead of soft-redirecting to /login. Every one of these routes
+// also re-checks auth itself (getCurrentStaff()/getCurrentClient() both
+// redirect on their own if there's no session) -- this list is just about
+// not soft-404ing genuinely unmatched paths, not the only auth gate.
+const PROTECTED_PATHS = [
+  "/dashboard",
+  "/calendar",
+  "/clients",
+  "/notes",
+  "/invoices",
+  "/messages",
+  "/settings",
+  "/booking-requests",
+  "/notifications",
+  "/practice-overview",
+  "/search",
+  "/help",
+  "/forms",
+  "/profile",
+  "/portal",
+  "/onboarding",
+  "/mfa",
+];
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -67,8 +94,9 @@ export async function updateSession(request: NextRequest) {
   const isPublicPath =
     request.nextUrl.pathname === "/" ||
     PUBLIC_PATHS.some((path) => request.nextUrl.pathname.startsWith(path));
+  const isProtectedPath = PROTECTED_PATHS.some((path) => request.nextUrl.pathname.startsWith(path));
 
-  if (!user && !isPublicPath) {
+  if (!user && !isPublicPath && isProtectedPath) {
     const url = request.nextUrl.clone();
     url.pathname = request.nextUrl.pathname.startsWith("/portal") ? "/portal/login" : "/login";
     return NextResponse.redirect(url);

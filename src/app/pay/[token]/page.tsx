@@ -1,5 +1,13 @@
+import type { Metadata } from "next";
 import { createClient } from "@/utils/supabase/server";
 import { startInvoicePayment } from "./actions";
+
+// A token-gated page rendering one specific client's real name, practice,
+// and invoice amount -- never indexable, even though it must stay
+// reachable for whoever holds the payment link.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 function formatMoney(cents: number) {
   return `$${(cents / 100).toFixed(2)} CAD`;
