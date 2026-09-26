@@ -12,7 +12,18 @@ export function ThemeToggleForm({
   const pathname = usePathname();
 
   return (
-    <form action={toggleTheme}>
+    <form
+      action={toggleTheme}
+      onSubmit={() => {
+        // The root layout no longer reads the theme cookie itself (that
+        // would block static generation of every page) -- it only seeds
+        // data-theme from an inline script on a hard page load. The
+        // action below redirects via the router, which is usually a soft
+        // client-side navigation and wouldn't re-run that script, so set
+        // the attribute here too for an instant, flash-free toggle.
+        document.documentElement.setAttribute("data-theme", theme === "dark" ? "light" : "dark");
+      }}
+    >
       <input type="hidden" name="current" value={theme} />
       <input type="hidden" name="returnTo" value={pathname || "/dashboard"} />
       <button
