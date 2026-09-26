@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://willow.sulosystems.com";
 const PAGE_URL = `${SITE_URL}/terms`;
 const EFFECTIVE_DATE = "September 25, 2026";
+
+export const metadata: Metadata = {
+  title: "Terms of Service — Willow",
+  description: "The terms governing use of Willow, practice-management software for therapists, provided by Sulo Systems Inc.",
+  alternates: { canonical: "/terms" },
+};
 
 // BreadcrumbList + WebPage structured data for this legal page.
 const jsonLd = {

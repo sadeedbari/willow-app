@@ -21,6 +21,26 @@ const nextConfig: NextConfig = {
     // has to clear before the request even reaches the server action.
     middlewareClientMaxBodySize: "20mb",
   },
+  // Beyond Vercel's platform-default HSTS, the app was sending no security
+  // headers at all -- notably no clickjacking protection, despite /login,
+  // /pay/[token], and /consent/[token] all handling auth or PHI-adjacent
+  // data. Telehealth video (Daily.co) always opens in a new tab, never an
+  // iframe on this origin (see the "Join video call" links in the calendar
+  // and portal), so a restrictive Permissions-Policy here doesn't affect it.
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

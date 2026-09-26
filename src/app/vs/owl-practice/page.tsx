@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   title: "Willow vs. Owl Practice — Pricing & Feature Comparison for Ontario Therapists",
   description:
     "A side-by-side look at Willow and Owl Practice's Solo plans: pricing, session limits, telehealth, and what's actually included. Sourced from Owl Practice's own published pricing.",
+  alternates: { canonical: "/vs/owl-practice" },
 };
 
 // BreadcrumbList + WebPage structured data for this comparison page. No

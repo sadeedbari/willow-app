@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://willow.sulosystems.com";
 const PAGE_URL = `${SITE_URL}/privacy`;
 const EFFECTIVE_DATE = "September 25, 2026";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy — Willow",
+  description: "How Sulo Systems Inc. handles information in Willow, including PHIPA-relevant practices for Ontario therapy practices and their clients.",
+  alternates: { canonical: "/privacy" },
+};
 
 // BreadcrumbList + WebPage structured data for this legal page.
 const jsonLd = {

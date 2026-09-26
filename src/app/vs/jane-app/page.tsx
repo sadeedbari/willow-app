@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   title: "Willow vs. Jane.app — Pricing & Feature Comparison for Ontario Therapists",
   description:
     "A side-by-side look at Willow and Jane.app's Balance plan: pricing, session limits, telehealth, and what's actually included. Sourced from Jane's own published pricing.",
+  alternates: { canonical: "/vs/jane-app" },
 };
 
 // BreadcrumbList + WebPage structured data for this comparison page. No

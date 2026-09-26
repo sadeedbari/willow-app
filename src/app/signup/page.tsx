@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { signup } from "./actions";
 import Link from "next/link";
 import { BrandMark } from "@/components/brand-mark";
@@ -6,6 +7,13 @@ import { PASSWORD_PATTERN, PASSWORD_REQUIREMENTS_HINT } from "@/utils/password";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://willow.sulosystems.com";
 const PAGE_URL = `${SITE_URL}/signup`;
+
+export const metadata: Metadata = {
+  title: "Start your free trial — Willow",
+  description:
+    "Start a 14-day free trial of Willow, practice-management software for Ontario therapists. No credit card required. Solo plans from $15.90/month CAD.",
+  alternates: { canonical: "/signup" },
+};
 
 // BreadcrumbList structured data for this page's place in the site hierarchy.
 const jsonLd = {
