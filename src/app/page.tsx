@@ -592,7 +592,7 @@ export default async function HomePage() {
       {/* FAQ */}
       <section className="border-t border-border">
         <div className="mx-auto max-w-3xl px-6 py-16 sm:py-20">
-          <details className="group/faq" open>
+          <details className="group/faq">
             <summary className="flex cursor-pointer list-none items-center justify-center gap-3 [&::-webkit-details-marker]:hidden [&::marker]:hidden">
               <h2 className="text-center text-[26px] font-bold tracking-tight text-foreground sm:text-[30px]">
                 Questions practitioners actually ask
