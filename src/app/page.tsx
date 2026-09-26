@@ -21,6 +21,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with
 the finish review, the verdict, and DESIGN.md.
 */}
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { BrandMark } from "@/components/brand-mark";
 
@@ -155,11 +156,14 @@ export default async function HomePage() {
           <div className="hero-in hero-in-delay">
             <div className="lg:rotate-[1.2deg]">
               <div className="overflow-hidden rounded-2xl border border-border shadow-[0_30px_60px_-20px_rgba(38,48,43,0.28)]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src="/marketing/calendar-shot.png"
                   alt="Willow's weekly calendar, showing a real practice's scheduled sessions"
-                  className="block w-full"
+                  width={1280}
+                  height={800}
+                  priority
+                  sizes="(min-width: 1024px) 55vw, 100vw"
+                  className="block h-auto w-full"
                 />
               </div>
             </div>
@@ -199,11 +203,13 @@ export default async function HomePage() {
               </p>
             </div>
             <div className="overflow-hidden rounded-2xl border border-border shadow-sm">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src="/marketing/dashboard-shot.png"
                 alt="A practice's daily overview in Willow — today's sessions, caseload, and revenue"
-                className="block w-full"
+                width={1280}
+                height={800}
+                sizes="(min-width: 1024px) 50vw, 100vw"
+                className="block h-auto w-full"
               />
             </div>
           </div>
@@ -215,11 +221,13 @@ export default async function HomePage() {
         <div className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
           <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
             <div className="overflow-hidden rounded-2xl border border-border shadow-sm lg:order-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src="/marketing/invoice-shot.png"
                 alt="A paid Willow invoice showing the client's balance settled online"
-                className="block w-full"
+                width={1280}
+                height={800}
+                sizes="(min-width: 1024px) 50vw, 100vw"
+                className="block h-auto w-full"
               />
             </div>
             <div className="lg:order-1">
@@ -251,11 +259,13 @@ export default async function HomePage() {
               </p>
             </div>
             <div className="mx-auto w-full max-w-[280px] overflow-hidden rounded-[20px] border border-border shadow-sm">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src="/marketing/portal-shot.png"
                 alt="A client booking their own appointment from Willow's client portal, on their phone"
-                className="block w-full"
+                width={430}
+                height={860}
+                sizes="280px"
+                className="block h-auto w-full"
               />
             </div>
           </div>
@@ -284,11 +294,13 @@ export default async function HomePage() {
               </p>
             </div>
             <div className="overflow-hidden rounded-2xl border border-border shadow-sm">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src="/marketing/messages-shot.png"
                 alt="A secure conversation with a client in Willow's Messages inbox"
-                className="block w-full"
+                width={1280}
+                height={800}
+                sizes="(min-width: 1024px) 50vw, 100vw"
+                className="block h-auto w-full"
               />
             </div>
           </div>
@@ -315,11 +327,13 @@ export default async function HomePage() {
               </p>
             </div>
             <div className="mx-auto w-full max-w-[280px] overflow-hidden rounded-[20px] border border-border shadow-sm">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src="/marketing/mobile-calendar-shot.png"
                 alt="Willow's calendar on a phone, showing one day at a time with a day-picker strip above it"
-                className="block w-full"
+                width={390}
+                height={744}
+                sizes="280px"
+                className="block h-auto w-full"
               />
             </div>
           </div>

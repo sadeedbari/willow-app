@@ -13,6 +13,9 @@ export const metadata: Metadata = {
     siteName: "Willow",
     type: "website",
   },
+  twitter: {
+    card: "summary_large_image",
+  },
   appleWebApp: {
     title: "Willow",
     statusBarStyle: "default",
