@@ -593,67 +593,81 @@ export default async function HomePage() {
       {/* FAQ */}
       <section className="border-t border-border">
         <div className="mx-auto max-w-3xl px-6 py-16 sm:py-20">
-          <h2 className="text-center text-[26px] font-bold tracking-tight text-foreground sm:text-[30px]">
-            Questions practitioners actually ask
-          </h2>
-          <div className="mt-8">
-            {FAQ_ITEMS.map((item) => (
-              <details
-                key={item.question}
-                className="group border-b border-border py-4 first:pt-0 last:border-b-0"
+          <details className="group/faq" open>
+            <summary className="flex cursor-pointer list-none items-center justify-center gap-3 [&::-webkit-details-marker]:hidden [&::marker]:hidden">
+              <h2 className="text-center text-[26px] font-bold tracking-tight text-foreground sm:text-[30px]">
+                Questions practitioners actually ask
+              </h2>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-5 w-5 flex-none text-text-3 transition-transform duration-200 group-open/faq:rotate-45"
               >
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[15.5px] font-bold text-foreground [&::-webkit-details-marker]:hidden [&::marker]:hidden">
-                  {item.question}
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4 flex-none text-text-3 transition-transform duration-200 group-open:rotate-45"
-                  >
-                    <path d="M12 5v14M5 12h14" />
-                  </svg>
-                </summary>
-                <p className="mt-3 text-[14px] leading-relaxed text-text-2">{item.answer}</p>
-              </details>
-            ))}
-          </div>
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </summary>
+            <div className="mt-8">
+              {FAQ_ITEMS.map((item) => (
+                <details
+                  key={item.question}
+                  className="group border-b border-border py-4 first:pt-0 last:border-b-0"
+                >
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[15.5px] font-bold text-foreground [&::-webkit-details-marker]:hidden [&::marker]:hidden">
+                    {item.question}
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-4 w-4 flex-none text-text-3 transition-transform duration-200 group-open:rotate-45"
+                    >
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                  </summary>
+                  <p className="mt-3 text-[14px] leading-relaxed text-text-2">{item.answer}</p>
+                </details>
+              ))}
+            </div>
+          </details>
         </div>
       </section>
 
       {/* Footer */}
       <footer className="border-t border-border">
-        <div className="mx-auto max-w-6xl px-6 py-10">
-          <p className="mx-auto max-w-[52ch] text-center text-[12.5px] leading-relaxed text-text-3">
-            Willow is built in Toronto by Sadeed Bari at Sulo Systems Inc. It&apos;s already used
-            every day by a real Ontario therapy practice — and if you email us, a person who
-            actually built the product answers.
-          </p>
-          <div className="mt-6 flex flex-col items-center gap-4 border-t border-border pt-6 text-center sm:flex-row sm:justify-between sm:text-left">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-6 py-10 text-center sm:flex-row sm:justify-between sm:text-left">
+          <div className="flex items-center gap-4">
+            <p className="hidden max-w-[30ch] text-[11.5px] leading-snug text-text-3 sm:block">
+              Willow is built in Toronto by Sadeed Bari at Sulo Systems Inc. Used daily by a real
+              Ontario therapy practice — email us and a person who built it answers.
+            </p>
             <div className="flex items-center gap-2.5">
               <BrandMark size={24} />
               <span className="text-[13.5px] font-bold text-foreground">Willow</span>
             </div>
-            <div className="flex items-center gap-5 text-[12.5px] text-text-3">
-              <Link href="/pricing" className="transition hover:text-text-2">
-                Pricing
-              </Link>
-              <Link href="/vs/jane-app" className="transition hover:text-text-2">
-                vs. Jane.app
-              </Link>
-              <Link href="/vs/owl-practice" className="transition hover:text-text-2">
-                vs. Owl Practice
-              </Link>
-              <Link href="/terms" className="transition hover:text-text-2">
-                Terms of Service
-              </Link>
-              <Link href="/privacy" className="transition hover:text-text-2">
-                Privacy Policy
-              </Link>
-              <span>© {new Date().getFullYear()} Sulo Systems Inc.</span>
-            </div>
+          </div>
+          <div className="flex items-center gap-5 text-[12.5px] text-text-3">
+            <Link href="/pricing" className="transition hover:text-text-2">
+              Pricing
+            </Link>
+            <Link href="/vs/jane-app" className="transition hover:text-text-2">
+              vs. Jane.app
+            </Link>
+            <Link href="/vs/owl-practice" className="transition hover:text-text-2">
+              vs. Owl Practice
+            </Link>
+            <Link href="/terms" className="transition hover:text-text-2">
+              Terms of Service
+            </Link>
+            <Link href="/privacy" className="transition hover:text-text-2">
+              Privacy Policy
+            </Link>
+            <span>© {new Date().getFullYear()} Sulo Systems Inc.</span>
           </div>
         </div>
       </footer>
