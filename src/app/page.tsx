@@ -138,6 +138,69 @@ const jsonLd = {
   ],
 };
 
+const FAQ_ITEMS = [
+  {
+    question: "Is there really a 14-day free trial?",
+    answer: (
+      <>
+        Yes, on either plan, and we don&apos;t ask for a credit card to start it. You only enter
+        payment details if and when you decide to subscribe at the end of the trial.
+      </>
+    ),
+  },
+  {
+    question: "Is the pricing really flat, with no add-ons?",
+    answer: (
+      <>
+        Yes. Scheduling, telehealth, session notes, billing, secure messaging, and the client
+        portal are all included on both Solo and Team — the only difference between them is how
+        many staff accounts you get.
+      </>
+    ),
+  },
+  {
+    question: "Can I cancel anytime?",
+    answer: (
+      <>
+        Yes, from your own billing settings, with no long-term contract. If you cancel, you keep
+        access until the end of your current billing period.
+      </>
+    ),
+  },
+  {
+    question: "Where is my clients' health information stored?",
+    answer: (
+      <>
+        In a database hosted in Canada, built around Ontario&apos;s PHIPA from the start. See our{" "}
+        <Link href="/privacy" className="font-semibold text-brand-ink underline">
+          Privacy Policy
+        </Link>{" "}
+        for the full detail on data handling and cross-border processors.
+      </>
+    ),
+  },
+  {
+    question: "Does telehealth need separate software?",
+    answer: (
+      <>
+        Your clients don&apos;t install anything — they join by clicking a link. You&apos;ll
+        connect a free Daily.co account once, in Settings, and every session after that gets its
+        own secure video room automatically.
+      </>
+    ),
+  },
+  {
+    question: "Can I switch from Jane, Owl Practice, or another platform?",
+    answer: (
+      <>
+        Yes — there&apos;s no automated import today, so you&apos;ll add your active clients
+        yourself as you bring them over. Most solo practitioners find this quick, since
+        you&apos;re only bringing across who you&apos;re currently seeing, not years of history.
+      </>
+    ),
+  },
+];
+
 // Deliberately renders for every visitor regardless of session state -- an
 // already-logged-in staff member can still land here (a shared link, a
 // bookmark, checking the public pricing page) and must be able to see it
@@ -411,17 +474,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Founder / trust signal */}
-      <section className="border-t border-border">
-        <div className="mx-auto max-w-3xl px-6 py-16 text-center sm:py-20">
-          <p className="mx-auto max-w-[52ch] text-[14.5px] leading-relaxed text-text-2">
-            Willow is built in Toronto by Sadeed Bari at Sulo Systems Inc. It&apos;s already used
-            every day by a real Ontario therapy practice — and if you email us, a person who
-            actually built the product answers.
-          </p>
-        </div>
-      </section>
-
       {/* Privacy & PHIPA */}
       <section className="border-t border-border bg-surface-2">
         <div className="mx-auto max-w-5xl px-6 py-16 text-center sm:py-20">
@@ -465,77 +517,6 @@ export default async function HomePage() {
           >
             Read our full Privacy Policy
           </Link>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="border-t border-border">
-        <div className="mx-auto max-w-3xl px-6 py-16 sm:py-20">
-          <h2 className="text-center text-[26px] font-bold tracking-tight text-foreground sm:text-[30px]">
-            Questions practitioners actually ask
-          </h2>
-          <div className="mt-10 space-y-8">
-            <div>
-              <h3 className="text-[15.5px] font-bold text-foreground">
-                Is there really a 14-day free trial?
-              </h3>
-              <p className="mt-2 text-[14px] leading-relaxed text-text-2">
-                Yes, on either plan, and we don&apos;t ask for a credit card to start it. You only
-                enter payment details if and when you decide to subscribe at the end of the trial.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-[15.5px] font-bold text-foreground">
-                Is the pricing really flat, with no add-ons?
-              </h3>
-              <p className="mt-2 text-[14px] leading-relaxed text-text-2">
-                Yes. Scheduling, telehealth, session notes, billing, secure messaging, and the
-                client portal are all included on both Solo and Team — the only difference between
-                them is how many staff accounts you get.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-[15.5px] font-bold text-foreground">Can I cancel anytime?</h3>
-              <p className="mt-2 text-[14px] leading-relaxed text-text-2">
-                Yes, from your own billing settings, with no long-term contract. If you cancel, you
-                keep access until the end of your current billing period.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-[15.5px] font-bold text-foreground">
-                Where is my clients&apos; health information stored?
-              </h3>
-              <p className="mt-2 text-[14px] leading-relaxed text-text-2">
-                In a database hosted in Canada, built around Ontario&apos;s PHIPA from the start.
-                See our{" "}
-                <Link href="/privacy" className="font-semibold text-brand-ink underline">
-                  Privacy Policy
-                </Link>{" "}
-                for the full detail on data handling and cross-border processors.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-[15.5px] font-bold text-foreground">
-                Does telehealth need separate software?
-              </h3>
-              <p className="mt-2 text-[14px] leading-relaxed text-text-2">
-                Your clients don&apos;t install anything — they join by clicking a link.
-                You&apos;ll connect a free Daily.co account once, in Settings, and every session
-                after that gets its own secure video room automatically.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-[15.5px] font-bold text-foreground">
-                Can I switch from Jane, Owl Practice, or another platform?
-              </h3>
-              <p className="mt-2 text-[14px] leading-relaxed text-text-2">
-                Yes — there&apos;s no automated import today, so you&apos;ll add your active
-                clients yourself as you bring them over. Most solo practitioners find this quick,
-                since you&apos;re only bringing across who you&apos;re currently seeing, not years
-                of history.
-              </p>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -609,30 +590,70 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* FAQ */}
+      <section className="border-t border-border">
+        <div className="mx-auto max-w-3xl px-6 py-16 sm:py-20">
+          <h2 className="text-center text-[26px] font-bold tracking-tight text-foreground sm:text-[30px]">
+            Questions practitioners actually ask
+          </h2>
+          <div className="mt-8">
+            {FAQ_ITEMS.map((item) => (
+              <details
+                key={item.question}
+                className="group border-b border-border py-4 first:pt-0 last:border-b-0"
+              >
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[15.5px] font-bold text-foreground [&::-webkit-details-marker]:hidden [&::marker]:hidden">
+                  {item.question}
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4 flex-none text-text-3 transition-transform duration-200 group-open:rotate-45"
+                  >
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                </summary>
+                <p className="mt-3 text-[14px] leading-relaxed text-text-2">{item.answer}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="border-t border-border">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-6 py-10 text-center sm:flex-row sm:justify-between sm:text-left">
-          <div className="flex items-center gap-2.5">
-            <BrandMark size={24} />
-            <span className="text-[13.5px] font-bold text-foreground">Willow</span>
-          </div>
-          <div className="flex items-center gap-5 text-[12.5px] text-text-3">
-            <Link href="/pricing" className="transition hover:text-text-2">
-              Pricing
-            </Link>
-            <Link href="/vs/jane-app" className="transition hover:text-text-2">
-              vs. Jane.app
-            </Link>
-            <Link href="/vs/owl-practice" className="transition hover:text-text-2">
-              vs. Owl Practice
-            </Link>
-            <Link href="/terms" className="transition hover:text-text-2">
-              Terms of Service
-            </Link>
-            <Link href="/privacy" className="transition hover:text-text-2">
-              Privacy Policy
-            </Link>
-            <span>© {new Date().getFullYear()} Sulo Systems Inc.</span>
+        <div className="mx-auto max-w-6xl px-6 py-10">
+          <p className="mx-auto max-w-[52ch] text-center text-[12.5px] leading-relaxed text-text-3">
+            Willow is built in Toronto by Sadeed Bari at Sulo Systems Inc. It&apos;s already used
+            every day by a real Ontario therapy practice — and if you email us, a person who
+            actually built the product answers.
+          </p>
+          <div className="mt-6 flex flex-col items-center gap-4 border-t border-border pt-6 text-center sm:flex-row sm:justify-between sm:text-left">
+            <div className="flex items-center gap-2.5">
+              <BrandMark size={24} />
+              <span className="text-[13.5px] font-bold text-foreground">Willow</span>
+            </div>
+            <div className="flex items-center gap-5 text-[12.5px] text-text-3">
+              <Link href="/pricing" className="transition hover:text-text-2">
+                Pricing
+              </Link>
+              <Link href="/vs/jane-app" className="transition hover:text-text-2">
+                vs. Jane.app
+              </Link>
+              <Link href="/vs/owl-practice" className="transition hover:text-text-2">
+                vs. Owl Practice
+              </Link>
+              <Link href="/terms" className="transition hover:text-text-2">
+                Terms of Service
+              </Link>
+              <Link href="/privacy" className="transition hover:text-text-2">
+                Privacy Policy
+              </Link>
+              <span>© {new Date().getFullYear()} Sulo Systems Inc.</span>
+            </div>
           </div>
         </div>
       </footer>
