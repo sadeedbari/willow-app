@@ -81,6 +81,60 @@ const jsonLd = {
         },
       ],
     },
+    {
+      "@type": "FAQPage",
+      "@id": `${SITE_URL}/#faq`,
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: "Is there really a 14-day free trial?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Yes, on either plan, and we don't ask for a credit card to start it. You only enter payment details if and when you decide to subscribe at the end of the trial.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Is the pricing really flat, with no add-ons?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Yes. Scheduling, telehealth, session notes, billing, secure messaging, and the client portal are all included on both Solo and Team — the only difference between them is how many staff accounts you get.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Can I cancel anytime?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Yes, from your own billing settings, with no long-term contract. If you cancel, you keep access until the end of your current billing period.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Where is my clients' health information stored?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "In a database hosted in Canada, built around Ontario's PHIPA from the start. See our Privacy Policy for the full detail on data handling and cross-border processors.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Does telehealth need separate software?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Your clients don't install anything — they join by clicking a link. You'll connect a free Daily.co account once, in Settings, and every session after that gets its own secure video room automatically.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Can I switch from Jane, Owl Practice, or another platform?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Yes — there's no automated import today, so you'll add your active clients yourself as you bring them over. Most solo practitioners find this quick, since you're only bringing across who you're currently seeing, not years of history.",
+          },
+        },
+      ],
+    },
   ],
 };
 
@@ -362,6 +416,123 @@ export default async function HomePage() {
             every day by a real Ontario therapy practice — and if you email us, a person who
             actually built the product answers.
           </p>
+        </div>
+      </section>
+
+      {/* Privacy & PHIPA */}
+      <section className="border-t border-border bg-surface-2">
+        <div className="mx-auto max-w-5xl px-6 py-16 text-center sm:py-20">
+          <span className="text-[12px] font-bold uppercase tracking-[0.08em] text-brand-ink">
+            Privacy &amp; PHIPA
+          </span>
+          <h2 className="mt-2 text-[26px] font-bold tracking-tight text-foreground sm:text-[30px]">
+            Built for the kind of information you actually handle
+          </h2>
+          <p className="mx-auto mt-3 max-w-[52ch] text-[14.5px] leading-relaxed text-text-2">
+            Willow was designed around Ontario&apos;s Personal Health Information Protection Act
+            (PHIPA) from day one, not retrofitted afterward.
+          </p>
+          <div className="mx-auto mt-10 grid gap-8 text-left sm:grid-cols-3">
+            <div>
+              <div className="text-[14px] font-bold text-foreground">Canadian data residency</div>
+              <p className="mt-1.5 text-[13.5px] leading-relaxed text-text-2">
+                Client health records are stored in a database hosted in Canada (AWS Canada
+                Central).
+              </p>
+            </div>
+            <div>
+              <div className="text-[14px] font-bold text-foreground">You stay the data controller</div>
+              <p className="mt-1.5 text-[13.5px] leading-relaxed text-text-2">
+                Your practice decides what&apos;s collected and why. Willow acts as your service
+                provider — we never use client health information for advertising, and we never
+                sell it.
+              </p>
+            </div>
+            <div>
+              <div className="text-[14px] font-bold text-foreground">Isolated per practice</div>
+              <p className="mt-1.5 text-[13.5px] leading-relaxed text-text-2">
+                Every practice&apos;s data is isolated at the database level, so one practice&apos;s
+                clients, notes, and messages are never visible to another.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/privacy"
+            className="mt-8 inline-block text-[13.5px] font-semibold text-brand-ink underline"
+          >
+            Read our full Privacy Policy
+          </Link>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="border-t border-border">
+        <div className="mx-auto max-w-3xl px-6 py-16 sm:py-20">
+          <h2 className="text-center text-[26px] font-bold tracking-tight text-foreground sm:text-[30px]">
+            Questions practitioners actually ask
+          </h2>
+          <div className="mt-10 space-y-8">
+            <div>
+              <h3 className="text-[15.5px] font-bold text-foreground">
+                Is there really a 14-day free trial?
+              </h3>
+              <p className="mt-2 text-[14px] leading-relaxed text-text-2">
+                Yes, on either plan, and we don&apos;t ask for a credit card to start it. You only
+                enter payment details if and when you decide to subscribe at the end of the trial.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-[15.5px] font-bold text-foreground">
+                Is the pricing really flat, with no add-ons?
+              </h3>
+              <p className="mt-2 text-[14px] leading-relaxed text-text-2">
+                Yes. Scheduling, telehealth, session notes, billing, secure messaging, and the
+                client portal are all included on both Solo and Team — the only difference between
+                them is how many staff accounts you get.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-[15.5px] font-bold text-foreground">Can I cancel anytime?</h3>
+              <p className="mt-2 text-[14px] leading-relaxed text-text-2">
+                Yes, from your own billing settings, with no long-term contract. If you cancel, you
+                keep access until the end of your current billing period.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-[15.5px] font-bold text-foreground">
+                Where is my clients&apos; health information stored?
+              </h3>
+              <p className="mt-2 text-[14px] leading-relaxed text-text-2">
+                In a database hosted in Canada, built around Ontario&apos;s PHIPA from the start.
+                See our{" "}
+                <Link href="/privacy" className="font-semibold text-brand-ink underline">
+                  Privacy Policy
+                </Link>{" "}
+                for the full detail on data handling and cross-border processors.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-[15.5px] font-bold text-foreground">
+                Does telehealth need separate software?
+              </h3>
+              <p className="mt-2 text-[14px] leading-relaxed text-text-2">
+                Your clients don&apos;t install anything — they join by clicking a link.
+                You&apos;ll connect a free Daily.co account once, in Settings, and every session
+                after that gets its own secure video room automatically.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-[15.5px] font-bold text-foreground">
+                Can I switch from Jane, Owl Practice, or another platform?
+              </h3>
+              <p className="mt-2 text-[14px] leading-relaxed text-text-2">
+                Yes — there&apos;s no automated import today, so you&apos;ll add your active
+                clients yourself as you bring them over. Most solo practitioners find this quick,
+                since you&apos;re only bringing across who you&apos;re currently seeing, not years
+                of history.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
