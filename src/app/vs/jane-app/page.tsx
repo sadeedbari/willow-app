@@ -81,7 +81,7 @@ export default async function WillowVsJaneAppPage() {
             Willow vs. Jane.app
           </span>
           <h1 className="mt-4 text-[34px] font-bold leading-[1.12] tracking-[-0.02em] text-foreground sm:text-[42px]">
-            What Jane&apos;s Balance plan charges extra for, Willow just includes — for less.
+            Jane&apos;s Balance plan caps you at 20 sessions a month. Willow doesn&apos;t cap you at all — for less.
           </h1>
           <p className="mx-auto mt-5 max-w-[56ch] text-[16px] leading-relaxed text-text-2">
             Both are built for solo practitioners. The difference shows up in the session cap, and in what you
@@ -130,7 +130,7 @@ export default async function WillowVsJaneAppPage() {
                 </tr>
                 <tr className="border-b border-border">
                   <td className="p-4 font-semibold text-foreground">Sessions per month</td>
-                  <td className="bg-brand-tint p-4 text-foreground">Up to 90</td>
+                  <td className="bg-brand-tint p-4 text-foreground">Unlimited</td>
                   <td className="p-4 text-foreground">
                     20{" "}
                     <span className="block text-[11.5px] text-text-3">
@@ -141,7 +141,8 @@ export default async function WillowVsJaneAppPage() {
                 <tr className="border-b border-border">
                   <td className="p-4 font-semibold text-foreground">Telehealth video</td>
                   <td className="bg-brand-tint p-4">
-                    <span className="font-bold text-ok">✓ Included</span>
+                    <span className="font-bold text-ok">✓ Included</span>{" "}
+                    <span className="block text-[11.5px] text-text-3">Requires connecting a free Daily.co account</span>
                   </td>
                   <td className="p-4">
                     <span className="font-bold text-ok">✓ Included</span>{" "}
@@ -168,10 +169,13 @@ export default async function WillowVsJaneAppPage() {
                   </td>
                 </tr>
                 <tr>
-                  <td className="p-4 font-semibold text-foreground">Insurance billing</td>
+                  <td className="p-4 font-semibold text-foreground">Direct insurance claim submission</td>
                   <td className="bg-brand-tint p-4 text-foreground">
-                    Client-facing superbill included
-                    <span className="block text-[11.5px] text-text-3">Client self-submits for reimbursement</span>
+                    <span className="font-bold text-bad">✗ Not offered</span>
+                    <span className="block text-[11.5px] text-text-3">
+                      Invoices include your license # and service codes, so clients can self-submit for
+                      reimbursement
+                    </span>
                   </td>
                   <td className="p-4 text-foreground">
                     +$20/mo add-on
@@ -184,7 +188,15 @@ export default async function WillowVsJaneAppPage() {
 
           <p className="mt-4 text-[12px] leading-relaxed text-text-3">
             Comparison reflects Jane.app&apos;s publicly listed Balance plan pricing at{" "}
-            <span className="whitespace-nowrap">jane.app/pricing</span> as of September 2026. Jane is a strong,
+            <a
+              href="https://jane.app/pricing"
+              target="_blank"
+              rel="nofollow noopener noreferrer"
+              className="whitespace-nowrap underline hover:text-text-2"
+            >
+              jane.app/pricing
+            </a>{" "}
+            as of September 2026. Jane is a strong,
             established product — this page compares the entry tier most solo practitioners actually
             evaluate, since that&apos;s the fairest apples-to-apples comparison at Willow&apos;s price point.
             Pricing and features are set by Jane Software Inc. and are subject to change — confirm current

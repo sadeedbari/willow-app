@@ -139,7 +139,7 @@ export default async function WillowVsOwlPracticePage() {
                 </tr>
                 <tr className="border-b border-border">
                   <td className="p-4 font-semibold text-foreground">Sessions per month</td>
-                  <td className="bg-brand-tint p-4 text-foreground">Up to 90</td>
+                  <td className="bg-brand-tint p-4 text-foreground">Unlimited</td>
                   <td className="p-4 text-foreground">20</td>
                   <td className="p-4 text-foreground">Unlimited</td>
                 </tr>
@@ -158,7 +158,8 @@ export default async function WillowVsOwlPracticePage() {
                 <tr className="border-b border-border">
                   <td className="p-4 font-semibold text-foreground">Telehealth video</td>
                   <td className="bg-brand-tint p-4">
-                    <span className="font-bold text-ok">✓ Included</span>
+                    <span className="font-bold text-ok">✓ Included</span>{" "}
+                    <span className="block text-[11.5px] text-text-3">Requires connecting a free Daily.co account</span>
                   </td>
                   <td className="p-4">
                     <span className="font-bold text-bad">✗ Not included</span>
@@ -184,8 +185,17 @@ export default async function WillowVsOwlPracticePage() {
           </div>
 
           <p className="mt-4 text-[12px] leading-relaxed text-text-3">
-            Comparison reflects Owl Practice&apos;s publicly listed regular (non-promotional) Solo plan pricing
-            at <span className="whitespace-nowrap">owlpractice.ca/pricing</span> as of September 2026. Owl
+            Comparison reflects Owl Practice&apos;s publicly listed regular (non-promotional) Growth and
+            Professional plan pricing at{" "}
+            <a
+              href="https://www.owlpractice.ca/pricing"
+              target="_blank"
+              rel="nofollow noopener noreferrer"
+              className="whitespace-nowrap underline hover:text-text-2"
+            >
+              owlpractice.ca/pricing
+            </a>{" "}
+            as of September 2026. Owl
             separately lists a temporary introductory discount for new signups; regular list pricing is shown
             here for a fair, ongoing-cost comparison. Pricing and features are set by Owl Practice and are
             subject to change — confirm current details directly with them before switching. Willow is an

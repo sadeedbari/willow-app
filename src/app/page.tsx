@@ -198,8 +198,9 @@ export default async function HomePage() {
                 straight into the times you&apos;re actually free.
               </p>
               <p className="mt-4 max-w-[48ch] text-[15px] leading-relaxed text-text-2">
-                Every telehealth session gets its own secure video room automatically — no extra
-                software to install, no links to go hunting for.
+                Connect a free Daily.co account once, and every telehealth session after that gets
+                its own secure video room automatically — no extra software to install, no links
+                to go hunting for.
               </p>
             </div>
             <div className="overflow-hidden rounded-2xl border border-border shadow-sm">
