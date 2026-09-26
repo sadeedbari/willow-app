@@ -24,11 +24,63 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BrandMark } from "@/components/brand-mark";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://willow.sulosystems.com";
+
 export const metadata: Metadata = {
   title: "Willow — Practice Management Software for Therapists",
   description:
     "Scheduling, telehealth, session notes, billing, secure client messaging, and a client portal — in one clean, fast app built for therapy practices in Ontario. 14-day free trial, no credit card required.",
   alternates: { canonical: "/" },
+};
+
+// Organization + SoftwareApplication structured data, combined in one
+// @graph. Only properties verifiable from this codebase are included --
+// no invented street address, phone number, or founding date, and
+// deliberately no aggregateRating/review (there are no real reviews to
+// cite, and fabricating one is a Google spam violation). Offer pricing
+// mirrors the two real plans in the Pricing section below.
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
+      name: "Sulo Systems Inc.",
+      url: SITE_URL,
+      logo: `${SITE_URL}/icons/icon-512.png`,
+      email: "sulosystems@gmail.com",
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": `${SITE_URL}/#software`,
+      name: "Willow",
+      url: SITE_URL,
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      description:
+        "Practice management software for therapists — scheduling, telehealth, session notes, billing, secure client messaging, and a client portal.",
+      provider: { "@id": `${SITE_URL}/#organization` },
+      offers: [
+        {
+          "@type": "Offer",
+          name: "Solo",
+          price: "15.90",
+          priceCurrency: "CAD",
+          url: `${SITE_URL}/signup`,
+          description: "For a one-person practice. 1 staff account, 14-day free trial, no credit card required.",
+        },
+        {
+          "@type": "Offer",
+          name: "Team",
+          price: "49",
+          priceCurrency: "CAD",
+          url: `${SITE_URL}/signup`,
+          description:
+            "For a small group practice. Up to 6 staff accounts, 14-day free trial, no credit card required.",
+        },
+      ],
+    },
+  ],
 };
 
 // Deliberately renders for every visitor regardless of session state -- an
@@ -39,6 +91,12 @@ export const metadata: Metadata = {
 export default async function HomePage() {
   return (
     <div className="bg-surface">
+      {/* Add JSON-LD to the page (per Next.js's app/02-guides/json-ld.md) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
+      />
+
       {/* Nav */}
       <header className="sticky top-0 z-20 border-b border-border bg-surface/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-6 py-4">

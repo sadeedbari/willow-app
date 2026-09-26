@@ -2,10 +2,38 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BrandMark } from "@/components/brand-mark";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://willow.sulosystems.com";
+const PAGE_URL = `${SITE_URL}/vs/jane-app`;
+
 export const metadata: Metadata = {
   title: "Willow vs. Jane.app — Pricing & Feature Comparison for Ontario Therapists",
   description:
     "A side-by-side look at Willow and Jane.app's Balance plan: pricing, session limits, telehealth, and what's actually included. Sourced from Jane's own published pricing.",
+};
+
+// BreadcrumbList + WebPage structured data for this comparison page. No
+// FAQPage: this page has no visible Q&A content, just a pricing/feature
+// table, so FAQPage schema would misrepresent the page.
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+        { "@type": "ListItem", position: 2, name: "Willow vs. Jane.app", item: PAGE_URL },
+      ],
+    },
+    {
+      "@type": "WebPage",
+      "@id": PAGE_URL,
+      url: PAGE_URL,
+      name: "Willow vs. Jane.app — Pricing & Feature Comparison for Ontario Therapists",
+      description:
+        "A side-by-side look at Willow and Jane.app's Balance plan: pricing, session limits, telehealth, and what's actually included. Sourced from Jane's own published pricing.",
+      isPartOf: { "@type": "WebSite", name: "Willow", url: SITE_URL },
+    },
+  ],
 };
 
 // Renders for every visitor regardless of session state -- see
@@ -14,6 +42,12 @@ export const metadata: Metadata = {
 export default async function WillowVsJaneAppPage() {
   return (
     <div className="bg-surface">
+      {/* Add JSON-LD to the page (per Next.js's app/02-guides/json-ld.md) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
+      />
+
       <header className="sticky top-0 z-20 border-b border-border bg-surface/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-6 py-4">
           <Link href="/" className="flex items-center gap-3">

@@ -1,10 +1,39 @@
 import Link from "next/link";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://willow.sulosystems.com";
+const PAGE_URL = `${SITE_URL}/terms`;
 const EFFECTIVE_DATE = "September 25, 2026";
+
+// BreadcrumbList + WebPage structured data for this legal page.
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+        { "@type": "ListItem", position: 2, name: "Terms of Service", item: PAGE_URL },
+      ],
+    },
+    {
+      "@type": "WebPage",
+      "@id": PAGE_URL,
+      url: PAGE_URL,
+      name: "Terms of Service",
+      isPartOf: { "@type": "WebSite", name: "Willow", url: SITE_URL },
+    },
+  ],
+};
 
 export default function TermsOfServicePage() {
   return (
     <div className="min-h-screen bg-surface-2 px-4 py-10">
+      {/* Add JSON-LD to the page (per Next.js's app/02-guides/json-ld.md) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
+      />
+
       <div className="mx-auto max-w-2xl rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-10">
         <h1 className="text-[24px] font-bold tracking-tight text-foreground">Terms of Service</h1>
         <p className="mt-1 text-[13px] text-text-3">Effective {EFFECTIVE_DATE}</p>

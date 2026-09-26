@@ -4,6 +4,19 @@ import { BrandMark } from "@/components/brand-mark";
 import { PasswordInput } from "@/components/password-input";
 import { PASSWORD_PATTERN, PASSWORD_REQUIREMENTS_HINT } from "@/utils/password";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://willow.sulosystems.com";
+const PAGE_URL = `${SITE_URL}/signup`;
+
+// BreadcrumbList structured data for this page's place in the site hierarchy.
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+    { "@type": "ListItem", position: 2, name: "Sign up", item: PAGE_URL },
+  ],
+};
+
 export default async function SignupPage({
   searchParams,
 }: {
@@ -13,6 +26,12 @@ export default async function SignupPage({
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-surface-2 px-4 py-10">
+      {/* Add JSON-LD to the page (per Next.js's app/02-guides/json-ld.md) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
+      />
+
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center text-center">
           <BrandMark size={56} />
