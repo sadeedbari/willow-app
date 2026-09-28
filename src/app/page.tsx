@@ -127,6 +127,14 @@ const jsonLd = {
         },
         {
           "@type": "Question",
+          name: "Can I get notified on my phone or computer for new messages and bookings?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Yes. Once you're signed up, open your Profile page, find Push Notifications, and click \"Enable on this device.\" Your browser will ask you to allow notifications — after that, you'll get notified for new client messages, booking requests, and appointment reminders, even when Willow isn't open in a tab.",
+          },
+        },
+        {
+          "@type": "Question",
           name: "Can I switch from Jane, Owl Practice, or another platform?",
           acceptedAnswer: {
             "@type": "Answer",
@@ -186,6 +194,17 @@ const FAQ_ITEMS = [
         No. Every telehealth appointment gets its own secure video room automatically, right
         inside Willow — your clients just click a link to join, and there&apos;s nothing for you
         to set up.
+      </>
+    ),
+  },
+  {
+    question: "Can I get notified on my phone or computer for new messages and bookings?",
+    answer: (
+      <>
+        Yes. Once you&apos;re signed up, open your Profile page, find Push Notifications, and
+        click &quot;Enable on this device.&quot; Your browser will ask you to allow notifications
+        — after that, you&apos;ll get notified for new client messages, booking requests, and
+        appointment reminders, even when Willow isn&apos;t open in a tab.
       </>
     ),
   },
