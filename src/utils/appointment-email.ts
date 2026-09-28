@@ -77,6 +77,45 @@ export async function sendAppointmentConfirmationEmail(details: AppointmentEmail
   });
 }
 
+// Best-effort, sent whenever a scheduled appointment's time changes --
+// either side can trigger this (the practitioner from the calendar, or the
+// client rescheduling themselves from the portal).
+export async function sendAppointmentRescheduledEmail(details: AppointmentEmailDetails) {
+  if (!details.clientEmail) return;
+
+  const when = formatWhen(details.startsAt);
+
+  await sendEmail({
+    to: details.clientEmail,
+    subject: `Appointment rescheduled: ${when}`,
+    html: `
+      <p>Hi ${details.clientName},</p>
+      <p>Your appointment with ${details.practiceName} has been rescheduled to a new time:</p>
+      ${appointmentDetailsHtml(details, when)}
+      <p>If this doesn't work for you, please contact your practice directly.</p>
+    `,
+  });
+}
+
+// Best-effort, sent whenever a scheduled appointment is cancelled -- either
+// side can trigger this (the practitioner from the calendar, or the client
+// cancelling themselves from the portal).
+export async function sendAppointmentCancelledEmail(details: AppointmentEmailDetails) {
+  if (!details.clientEmail) return;
+
+  const when = formatWhen(details.startsAt);
+
+  await sendEmail({
+    to: details.clientEmail,
+    subject: `Appointment cancelled: ${when}`,
+    html: `
+      <p>Hi ${details.clientName},</p>
+      <p>Your appointment with ${details.practiceName} that was scheduled for <strong>${when}</strong> has been cancelled.</p>
+      <p>If this wasn't expected, or you'd like to book a new time, please contact your practice directly.</p>
+    `,
+  });
+}
+
 // Sent once, ~24 hours ahead of the appointment, by the
 // send-appointment-reminders cron route -- gated on both the practice's and
 // the client's own appointment_reminders_enabled toggle before this is ever
