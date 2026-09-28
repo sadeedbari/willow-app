@@ -1,5 +1,6 @@
 import { createServiceRoleClient } from "@/utils/supabase/service-role";
 import { sendAppointmentReminderEmail } from "@/utils/appointment-email";
+import { sendPushToStaff } from "@/utils/push/send";
 
 // Triggered on a schedule (pg_cron + pg_net -> HTTP POST here), same pattern
 // as /api/cron/auto-send-invoices. Auth is a shared secret rather than a
@@ -39,6 +40,26 @@ export async function POST(request: Request) {
     const client = appt.clients as unknown as { full_name: string; email: string | null; appointment_reminders_enabled: boolean } | null;
     const staff = appt.staff as unknown as { full_name: string } | null;
     const practice = appt.practices as unknown as { name: string; appointment_reminders_enabled: boolean } | null;
+
+    // Staff gets reminded regardless of the client-facing email preferences
+    // checked below -- those only control whether the *client* gets emailed,
+    // and a practitioner's own push reminder is a separate, unconditional
+    // feature (never sent to the client portal).
+    if (client) {
+      await supabase.from("notifications").insert({
+        practice_id: appt.practice_id,
+        staff_id: appt.staff_id,
+        type: "appointment_reminder",
+        title: "Upcoming session",
+        body: `${client.full_name} in the next 24 hours`,
+        link: `/calendar/${appt.id}`,
+      });
+      await sendPushToStaff(appt.staff_id, {
+        title: "Upcoming session",
+        body: `${client.full_name} in the next 24 hours`,
+        url: `/calendar/${appt.id}`,
+      });
+    }
 
     if (!practice?.appointment_reminders_enabled || !client?.appointment_reminders_enabled || !client.email) {
       skipped++;

@@ -6,6 +6,7 @@ import { logout } from "./actions";
 import { toggleTheme } from "./theme-actions";
 import { NavLink } from "./nav-link";
 import { ThemeToggleForm } from "./theme-toggle-form";
+import { PushRegister } from "./push-register";
 import { isThreadUnread } from "@/utils/messaging";
 import { BrandMark } from "@/components/brand-mark";
 
@@ -252,6 +253,7 @@ export default async function AppLayout({
 
   return (
     <div className="flex h-screen w-screen overflow-hidden">
+      <PushRegister />
       {/* Pure-CSS mobile drawer toggle -- no client component needed. This
           Tailwind v4 setup doesn't generate the plain peer-checked: variant
           (see the working `peer-has-[:checked]` example in profile/page.tsx),

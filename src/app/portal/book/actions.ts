@@ -7,6 +7,7 @@ import { SELF_BOOKABLE_TYPES, type SelfBookableType } from "@/utils/appointment-
 import { friendlyErrorMessage } from "@/utils/friendly-error";
 import { sendAppointmentConfirmationEmail } from "@/utils/appointment-email";
 import { createDailyRoomWithAccessLinks } from "@/utils/daily/create-room";
+import { sendPushToStaff } from "@/utils/push/send";
 
 export async function bookAppointment(formData: FormData) {
   const client = await getCurrentClient();
@@ -55,6 +56,13 @@ export async function bookAppointment(formData: FormData) {
     type: data.type,
     locationType: "telehealth",
     videoClientUrl: video?.clientUrl ?? null,
+  });
+
+  const article = ["individual", "intake"].includes(data.type) ? "an" : "a";
+  await sendPushToStaff(data.staffId, {
+    title: "New self-booked appointment",
+    body: `${data.clientName} booked ${article} ${data.type} session`,
+    url: `/calendar/${data.appointmentId}`,
   });
 
   redirect(`/portal/book?${backParams}&booked=1`);

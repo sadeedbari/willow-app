@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sendEmail } from "@/utils/resend/send";
 import { friendlyErrorMessage } from "@/utils/friendly-error";
+import { sendPushToStaff } from "@/utils/push/send";
 
 // A thread is unread from one side the moment the other side has posted
 // since that side's last visit -- same rule for staff (staff_last_read_at)
@@ -57,7 +58,9 @@ export async function notifyStaffOfClientMessage(
   supabase: SupabaseClient,
   params: { clientId: string; clientFullName: string; practiceId: string; body: string },
 ) {
-  await supabase.rpc("notify_message_recipient", { p_preview: params.body.slice(0, 140) });
+  const { data: recipientStaffId } = await supabase.rpc("notify_message_recipient", {
+    p_preview: params.body.slice(0, 140),
+  });
 
   const { data: recipientEmail } = await supabase.rpc("get_my_message_recipient_email");
   if (recipientEmail) {
@@ -66,6 +69,14 @@ export async function notifyStaffOfClientMessage(
       to: recipientEmail,
       subject: `New secure message from ${params.clientFullName}`,
       html: `<p>You have a new secure message from ${params.clientFullName}.</p><p><a href="${siteUrl}/messages/${params.clientId}">Log in to view and reply</a></p>`,
+    });
+  }
+
+  if (recipientStaffId) {
+    await sendPushToStaff(recipientStaffId, {
+      title: `New message from ${params.clientFullName}`,
+      body: params.body.slice(0, 140),
+      url: `/messages/${params.clientId}`,
     });
   }
 }
@@ -108,6 +119,12 @@ export async function notifyStaffOfClientMessageByClientId(
       html: `<p>You have a new secure message from ${params.clientFullName}.</p><p><a href="${siteUrl}/messages/${params.clientId}">Log in to view and reply</a></p>`,
     });
   }
+
+  await sendPushToStaff(recipientStaffId, {
+    title: `New message from ${params.clientFullName}`,
+    body: params.body.slice(0, 140),
+    url: `/messages/${params.clientId}`,
+  });
 }
 
 // Best-effort strip of the quoted history from a plain-text email reply.

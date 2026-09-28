@@ -7,6 +7,7 @@ import {
   sendBookingRequestReceivedEmail,
   sendBookingRequestStaffEmail,
 } from "@/utils/booking-request-email";
+import { sendPushToStaff } from "@/utils/push/send";
 
 export async function requestBooking(formData: FormData) {
   const slug = formData.get("slug") as string;
@@ -53,6 +54,12 @@ export async function requestBooking(formData: FormData) {
       startsAt: data.startsAt,
     });
   }
+
+  await sendPushToStaff(data.staffId, {
+    title: "New booking request",
+    body: `${fullName} requested an intake session`,
+    url: "/booking-requests",
+  });
 
   redirect(`/book/${slug}?submitted=1`);
 }

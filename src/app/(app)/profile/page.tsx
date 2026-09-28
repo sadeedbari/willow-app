@@ -2,6 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import { updateProfile } from "./actions";
 import { ProfileTabs } from "./tabs";
+import { PushToggle } from "./push-toggle";
 
 const ROLE_LABEL: Record<string, string> = {
   practice_admin: "Practice Admin",
@@ -202,6 +203,8 @@ export default async function ProfilePage({
               Email me when someone submits a public booking request
             </label>
           </div>
+
+          <PushToggle vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
 
           <button
             type="submit"
