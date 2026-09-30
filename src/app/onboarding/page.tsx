@@ -1,5 +1,7 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { createPractice } from "./actions";
+import { SubmitButton } from "./submit-button";
 
 export default async function OnboardingPage({
   searchParams,
@@ -12,6 +14,18 @@ export default async function OnboardingPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // A user who already completed this (e.g. navigating back after a
+  // successful submit, or a double-submitted form landing here a second
+  // time) should just land in their workspace, not see a form that's
+  // guaranteed to fail with "This account already belongs to a practice."
+  if (user) {
+    const { data: existingStaffRow } = await supabase.rpc("get_my_staff_row").maybeSingle();
+    if (existingStaffRow) {
+      redirect("/dashboard");
+    }
+  }
+
   // Set at signup (see src/app/signup/actions.ts) -- already asked once,
   // so this page only asks for the one thing it doesn't have yet.
   const practiceName = (user?.user_metadata?.practice_name as string | undefined) ?? "";
@@ -69,15 +83,10 @@ export default async function OnboardingPage({
               type="text"
               required
               placeholder="e.g. Dr. Naomi Osei"
-              className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-sm shadow-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+              className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900 shadow-sm focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
             />
           </div>
-          <button
-            type="submit"
-            className="w-full rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-800"
-          >
-            Create practice
-          </button>
+          <SubmitButton />
         </form>
       </div>
     </div>
