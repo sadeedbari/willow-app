@@ -109,7 +109,9 @@ export async function recordPayment(formData: FormData) {
         clientEmail: built.clientEmail,
         clientName: built.clientFullName,
         practiceName: built.practiceName,
+        practiceLogoUrl: built.practiceLogoUrl,
         invoiceNumber: built.invoiceNumber,
+        invoiceLabel: built.invoiceLabel,
         status: built.status,
         totalCents: built.totalCents,
         balanceCents: built.totalCents - built.amountPaidCents,
@@ -117,6 +119,34 @@ export async function recordPayment(formData: FormData) {
         paymentToken: built.paymentToken,
       });
     }
+  }
+
+  revalidatePath(`/invoices/${invoiceId}`);
+  redirect(`/invoices/${invoiceId}`);
+}
+
+// Gated on allowCustomInvoiceNumber -- an operator-only flag (not a
+// practice-facing setting), today turned on for exactly one practice with
+// its own numbering scheme. Every other practice never sees the field
+// this action is wired to, but the server action itself also re-checks
+// the flag rather than trusting the UI alone.
+export async function updateInvoiceLabel(formData: FormData) {
+  const staff = await getCurrentStaff();
+  const invoiceId = formData.get("invoiceId") as string;
+  requireBillingRole(staff.role, invoiceId);
+
+  if (!staff.allowCustomInvoiceNumber) {
+    redirect(`/invoices/${invoiceId}`);
+  }
+
+  const invoiceLabel = (formData.get("invoiceLabel") as string)?.trim() || null;
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("invoices").update({ invoice_label: invoiceLabel }).eq("id", invoiceId);
+
+  if (error) {
+    const message = error.code === "23505" ? "That invoice number is already in use." : friendlyErrorMessage(error);
+    redirect(`/invoices/${invoiceId}?error=${encodeURIComponent(message)}`);
   }
 
   revalidatePath(`/invoices/${invoiceId}`);
@@ -159,7 +189,9 @@ export async function resendInvoice(formData: FormData) {
     clientEmail: built.clientEmail,
     clientName: built.clientFullName,
     practiceName: built.practiceName,
+    practiceLogoUrl: built.practiceLogoUrl,
     invoiceNumber: built.invoiceNumber,
+    invoiceLabel: built.invoiceLabel,
     status: built.status,
     totalCents: built.totalCents,
     balanceCents: built.totalCents - built.amountPaidCents,

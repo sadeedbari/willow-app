@@ -18,6 +18,7 @@ export async function sendFormToClient(formData: FormData) {
   const result = await createAndSendConsentForm(supabase, {
     practiceId: staff.practiceId,
     practiceName: staff.practiceName,
+    practiceLogoUrl: staff.practiceLogoUrl,
     clientId,
     templateId,
   });
@@ -58,6 +59,7 @@ export async function resendPendingSignature(formData: FormData) {
     clientEmail: client.email,
     clientName: client.full_name,
     practiceName: staff.practiceName,
+    practiceLogoUrl: staff.practiceLogoUrl,
     formTitle: form.form_type,
     accessToken: form.access_token,
   });

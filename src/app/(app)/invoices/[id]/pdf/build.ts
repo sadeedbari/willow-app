@@ -6,12 +6,14 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 export type BuiltInvoicePdf = {
   pdfBuffer: Buffer;
   invoiceNumber: number;
+  invoiceLabel: string | null;
   status: string;
   totalCents: number;
   amountPaidCents: number;
   clientEmail: string | null;
   clientFullName: string;
   practiceName: string;
+  practiceLogoUrl: string | null;
   paymentToken: string;
 };
 
@@ -24,7 +26,7 @@ export async function buildInvoicePdf(
   const { data: invoice } = await supabase
     .from("invoices")
     .select(
-      "invoice_number, status, issue_date, due_date, total_cents, amount_paid_cents, payment_method, paid_at, notes, practice_id, payment_token, clients(full_name, email), staff(full_name, credential, license_number, license_province)"
+      "invoice_number, invoice_label, status, issue_date, due_date, total_cents, amount_paid_cents, payment_method, paid_at, notes, practice_id, payment_token, clients(full_name, email), staff(full_name, credential, license_number, license_province)"
     )
     .eq("id", invoiceId)
     .single();
@@ -54,6 +56,7 @@ export async function buildInvoicePdf(
 
   const pdfBuffer = await renderInvoicePdf({
     invoiceNumber: invoice.invoice_number,
+    invoiceLabel: invoice.invoice_label,
     status: invoice.status,
     issueDate: invoice.issue_date,
     dueDate: invoice.due_date,
@@ -93,12 +96,14 @@ export async function buildInvoicePdf(
   return {
     pdfBuffer,
     invoiceNumber: invoice.invoice_number,
+    invoiceLabel: invoice.invoice_label,
     status: invoice.status,
     totalCents: invoice.total_cents,
     amountPaidCents: invoice.amount_paid_cents,
     clientEmail: client?.email ?? null,
     clientFullName: client?.full_name ?? "Unknown client",
     practiceName: practice?.name ?? "Practice",
+    practiceLogoUrl: practice?.logo_url ?? null,
     paymentToken: invoice.payment_token,
   };
 }

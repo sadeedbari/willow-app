@@ -52,6 +52,7 @@ export async function bookAppointment(formData: FormData) {
     clientName: data.clientName,
     staffName: data.staffName,
     practiceName: data.practiceName ?? client.practiceName,
+    practiceLogoUrl: data.logoUrl ?? client.practiceLogoUrl,
     startsAt: data.startsAt,
     type: data.type,
     locationType: "telehealth",

@@ -1,5 +1,12 @@
 import { sendEmail } from "@/utils/resend/send";
 
+// See appointment-email.ts's logoHtml -- same reasoning, duplicated rather
+// than shared across the two small util files to avoid a cross-import for
+// one line of markup.
+function logoHtml(logoUrl?: string | null): string {
+  return logoUrl ? `<p><img src="${logoUrl}" alt="" style="max-height:48px;max-width:200px" /></p>` : "";
+}
+
 function formatWhen(startsAt: string) {
   return new Date(startsAt).toLocaleString("en-US", {
     weekday: "long",
@@ -18,12 +25,14 @@ export async function sendBookingRequestReceivedEmail(details: {
   toName: string;
   staffName: string | null;
   practiceName: string;
+  practiceLogoUrl?: string | null;
   startsAt: string;
 }) {
   await sendEmail({
     to: details.toEmail,
     subject: `Request received: ${details.practiceName}`,
     html: `
+      ${logoHtml(details.practiceLogoUrl)}
       <p>Hi ${details.toName},</p>
       <p>Thanks for reaching out to ${details.practiceName}. Your request for an intake session${
         details.staffName ? ` with ${details.staffName}` : ""
@@ -56,12 +65,14 @@ export async function sendBookingRequestDeclinedEmail(details: {
   toEmail: string;
   toName: string;
   practiceName: string;
+  practiceLogoUrl?: string | null;
   reason: string | null;
 }) {
   await sendEmail({
     to: details.toEmail,
     subject: `Update on your request to ${details.practiceName}`,
     html: `
+      ${logoHtml(details.practiceLogoUrl)}
       <p>Hi ${details.toName},</p>
       <p>Thanks for your interest in ${details.practiceName}. Unfortunately they're not able to take your requested appointment${
         details.reason ? `: ${details.reason}` : "."

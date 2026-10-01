@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import Link from "next/link";
+import { formatInvoiceLabel } from "@/utils/invoice-label";
 
 const CLIENT_STATUS_LABEL: Record<string, string> = {
   active: "Active",
@@ -100,6 +101,7 @@ export default async function SearchPage({
   type InvoiceRow = {
     id: string;
     invoice_number: number;
+    invoice_label: string | null;
     status: string;
     total_cents: number;
     clients: { full_name: string } | null;
@@ -112,7 +114,7 @@ export default async function SearchPage({
   if (clientIdList || isNumeric) {
     let invoicesQuery = supabase
       .from("invoices")
-      .select("id, invoice_number, status, total_cents, clients(full_name)")
+      .select("id, invoice_number, invoice_label, status, total_cents, clients(full_name)")
       .order("issue_date", { ascending: false })
       .limit(15);
 
@@ -204,7 +206,7 @@ export default async function SearchPage({
                 className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-surface p-4 shadow-sm transition hover:border-brand"
               >
                 <div className="text-[13.4px] font-semibold text-foreground">
-                  INV-{String(inv.invoice_number).padStart(4, "0")}
+                  {formatInvoiceLabel(inv.invoice_number, inv.invoice_label)}
                   <span className="ml-2 font-normal text-text-3">
                     {inv.clients?.full_name ?? "Unknown client"}
                   </span>

@@ -6,12 +6,18 @@ function signingUrlFor(accessToken: string) {
   return `${siteUrl}/consent/${accessToken}`;
 }
 
+// See appointment-email.ts's logoHtml -- same reasoning.
+function logoHtml(logoUrl?: string | null): string {
+  return logoUrl ? `<p><img src="${logoUrl}" alt="" style="max-height:48px;max-width:200px" /></p>` : "";
+}
+
 // Shared by every "send a client this form to sign" entry point (new send,
 // resend) so the email is worded identically everywhere.
 export async function sendConsentFormSigningEmail(params: {
   clientEmail: string;
   clientName: string;
   practiceName: string;
+  practiceLogoUrl?: string | null;
   formTitle: string;
   accessToken: string;
 }): Promise<boolean> {
@@ -19,6 +25,7 @@ export async function sendConsentFormSigningEmail(params: {
     to: params.clientEmail,
     subject: `${params.formTitle} — please review and sign`,
     html: `
+      ${logoHtml(params.practiceLogoUrl)}
       <p>Hi ${params.clientName},</p>
       <p>${params.practiceName} has sent you a form to review and sign: <strong>${params.formTitle}</strong>.</p>
       <p><a href="${signingUrlFor(params.accessToken)}">Click here to review and sign</a>.</p>
@@ -36,7 +43,7 @@ type CreateConsentFormResult =
 // (rather than only ever showing staff a copyable link).
 export async function createAndSendConsentForm(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  params: { practiceId: string; practiceName: string; clientId: string; templateId: string }
+  params: { practiceId: string; practiceName: string; practiceLogoUrl?: string | null; clientId: string; templateId: string }
 ): Promise<CreateConsentFormResult> {
   const { data: template } = await supabase
     .from("consent_form_templates")
@@ -75,6 +82,7 @@ export async function createAndSendConsentForm(
       clientEmail: client.email,
       clientName: client.full_name,
       practiceName: params.practiceName,
+      practiceLogoUrl: params.practiceLogoUrl,
       formTitle: template.title,
       accessToken: data.access_token,
     });

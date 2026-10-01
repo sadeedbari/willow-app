@@ -3,6 +3,7 @@ import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import Link from "next/link";
 import { avatarColorFor, initialsOf } from "@/utils/avatar-color";
 import { NewInvoiceModal } from "./new-invoice-modal";
+import { formatInvoiceLabel } from "@/utils/invoice-label";
 
 const STATUS_STYLE: Record<string, string> = {
   draft: "bg-surface-2 text-text-3",
@@ -77,7 +78,7 @@ export default async function InvoicesPage({
   const { data } = await supabase
     .from("invoices")
     .select(
-      "id, invoice_number, status, issue_date, due_date, total_cents, amount_paid_cents, paid_at, client_id, clients(full_name, assigned_staff_id)"
+      "id, invoice_number, invoice_label, status, issue_date, due_date, total_cents, amount_paid_cents, paid_at, client_id, clients(full_name, assigned_staff_id)"
     )
     .order("issue_date", { ascending: false })
     .order("invoice_number", { ascending: false });
@@ -85,6 +86,7 @@ export default async function InvoicesPage({
   type Row = {
     id: string;
     invoice_number: number;
+    invoice_label: string | null;
     status: string;
     issue_date: string;
     due_date: string | null;
@@ -222,7 +224,7 @@ export default async function InvoicesPage({
                 </span>
                 <div className="min-w-0">
                   <div className="truncate text-[13.4px] font-semibold text-foreground">
-                    INV-{String(inv.invoice_number).padStart(4, "0")}
+                    {formatInvoiceLabel(inv.invoice_number, inv.invoice_label)}
                     <span className="ml-2 font-normal text-text-3">
                       · {inv.clients?.full_name ?? "Unknown client"}
                     </span>

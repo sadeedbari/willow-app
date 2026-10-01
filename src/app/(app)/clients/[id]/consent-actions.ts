@@ -19,6 +19,7 @@ export async function sendConsentForm(formData: FormData) {
   const result = await createAndSendConsentForm(supabase, {
     practiceId: staff.practiceId,
     practiceName: staff.practiceName,
+    practiceLogoUrl: staff.practiceLogoUrl,
     clientId,
     templateId,
   });

@@ -3,7 +3,7 @@ import { getCurrentClient } from "@/utils/supabase/current-client";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PortalTabs } from "../../../tabs";
-import { portalLogout } from "../../../actions";
+import { PortalHeader } from "../../../portal-header";
 import { rescheduleMyAppointment } from "./actions";
 import { parseDateParamString } from "@/utils/parse-date-param";
 
@@ -112,17 +112,7 @@ export default async function RescheduleAppointmentPage({
 
   return (
     <div className="flex min-h-screen flex-col bg-surface-2">
-      <header className="flex items-center justify-between border-b border-border bg-surface px-5 py-3.5">
-        <div>
-          <div className="text-[14.5px] font-bold text-foreground">{client.practiceName}</div>
-          <div className="text-[11.5px] text-text-3">Signed in as {client.fullName}</div>
-        </div>
-        <form action={portalLogout}>
-          <button type="submit" className="text-[12.5px] font-semibold text-text-3 hover:text-foreground">
-            Log out
-          </button>
-        </form>
-      </header>
+      <PortalHeader practiceName={client.practiceName} practiceLogoUrl={client.practiceLogoUrl} clientFullName={client.fullName} />
 
       <div className="mx-auto flex w-full max-w-lg flex-1 flex-col px-4 py-6">
         <PortalTabs active="/portal/appointments" />

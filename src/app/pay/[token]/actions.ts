@@ -4,12 +4,14 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { stripe, isMissingConnectAccountError } from "@/utils/stripe/server";
 import { friendlyErrorMessage } from "@/utils/friendly-error";
+import { formatInvoiceLabel } from "@/utils/invoice-label";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 type InvoiceByToken = {
   id: string;
   invoice_number: number;
+  invoice_label: string | null;
   status: string;
   total_cents: number;
   amount_paid_cents: number;
@@ -46,7 +48,7 @@ export async function startInvoicePayment(formData: FormData) {
     redirect(`/pay/${token}`);
   }
 
-  const invoiceLabel = `INV-${String(invoice.invoice_number).padStart(4, "0")}`;
+  const invoiceLabel = formatInvoiceLabel(invoice.invoice_number, invoice.invoice_label);
 
   let checkoutUrl: string | null = null;
   let errorMessage: string | null = null;

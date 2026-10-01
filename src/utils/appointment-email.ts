@@ -32,11 +32,19 @@ export type AppointmentEmailDetails = {
   clientName: string;
   staffName: string | null;
   practiceName: string;
+  practiceLogoUrl?: string | null;
   startsAt: string;
   type: string;
   locationType: string;
   videoClientUrl?: string | null;
 };
+
+// Prepended to every client-facing email so a practice's own logo is what
+// clients see, not just the Willow brand -- see willow-app memory on
+// per-practice branding. Absent for practices with no logo on file.
+function logoHtml(logoUrl?: string | null): string {
+  return logoUrl ? `<p><img src="${logoUrl}" alt="" style="max-height:48px;max-width:200px" /></p>` : "";
+}
 
 function appointmentDetailsHtml(details: AppointmentEmailDetails, when: string): string {
   const typeLabel = TYPE_LABEL[details.type] ?? details.type;
@@ -69,6 +77,7 @@ export async function sendAppointmentConfirmationEmail(details: AppointmentEmail
     to: details.clientEmail,
     subject: `Appointment confirmed: ${when}`,
     html: `
+      ${logoHtml(details.practiceLogoUrl)}
       <p>Hi ${details.clientName},</p>
       <p>Your appointment with ${details.practiceName} is confirmed:</p>
       ${appointmentDetailsHtml(details, when)}
@@ -89,6 +98,7 @@ export async function sendAppointmentRescheduledEmail(details: AppointmentEmailD
     to: details.clientEmail,
     subject: `Appointment rescheduled: ${when}`,
     html: `
+      ${logoHtml(details.practiceLogoUrl)}
       <p>Hi ${details.clientName},</p>
       <p>Your appointment with ${details.practiceName} has been rescheduled to a new time:</p>
       ${appointmentDetailsHtml(details, when)}
@@ -109,6 +119,7 @@ export async function sendAppointmentCancelledEmail(details: AppointmentEmailDet
     to: details.clientEmail,
     subject: `Appointment cancelled: ${when}`,
     html: `
+      ${logoHtml(details.practiceLogoUrl)}
       <p>Hi ${details.clientName},</p>
       <p>Your appointment with ${details.practiceName} that was scheduled for <strong>${when}</strong> has been cancelled.</p>
       <p>If this wasn't expected, or you'd like to book a new time, please contact your practice directly.</p>
@@ -129,6 +140,7 @@ export async function sendAppointmentReminderEmail(details: AppointmentEmailDeta
     to: details.clientEmail,
     subject: `Reminder: upcoming appointment ${when}`,
     html: `
+      ${logoHtml(details.practiceLogoUrl)}
       <p>Hi ${details.clientName},</p>
       <p>This is a reminder about your upcoming appointment with ${details.practiceName}:</p>
       ${appointmentDetailsHtml(details, when)}

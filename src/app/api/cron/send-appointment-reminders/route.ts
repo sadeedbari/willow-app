@@ -26,7 +26,7 @@ export async function POST(request: Request) {
   const { data: dueAppointments } = await supabase
     .from("appointments")
     .select(
-      "id, starts_at, type, location_type, video_client_url, client_id, staff_id, practice_id, clients(full_name, email, appointment_reminders_enabled), staff(full_name), practices(name, appointment_reminders_enabled)"
+      "id, starts_at, type, location_type, video_client_url, client_id, staff_id, practice_id, clients(full_name, email, appointment_reminders_enabled), staff(full_name), practices(name, logo_url, appointment_reminders_enabled)"
     )
     .neq("status", "cancelled")
     .is("reminder_sent_at", null)
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
   for (const appt of dueAppointments ?? []) {
     const client = appt.clients as unknown as { full_name: string; email: string | null; appointment_reminders_enabled: boolean } | null;
     const staff = appt.staff as unknown as { full_name: string } | null;
-    const practice = appt.practices as unknown as { name: string; appointment_reminders_enabled: boolean } | null;
+    const practice = appt.practices as unknown as { name: string; logo_url: string | null; appointment_reminders_enabled: boolean } | null;
 
     // Staff gets reminded regardless of the client-facing email preferences
     // checked below -- those only control whether the *client* gets emailed,
@@ -76,6 +76,7 @@ export async function POST(request: Request) {
       clientName: client.full_name,
       staffName: staff?.full_name ?? null,
       practiceName: practice.name,
+      practiceLogoUrl: practice.logo_url,
       startsAt: appt.starts_at,
       type: appt.type,
       locationType: appt.location_type,

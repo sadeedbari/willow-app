@@ -1,14 +1,22 @@
 import { sendEmail } from "@/utils/resend/send";
+import { formatInvoiceLabel } from "@/utils/invoice-label";
 
 function formatMoney(cents: number) {
   return `$${(cents / 100).toFixed(2)} CAD`;
+}
+
+// See appointment-email.ts's logoHtml -- same reasoning.
+function logoHtml(logoUrl?: string | null): string {
+  return logoUrl ? `<p><img src="${logoUrl}" alt="" style="max-height:48px;max-width:200px" /></p>` : "";
 }
 
 export type InvoiceEmailDetails = {
   clientEmail: string | null;
   clientName: string;
   practiceName: string;
+  practiceLogoUrl?: string | null;
   invoiceNumber: number;
+  invoiceLabel?: string | null;
   status: string;
   totalCents: number;
   balanceCents: number;
@@ -24,7 +32,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 export async function sendInvoiceEmail(details: InvoiceEmailDetails): Promise<boolean> {
   if (!details.clientEmail) return false;
 
-  const invoiceLabel = `INV-${String(details.invoiceNumber).padStart(4, "0")}`;
+  const invoiceLabel = formatInvoiceLabel(details.invoiceNumber, details.invoiceLabel);
   const owesBalance = details.status !== "paid" && details.status !== "void" && details.balanceCents > 0;
   const paymentUrl = `${SITE_URL}/pay/${details.paymentToken}`;
   const balanceLine = details.status === "paid"
@@ -40,6 +48,7 @@ export async function sendInvoiceEmail(details: InvoiceEmailDetails): Promise<bo
     to: details.clientEmail,
     subject: `Invoice ${invoiceLabel} from ${details.practiceName}`,
     html: `
+      ${logoHtml(details.practiceLogoUrl)}
       <p>Hi ${details.clientName},</p>
       <p>Please find attached your invoice ${invoiceLabel} from ${details.practiceName}.</p>
       <p><strong>Total:</strong> ${formatMoney(details.totalCents)}</p>

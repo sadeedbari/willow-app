@@ -48,6 +48,7 @@ export async function approveBookingRequest(requestId: string) {
     clientName: result.fullName,
     staffName: clinician?.full_name ?? null,
     practiceName: staff.practiceName,
+    practiceLogoUrl: staff.practiceLogoUrl,
     startsAt: result.startsAt,
     type: "intake",
     locationType: "telehealth",
@@ -86,6 +87,7 @@ export async function declineBookingRequest(requestId: string, formData: FormDat
       toEmail: request.email,
       toName: request.full_name,
       practiceName: staff.practiceName,
+      practiceLogoUrl: staff.practiceLogoUrl,
       reason,
     });
   }

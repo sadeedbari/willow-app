@@ -1,4 +1,5 @@
 import { Document, Page, Text, View, Image, Link, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
+import { formatInvoiceLabel } from "@/utils/invoice-label";
 
 const styles = StyleSheet.create({
   page: { padding: 40, fontSize: 10, fontFamily: "Helvetica", color: "#1a1a1a" },
@@ -52,6 +53,7 @@ function formatMoney(cents: number) {
 
 export type InvoicePdfProps = {
   invoiceNumber: number;
+  invoiceLabel: string | null;
   status: string;
   issueDate: string;
   dueDate: string | null;
@@ -96,6 +98,7 @@ const PAYMENT_METHOD_LABEL: Record<string, string> = {
 
 function InvoicePdf({
   invoiceNumber,
+  invoiceLabel,
   status,
   issueDate,
   dueDate,
@@ -137,7 +140,7 @@ function InvoicePdf({
           </View>
           <View>
             <Text style={styles.invoiceTitle}>
-              INV-{String(invoiceNumber).padStart(4, "0")}
+              {formatInvoiceLabel(invoiceNumber, invoiceLabel)}
             </Text>
             <Text style={styles.metaRight}>Issued {issueDate}</Text>
             {dueDate && <Text style={styles.metaRight}>Due {dueDate}</Text>}

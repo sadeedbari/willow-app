@@ -24,6 +24,7 @@ export async function cancelMyAppointment(formData: FormData) {
       clientName: data.clientName,
       staffName: data.staffName,
       practiceName: data.practiceName,
+      practiceLogoUrl: data.logoUrl,
       startsAt: data.startsAt,
       type: data.type,
       locationType: data.locationType,

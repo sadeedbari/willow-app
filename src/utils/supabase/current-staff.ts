@@ -7,6 +7,8 @@ export type CurrentStaff = {
   role: "practice_admin" | "clinician" | "front_desk" | "billing_admin";
   practiceId: string;
   practiceName: string;
+  practiceLogoUrl: string | null;
+  allowCustomInvoiceNumber: boolean;
 };
 
 async function getCurrentStaffInternal(opts: { enforceTrial: boolean }): Promise<CurrentStaff> {
@@ -37,6 +39,8 @@ async function getCurrentStaffInternal(opts: { enforceTrial: boolean }): Promise
       subscription_status: string | null;
       trial_ends_at: string | null;
       mfa_skip_login_at: string | null;
+      practice_logo_url: string | null;
+      allow_custom_invoice_number: boolean;
     } | null;
   };
 
@@ -98,6 +102,8 @@ async function getCurrentStaffInternal(opts: { enforceTrial: boolean }): Promise
     role: data.role,
     practiceId: data.practice_id,
     practiceName: data.practice_name ?? "Your practice",
+    practiceLogoUrl: data.practice_logo_url,
+    allowCustomInvoiceNumber: data.allow_custom_invoice_number,
   };
 }
 

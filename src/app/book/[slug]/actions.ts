@@ -44,6 +44,7 @@ export async function requestBooking(formData: FormData) {
     toName: fullName,
     staffName: data.staffName,
     practiceName: data.practiceName,
+    practiceLogoUrl: data.logoUrl,
     startsAt: data.startsAt,
   });
 

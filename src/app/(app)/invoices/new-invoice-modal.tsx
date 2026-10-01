@@ -108,6 +108,20 @@ export async function NewInvoiceModal({ error, clientId }: { error?: string; cli
               </div>
             </div>
 
+            {staff.allowCustomInvoiceNumber && (
+              <div>
+                <label className="block text-[12.5px] font-semibold text-text-2">Invoice # (optional)</label>
+                <input
+                  name="invoiceLabel"
+                  placeholder="e.g. SG-2026-1"
+                  className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                />
+                <p className="mt-1 text-[11.5px] text-text-3">
+                  Leave blank to use the default auto-numbering.
+                </p>
+              </div>
+            )}
+
             {!!serviceCodes?.length && (
               <div>
                 <label className="block text-[12.5px] font-semibold text-text-2">Services (optional)</label>

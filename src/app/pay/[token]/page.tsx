@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { createClient } from "@/utils/supabase/server";
 import { startInvoicePayment } from "./actions";
+import { formatInvoiceLabel } from "@/utils/invoice-label";
 
 // A token-gated page rendering one specific client's real name, practice,
 // and invoice amount -- never indexable, even though it must stay
@@ -16,6 +17,7 @@ function formatMoney(cents: number) {
 type Invoice = {
   id: string;
   invoice_number: number;
+  invoice_label: string | null;
   status: string;
   total_cents: number;
   amount_paid_cents: number;
@@ -65,7 +67,7 @@ export default async function PayInvoicePage({
     );
   }
 
-  const invoiceLabel = `INV-${String(invoice.invoice_number).padStart(4, "0")}`;
+  const invoiceLabel = formatInvoiceLabel(invoice.invoice_number, invoice.invoice_label);
   const balanceCents = invoice.total_cents - invoice.amount_paid_cents;
   const isPaid = invoice.status === "paid" || (paid === "1" && balanceCents <= 0);
   const isVoid = invoice.status === "void";

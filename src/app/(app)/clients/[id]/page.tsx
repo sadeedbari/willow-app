@@ -8,6 +8,7 @@ import { avatarColorFor, initialsOf } from "@/utils/avatar-color";
 import { EditClientModal } from "./edit-client-modal";
 import { uploadClientDocument, deleteClientDocument } from "./documents-actions";
 import { removeSavedCard } from "./card-actions";
+import { formatInvoiceLabel } from "@/utils/invoice-label";
 
 const STATUS_LABEL: Record<string, string> = {
   active: "Active",
@@ -124,7 +125,7 @@ export default async function ClientDetailPage({
         : Promise.resolve({ data: null }),
       supabase
         .from("invoices")
-        .select("id, invoice_number, status, total_cents, amount_paid_cents, issue_date")
+        .select("id, invoice_number, invoice_label, status, total_cents, amount_paid_cents, issue_date")
         .eq("client_id", id)
         .order("issue_date", { ascending: false }),
       supabase
@@ -618,7 +619,7 @@ export default async function ClientDetailPage({
                         className="flex items-center justify-between border-b border-border pb-2 last:border-0"
                       >
                         <span className="text-foreground">
-                          INV-{String(inv.invoice_number).padStart(4, "0")}
+                          {formatInvoiceLabel(inv.invoice_number, inv.invoice_label)}
                           <span className="ml-2 text-text-3">{inv.issue_date}</span>
                         </span>
                         <span className="text-text-2">

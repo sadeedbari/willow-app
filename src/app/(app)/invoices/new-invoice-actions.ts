@@ -34,6 +34,13 @@ export async function createInvoiceWithLineItems(formData: FormData) {
 
   const supabase = await createClient();
 
+  // invoiceLabel only ever reaches here from a form field that's itself
+  // only rendered when staff.allowCustomInvoiceNumber is true (see
+  // new-invoice-modal.tsx) -- trusting it here rather than re-checking the
+  // flag is fine since every other practice's form simply never submits
+  // this field at all.
+  const invoiceLabel = (formData.get("invoiceLabel") as string)?.trim() || null;
+
   const { data: invoice, error } = await supabase
     .from("invoices")
     .insert({
@@ -42,6 +49,7 @@ export async function createInvoiceWithLineItems(formData: FormData) {
       issued_by_staff_id: clinicianStaffId,
       due_date: (formData.get("dueDate") as string) || null,
       notes: (formData.get("notes") as string) || null,
+      invoice_label: invoiceLabel,
     })
     .select("id")
     .single();
@@ -113,7 +121,9 @@ export async function createInvoiceWithLineItems(formData: FormData) {
         clientEmail: built.clientEmail,
         clientName: built.clientFullName,
         practiceName: built.practiceName,
+        practiceLogoUrl: built.practiceLogoUrl,
         invoiceNumber: built.invoiceNumber,
+        invoiceLabel: built.invoiceLabel,
         status: built.status,
         totalCents: built.totalCents,
         balanceCents: built.totalCents - built.amountPaidCents,

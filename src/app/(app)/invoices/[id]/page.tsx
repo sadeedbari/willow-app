@@ -2,7 +2,8 @@ import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { addLineItem, removeLineItem, markSent, recordPayment, voidInvoice, resendInvoice, chargeSavedCard } from "./actions";
+import { addLineItem, removeLineItem, markSent, recordPayment, voidInvoice, resendInvoice, chargeSavedCard, updateInvoiceLabel } from "./actions";
+import { formatInvoiceLabel } from "@/utils/invoice-label";
 
 const STATUS_STYLE: Record<string, string> = {
   draft: "bg-surface-2 text-text-3",
@@ -45,7 +46,7 @@ export default async function InvoiceDetailPage({
   const { data: invoice } = await supabase
     .from("invoices")
     .select(
-      "id, invoice_number, status, issue_date, due_date, total_cents, amount_paid_cents, payment_method, paid_at, notes, client_id, payment_token, clients(full_name, email, stripe_card_brand, stripe_card_last4), issued_by_staff_id, staff(full_name, credential, license_number, license_province)"
+      "id, invoice_number, invoice_label, status, issue_date, due_date, total_cents, amount_paid_cents, payment_method, paid_at, notes, client_id, payment_token, clients(full_name, email, stripe_card_brand, stripe_card_last4), issued_by_staff_id, staff(full_name, credential, license_number, license_province)"
     )
     .eq("id", id)
     .single();
@@ -107,12 +108,29 @@ export default async function InvoiceDetailPage({
       <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-[22px] font-bold tracking-tight text-foreground">
-            INV-{String(invoice.invoice_number).padStart(4, "0")}
+            {formatInvoiceLabel(invoice.invoice_number, invoice.invoice_label)}
           </h1>
           <p className="mt-1 text-[13.5px] text-text-2">
             {client?.full_name ?? "Unknown client"} · Issued {invoice.issue_date}
             {invoice.due_date ? ` · Due ${invoice.due_date}` : ""}
           </p>
+          {staff.allowCustomInvoiceNumber && canManage && (
+            <form action={updateInvoiceLabel} className="mt-2 flex items-center gap-2">
+              <input type="hidden" name="invoiceId" value={invoice.id} />
+              <input
+                name="invoiceLabel"
+                defaultValue={invoice.invoice_label ?? ""}
+                placeholder="e.g. SG-2026-1"
+                className="rounded-lg border border-border bg-surface px-2.5 py-1 text-[12.5px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              />
+              <button
+                type="submit"
+                className="text-[12px] font-semibold text-brand-ink"
+              >
+                Save invoice #
+              </button>
+            </form>
+          )}
         </div>
         <div className="flex flex-col items-end gap-2">
           <span
