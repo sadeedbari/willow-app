@@ -138,7 +138,7 @@ export default async function InvoiceDetailPage({
           >
             {STATUS_LABEL[invoice.status]}
           </span>
-          {!isDraft && invoice.status !== "void" && (
+          {invoice.status !== "void" && (
             <a
               href={`/invoices/${invoice.id}/pdf`}
               className="rounded-lg border border-border px-3 py-1.5 text-[12.5px] font-semibold text-text-2 transition hover:border-brand hover:text-brand-ink"
