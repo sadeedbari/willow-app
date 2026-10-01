@@ -10,6 +10,7 @@ const CONSTRAINT_MESSAGES: Record<string, string> = {
   "service_codes_practice_id_code_key": "You already have a service code with that CPT code.",
   "consent_form_templates_practice_id_slug_key": "You already have a template with that name.",
   "clients_practice_id_email_key": "A client with this email already exists in your practice.",
+  "invoices_practice_id_invoice_label_key": "This invoice ID already exists. Duplicate Invoice IDs are not allowed.",
 };
 
 export function friendlyErrorMessage(error: PostgrestLikeError, fallback = "That didn't work — please try again."): string {

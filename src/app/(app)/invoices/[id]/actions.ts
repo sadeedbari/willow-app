@@ -145,8 +145,7 @@ export async function updateInvoiceLabel(formData: FormData) {
   const { error } = await supabase.from("invoices").update({ invoice_label: invoiceLabel }).eq("id", invoiceId);
 
   if (error) {
-    const message = error.code === "23505" ? "That invoice number is already in use." : friendlyErrorMessage(error);
-    redirect(`/invoices/${invoiceId}?error=${encodeURIComponent(message)}`);
+    redirect(`/invoices/${invoiceId}?error=${encodeURIComponent(friendlyErrorMessage(error))}`);
   }
 
   revalidatePath(`/invoices/${invoiceId}`);
