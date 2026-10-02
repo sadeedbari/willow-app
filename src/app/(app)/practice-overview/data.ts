@@ -1,7 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { zonedStartOfMonth } from "@/utils/timezone";
 
+// Zone-aware: "this month" must mean Toronto's calendar month, not the
+// server process's own (UTC on Vercel) -- see src/utils/timezone.ts.
 function firstOfMonth(d: Date, monthOffset = 0) {
-  return new Date(d.getFullYear(), d.getMonth() + monthOffset, 1);
+  return zonedStartOfMonth(d, monthOffset);
 }
 function daysAgo(d: Date, n: number) {
   const x = new Date(d);

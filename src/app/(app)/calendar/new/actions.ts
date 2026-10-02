@@ -6,6 +6,7 @@ import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import { friendlyErrorMessage } from "@/utils/friendly-error";
 import { sendAppointmentConfirmationEmail } from "@/utils/appointment-email";
 import { createDailyRoomWithAccessLinks } from "@/utils/daily/create-room";
+import { zonedTimeToUtc } from "@/utils/timezone";
 
 function dollarsToCents(value: FormDataEntryValue | null) {
   const n = parseFloat((value as string) ?? "");
@@ -19,7 +20,7 @@ export async function createAppointment(formData: FormData) {
   const date = formData.get("date") as string;
   const time = formData.get("time") as string;
   const durationMinutes = Number(formData.get("duration"));
-  const startsAt = new Date(`${date}T${time}`);
+  const startsAt = zonedTimeToUtc(date, time);
   const type = formData.get("type") as string;
   const locationType = formData.get("locationType") as string;
   const clientId = formData.get("clientId") as string;

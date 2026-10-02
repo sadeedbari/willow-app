@@ -12,7 +12,7 @@ import {
   type SelfBookableType,
 } from "@/utils/appointment-types";
 import { parseDateParamString } from "@/utils/parse-date-param";
-import { DISPLAY_TIME_ZONE } from "@/utils/timezone";
+import { DISPLAY_TIME_ZONE, zonedTimeToUtc } from "@/utils/timezone";
 
 const SLOT_MINUTES = 30;
 
@@ -32,7 +32,7 @@ function computeSlots(
   durationMinutes: number,
   override?: AvailabilityOverride | null
 ) {
-  const dayStart = new Date(`${date}T00:00:00`);
+  const dayStart = zonedTimeToUtc(date, "00:00");
   const now = new Date();
 
   // A custom date (holiday, vacation, one-off hours) fully replaces the
@@ -167,7 +167,7 @@ async function BookingSlots({
   effectiveType: SelfBookableType;
   selectedDate: string;
 }) {
-  const dayStart = new Date(`${selectedDate}T00:00:00`);
+  const dayStart = zonedTimeToUtc(selectedDate, "00:00");
   const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
   const durationMinutes = APPOINTMENT_TYPE_DURATION_MINUTES[effectiveType];
 

@@ -1,13 +1,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { zonedStartOfDay, zonedDayOfWeek, zonedStartOfMonth } from "@/utils/timezone";
 
+// Zone-aware: "today"/"this week" must mean Toronto's calendar day, not
+// the server process's own (UTC on Vercel) -- see src/utils/timezone.ts.
 function startOfDay(d: Date) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
+  return zonedStartOfDay(d);
 }
 function mondayOf(d: Date) {
   const x = startOfDay(d);
-  const day = x.getDay(); // 0=Sun..6=Sat
+  const day = zonedDayOfWeek(d); // 0=Sun..6=Sat
   x.setDate(x.getDate() + (day === 0 ? -6 : 1 - day));
   return x;
 }
@@ -60,8 +61,8 @@ export async function getDashboardData(
   const weekStart = mondayOf(now);
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekEnd.getDate() + 7);
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const monthStart = zonedStartOfMonth(now);
+  const lastMonthStart = zonedStartOfMonth(now, -1);
   const todayStr = todayStart.toISOString().slice(0, 10);
 
   const [

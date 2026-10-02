@@ -5,7 +5,7 @@ import { requestBooking } from "./actions";
 import { BrandMark } from "@/components/brand-mark";
 import { APPOINTMENT_TYPE_DURATION_MINUTES, APPOINTMENT_TYPE_LABEL } from "@/utils/appointment-types";
 import { parseDateParamString } from "@/utils/parse-date-param";
-import { DISPLAY_TIME_ZONE } from "@/utils/timezone";
+import { DISPLAY_TIME_ZONE, zonedTimeToUtc } from "@/utils/timezone";
 
 // Each slug is a real, legitimate link a clinician embeds on their own site
 // -- so this stays crawlable (no robots.ts disallow) but never indexed,
@@ -36,7 +36,7 @@ function computeSlots(
   busy: BusyTime[],
   override?: AvailabilityOverride | null
 ) {
-  const dayStart = new Date(`${date}T00:00:00`);
+  const dayStart = zonedTimeToUtc(date, "00:00");
   const now = new Date();
 
   if (override?.is_unavailable) return [];
@@ -305,7 +305,7 @@ async function BookingFlow({
 }) {
   const weekStart = startOfWeek(selectedDate);
   const weekDates = Array.from({ length: 7 }, (_, i) => shiftDate(weekStart, i));
-  const rangeFrom = new Date(`${weekStart}T00:00:00`);
+  const rangeFrom = zonedTimeToUtc(weekStart, "00:00");
   const rangeTo = new Date(rangeFrom.getTime() + 7 * 24 * 60 * 60 * 1000);
 
   const [{ data: blocks }, { data: busy }, overrideResults] = await Promise.all([

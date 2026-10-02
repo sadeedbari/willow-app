@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import { friendlyErrorMessage } from "@/utils/friendly-error";
 import { sendAppointmentRescheduledEmail, sendAppointmentCancelledEmail } from "@/utils/appointment-email";
+import { zonedTimeToUtc } from "@/utils/timezone";
 
 type AppointmentEmailRow = {
   type: string;
@@ -22,7 +23,7 @@ export async function rescheduleAppointment(formData: FormData) {
   const date = formData.get("date") as string;
   const time = formData.get("time") as string;
   const durationMinutes = Number(formData.get("duration"));
-  const startsAt = new Date(`${date}T${time}`);
+  const startsAt = zonedTimeToUtc(date, time);
 
   // A malformed/missing date, time, or duration produces an Invalid Date --
   // toISOString() throws on that rather than returning an error, so this
