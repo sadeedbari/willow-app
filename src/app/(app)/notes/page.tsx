@@ -7,6 +7,15 @@ function formatSessionDate(dateStr: string) {
   return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
+const APPOINTMENT_FLAG_LABEL: Record<string, string> = {
+  cancelled: "Appointment cancelled",
+  no_show: "Appointment no-show",
+};
+const APPOINTMENT_FLAG_STYLE: Record<string, string> = {
+  cancelled: "bg-bad-tint text-bad",
+  no_show: "bg-warn-tint text-warn",
+};
+
 const TABS = [
   { key: "all", label: "All notes" },
   { key: "unsigned", label: "Due / unsigned" },
@@ -40,6 +49,7 @@ export default async function NotesPage({
     staff_id: string;
     staff_full_name: string;
     subjective_preview: string | null;
+    appointment_status: string | null;
   };
   const allNotes = (data ?? []) as Row[];
   const notes =
@@ -104,13 +114,22 @@ export default async function NotesPage({
                     </span>
                   )}
                 </div>
-                <span
-                  className={`inline-flex flex-none rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                    isUnsigned ? "bg-bad-tint text-bad" : "bg-ok-tint text-ok"
-                  }`}
-                >
-                  {isUnsigned ? "Unsigned" : "Signed"}
-                </span>
+                <div className="flex flex-none items-center gap-1.5">
+                  {n.appointment_status && APPOINTMENT_FLAG_LABEL[n.appointment_status] && (
+                    <span
+                      className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${APPOINTMENT_FLAG_STYLE[n.appointment_status]}`}
+                    >
+                      {APPOINTMENT_FLAG_LABEL[n.appointment_status]}
+                    </span>
+                  )}
+                  <span
+                    className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                      isUnsigned ? "bg-bad-tint text-bad" : "bg-ok-tint text-ok"
+                    }`}
+                  >
+                    {isUnsigned ? "Unsigned" : "Signed"}
+                  </span>
+                </div>
               </Link>
 
               {isUnsigned && isOwn && (

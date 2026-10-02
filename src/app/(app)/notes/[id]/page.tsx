@@ -26,6 +26,15 @@ const TYPE_LABEL: Record<string, string> = {
   group: "Group",
 };
 
+const APPOINTMENT_FLAG_LABEL: Record<string, string> = {
+  cancelled: "Appointment cancelled",
+  no_show: "Appointment no-show",
+};
+const APPOINTMENT_FLAG_STYLE: Record<string, string> = {
+  cancelled: "bg-bad-tint text-bad",
+  no_show: "bg-warn-tint text-warn",
+};
+
 type FullNote = {
   id: string;
   session_date: string;
@@ -42,7 +51,7 @@ type FullNote = {
   appointment_id?: string | null;
   clients?: { full_name: string } | null;
   staff?: { full_name: string } | null;
-  appointments?: { type: string; starts_at: string; ends_at: string } | null;
+  appointments?: { type: string; starts_at: string; ends_at: string; status: string | null } | null;
 };
 
 type Addendum = { id: string; content: string; created_at: string };
@@ -71,7 +80,7 @@ export default async function NoteDetailPage({
   const { data: fullRow } = await supabase
     .from("session_notes")
     .select(
-      "id, session_date, status, subjective, objective, assessment, plan, risk_level, risk_notes, signed_at, client_id, staff_id, appointment_id, clients(full_name), staff(full_name), appointments(type, starts_at, ends_at)"
+      "id, session_date, status, subjective, objective, assessment, plan, risk_level, risk_notes, signed_at, client_id, staff_id, appointment_id, clients(full_name), staff(full_name), appointments(type, starts_at, ends_at, status)"
     )
     .eq("id", id)
     .maybeSingle();
@@ -80,15 +89,24 @@ export default async function NoteDetailPage({
   let canSeeContent = !!note;
   let addenda: Addendum[] | null = null;
   let viaDepartedClinicianPath = false;
+  // Flagged separately from `note` itself -- its shape (and where the
+  // appointment link surfaces) differs across the three fetch tiers below.
+  let appointmentStatus: string | null = note?.appointments?.status ?? null;
 
   if (!note && staff.role === "practice_admin") {
     const { data: departed } = await supabase.rpc("get_departed_clinician_note", { p_note_id: id });
     if (departed) {
-      const d = departed as unknown as FullNote & { client_full_name?: string; staff_full_name?: string; addenda?: Addendum[] };
+      const d = departed as unknown as FullNote & {
+        client_full_name?: string;
+        staff_full_name?: string;
+        addenda?: Addendum[];
+        appointment_status?: string | null;
+      };
       note = { ...d, clients: { full_name: d.client_full_name ?? "Unknown client" }, staff: { full_name: d.staff_full_name ?? "Unknown" } };
       addenda = d.addenda ?? [];
       canSeeContent = true;
       viaDepartedClinicianPath = true;
+      appointmentStatus = d.appointment_status ?? null;
     }
   }
 
@@ -101,6 +119,7 @@ export default async function NoteDetailPage({
       client_id: string;
       client_full_name: string;
       staff_full_name: string;
+      appointment_status: string | null;
     } | null;
     if (!overview) notFound();
     note = {
@@ -112,6 +131,7 @@ export default async function NoteDetailPage({
       staff: { full_name: overview.staff_full_name },
     };
     canSeeContent = false;
+    appointmentStatus = overview.appointment_status ?? null;
   }
 
   if (canSeeContent && !viaDepartedClinicianPath) {
@@ -147,13 +167,22 @@ export default async function NoteDetailPage({
             {note.staff?.full_name && ` · ${note.staff.full_name}`}
           </p>
         </div>
-        <span
-          className={`inline-flex flex-none rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold ${
-            note.status === "signed" ? "bg-ok-tint text-ok" : "bg-warn-tint text-warn"
-          }`}
-        >
-          {note.status === "signed" ? "Signed" : "Draft"}
-        </span>
+        <div className="flex flex-none flex-col items-end gap-1.5">
+          {appointmentStatus && APPOINTMENT_FLAG_LABEL[appointmentStatus] && (
+            <span
+              className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${APPOINTMENT_FLAG_STYLE[appointmentStatus]}`}
+            >
+              {APPOINTMENT_FLAG_LABEL[appointmentStatus]}
+            </span>
+          )}
+          <span
+            className={`inline-flex rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold ${
+              note.status === "signed" ? "bg-ok-tint text-ok" : "bg-warn-tint text-warn"
+            }`}
+          >
+            {note.status === "signed" ? "Signed" : "Draft"}
+          </span>
+        </div>
       </div>
 
       <div className="mt-2 flex flex-wrap gap-3">

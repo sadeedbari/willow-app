@@ -27,6 +27,15 @@ const PAYMENT_METHOD_LABEL: Record<string, string> = {
   other: "Other",
 };
 
+const APPOINTMENT_FLAG_LABEL: Record<string, string> = {
+  cancelled: "Appointment cancelled",
+  no_show: "Appointment no-show",
+};
+const APPOINTMENT_FLAG_STYLE: Record<string, string> = {
+  cancelled: "bg-bad-tint text-bad",
+  no_show: "bg-warn-tint text-warn",
+};
+
 function formatMoney(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
 }
@@ -55,9 +64,19 @@ export default async function InvoiceDetailPage({
 
   const { data: lineItems } = await supabase
     .from("invoice_line_items")
-    .select("id, service_date, description, service_code, quantity, unit_amount_cents, amount_cents")
+    .select("id, service_date, description, service_code, quantity, unit_amount_cents, amount_cents, appointments(status)")
     .eq("invoice_id", id)
     .order("service_date");
+
+  // An invoice can in principle carry line items from more than one
+  // appointment (a billing admin can always "Quick add" another one), but
+  // the common case here is the single auto-created line item for the
+  // appointment this invoice was generated for -- so any cancelled/no-show
+  // appointment among its line items is enough to flag the whole invoice.
+  const appointmentFlag =
+    (lineItems as unknown as { appointments: { status: string } | null }[] | null)?.find(
+      (li) => li.appointments?.status === "cancelled" || li.appointments?.status === "no_show"
+    )?.appointments?.status ?? null;
 
   const { data: serviceCodes } = await supabase
     .from("service_codes")
@@ -133,6 +152,13 @@ export default async function InvoiceDetailPage({
           )}
         </div>
         <div className="flex flex-col items-end gap-2">
+          {appointmentFlag && APPOINTMENT_FLAG_LABEL[appointmentFlag] && (
+            <span
+              className={`inline-flex rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold ${APPOINTMENT_FLAG_STYLE[appointmentFlag]}`}
+            >
+              {APPOINTMENT_FLAG_LABEL[appointmentFlag]}
+            </span>
+          )}
           <span
             className={`inline-flex rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold ${STATUS_STYLE[invoice.status]}`}
           >

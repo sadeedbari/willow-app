@@ -19,8 +19,32 @@ const STATUS_LABEL: Record<string, string> = {
   void: "Void",
 };
 
+const APPOINTMENT_FLAG_LABEL: Record<string, string> = {
+  cancelled: "Appointment cancelled",
+  no_show: "Appointment no-show",
+};
+const APPOINTMENT_FLAG_STYLE: Record<string, string> = {
+  cancelled: "bg-bad-tint text-bad",
+  no_show: "bg-warn-tint text-warn",
+};
+
 function formatMoney(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
+}
+
+// An invoice can in principle carry line items from more than one
+// appointment (a billing admin can always "Quick add" another one), but the
+// common case this flags is the single auto-created line item for the
+// appointment this invoice was generated for -- so any cancelled/no-show
+// appointment among its line items is enough to flag the whole invoice.
+function appointmentFlagFor(invoice: {
+  invoice_line_items: { appointments: { status: string } | null }[] | null;
+}) {
+  return (
+    invoice.invoice_line_items?.find(
+      (li) => li.appointments?.status === "cancelled" || li.appointments?.status === "no_show"
+    )?.appointments?.status ?? null
+  );
 }
 
 function StatCard({
@@ -78,7 +102,7 @@ export default async function InvoicesPage({
   const { data } = await supabase
     .from("invoices")
     .select(
-      "id, invoice_number, invoice_label, status, issue_date, due_date, total_cents, amount_paid_cents, paid_at, client_id, clients(full_name, assigned_staff_id)"
+      "id, invoice_number, invoice_label, status, issue_date, due_date, total_cents, amount_paid_cents, paid_at, client_id, clients(full_name, assigned_staff_id), invoice_line_items(appointment_id, appointments(status))"
     )
     .order("issue_date", { ascending: false })
     .order("invoice_number", { ascending: false });
@@ -95,6 +119,7 @@ export default async function InvoicesPage({
     paid_at: string | null;
     client_id: string;
     clients: { full_name: string; assigned_staff_id: string | null } | null;
+    invoice_line_items: { appointment_id: string | null; appointments: { status: string } | null }[] | null;
   };
   const allInvoices = (data ?? []) as unknown as Row[];
   const invoices =
@@ -210,6 +235,7 @@ export default async function InvoicesPage({
           const balance = inv.total_cents - inv.amount_paid_cents;
           const isOverdue = inv.status === "sent" && !!inv.due_date && inv.due_date < today;
           const color = avatarColorFor(inv.client_id);
+          const appointmentFlag = appointmentFlagFor(inv);
           return (
             <Link
               key={inv.id}
@@ -246,6 +272,13 @@ export default async function InvoicesPage({
                     </div>
                   )}
                 </div>
+                {appointmentFlag && APPOINTMENT_FLAG_LABEL[appointmentFlag] && (
+                  <span
+                    className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${APPOINTMENT_FLAG_STYLE[appointmentFlag]}`}
+                  >
+                    {APPOINTMENT_FLAG_LABEL[appointmentFlag]}
+                  </span>
+                )}
                 <span
                   className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
                     isOverdue ? "bg-bad-tint text-bad" : STATUS_STYLE[inv.status]
