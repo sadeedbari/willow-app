@@ -69,7 +69,8 @@ export async function startCheckout(formData: FormData) {
     practice.subscription_status === "trialing" &&
     !!practice.trial_ends_at &&
     new Date(practice.trial_ends_at) < new Date();
-  const returnPath = trialExpired ? "/trial-expired" : "/settings/billing";
+  const subscriptionCanceled = practice.subscription_status === "canceled";
+  const returnPath = trialExpired || subscriptionCanceled ? "/trial-expired" : "/settings/billing";
 
   // Resolved before the try/catch below (which is scoped to the
   // customer/session creation flow and would otherwise swallow this

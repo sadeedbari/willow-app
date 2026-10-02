@@ -30,13 +30,15 @@ export default async function TrialExpiredPage({
 
   if (!staffRow) redirect("/onboarding");
 
-  // Trial no longer expired (they subscribed, or this got fixed some other
-  // way) -- send them on rather than showing a stale "expired" screen.
-  const stillExpired =
+  const trialExpired =
     staffRow.subscription_status === "trialing" &&
     !!staffRow.trial_ends_at &&
     new Date(staffRow.trial_ends_at) < new Date();
-  if (!stillExpired) redirect("/dashboard");
+  const subscriptionCanceled = staffRow.subscription_status === "canceled";
+
+  // Access restored (they subscribed, or this got fixed some other way) --
+  // send them on rather than showing a stale "blocked" screen.
+  if (!trialExpired && !subscriptionCanceled) redirect("/dashboard");
 
   let adminContacts: { full_name: string; email: string | null }[] = [];
   if (staffRow.role !== "practice_admin") {
@@ -55,10 +57,12 @@ export default async function TrialExpiredPage({
         <div className="flex flex-col items-center text-center">
           <BrandMark size={56} />
           <h1 className="mt-5 text-[26px] font-bold tracking-tight text-foreground">
-            Your trial has ended
+            {subscriptionCanceled ? "Subscription ended" : "Your trial has ended"}
           </h1>
           <p className="mt-1.5 text-[13.5px] text-text-2">
-            {staffRow.practice_name}&apos;s 14-day trial is over. Subscribe to keep using Willow.
+            {subscriptionCanceled
+              ? `${staffRow.practice_name}'s subscription has ended. Your data is safe — subscribe again to pick up right where you left off.`
+              : `${staffRow.practice_name}'s 14-day trial is over. Subscribe to keep using Willow.`}
           </p>
         </div>
 

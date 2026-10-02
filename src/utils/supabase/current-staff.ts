@@ -82,16 +82,22 @@ async function getCurrentStaffInternal(opts: { enforceTrial: boolean }): Promise
     }
   }
 
-  // A trial that's run out with no paid subscription blocks every page
-  // except /trial-expired itself (which reads staff/practice info directly
-  // rather than through this function, to avoid redirecting to itself) and
-  // the checkout action it links to (enforceTrial: false -- otherwise
-  // clicking "Subscribe" from that very page would redirect right back to
-  // itself before ever reaching Stripe).
+  // A trial that's run out, or a paid subscription that's fully lapsed
+  // (status "canceled" -- set once Stripe's customer.subscription.deleted
+  // fires at the end of the period the practice already paid for; see
+  // cancelSubscription()), blocks every page except /trial-expired itself
+  // (which reads staff/practice info directly rather than through this
+  // function, to avoid redirecting to itself) and the checkout action it
+  // links to (enforceTrial: false -- otherwise clicking "Subscribe" from
+  // that very page would redirect right back to itself before ever
+  // reaching Stripe). Blocking access never deletes any practice data --
+  // it only gates the UI; the practice's rows stay intact so a later
+  // resubscribe picks up right where it left off.
   if (opts.enforceTrial) {
     const trialExpired =
       data.subscription_status === "trialing" && !!data.trial_ends_at && new Date(data.trial_ends_at) < new Date();
-    if (trialExpired) {
+    const subscriptionCanceled = data.subscription_status === "canceled";
+    if (trialExpired || subscriptionCanceled) {
       redirect("/trial-expired");
     }
   }
