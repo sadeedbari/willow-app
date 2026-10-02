@@ -1,4 +1,5 @@
 import { sendEmail } from "@/utils/resend/send";
+import { DISPLAY_TIME_ZONE } from "@/utils/timezone";
 
 const TYPE_LABEL: Record<string, string> = {
   individual: "Individual therapy",
@@ -7,14 +8,6 @@ const TYPE_LABEL: Record<string, string> = {
   intake: "Intake session",
   group: "Group therapy",
 };
-
-// Every practice today is Ontario-only (see willow-app scope memory) --
-// hardcoded rather than a practices.timezone column, which would be
-// meaningless until the product actually supports other regions. Without
-// an explicit zone, toLocaleString() renders in whatever TZ the Node
-// process happens to run in (UTC on Vercel), showing clients the wrong
-// time entirely.
-const DISPLAY_TIME_ZONE = "America/Toronto";
 
 function formatWhen(startsAt: string): string {
   return new Date(startsAt).toLocaleString("en-US", {

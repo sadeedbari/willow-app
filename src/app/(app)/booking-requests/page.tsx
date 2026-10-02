@@ -2,6 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import { approveBookingRequest, declineBookingRequest } from "./actions";
 import { avatarColorFor, initialsOf } from "@/utils/avatar-color";
+import { DISPLAY_TIME_ZONE } from "@/utils/timezone";
 
 export default async function BookingRequestsPage({
   searchParams,
@@ -70,6 +71,7 @@ export default async function BookingRequestsPage({
                         day: "numeric",
                         hour: "numeric",
                         minute: "2-digit",
+                        timeZone: DISPLAY_TIME_ZONE,
                       })}
                       {staff.role !== "clinician" && staffName ? ` · with ${staffName}` : ""}
                     </div>
@@ -122,7 +124,7 @@ export default async function BookingRequestsPage({
                 <div>
                   <div className="text-[13px] font-semibold text-foreground">{r.full_name}</div>
                   <div className="text-[11.5px] text-text-3">
-                    {new Date(r.starts_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                    {new Date(r.starts_at).toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: DISPLAY_TIME_ZONE })}
                   </div>
                 </div>
                 <span

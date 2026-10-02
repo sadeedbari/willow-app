@@ -5,6 +5,7 @@ import { requestBooking } from "./actions";
 import { BrandMark } from "@/components/brand-mark";
 import { APPOINTMENT_TYPE_DURATION_MINUTES, APPOINTMENT_TYPE_LABEL } from "@/utils/appointment-types";
 import { parseDateParamString } from "@/utils/parse-date-param";
+import { DISPLAY_TIME_ZONE } from "@/utils/timezone";
 
 // Each slug is a real, legitimate link a clinician embeds on their own site
 // -- so this stays crawlable (no robots.ts disallow) but never indexed,
@@ -421,7 +422,7 @@ async function BookingFlow({
                       href={`/book/${slug}?date=${selectedDate}&start=${encodeURIComponent(slot.toISOString())}`}
                       className="rounded-lg border border-border bg-surface px-2 py-2 text-center text-[12.5px] font-semibold text-text-2 transition hover:border-brand hover:bg-brand-tint hover:text-brand-ink"
                     >
-                      {slot.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                      {slot.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZone: DISPLAY_TIME_ZONE })}
                     </Link>
                   ))}
                 </div>
@@ -451,8 +452,8 @@ function ConfirmRequest({
 }) {
   const startDate = new Date(startsAt);
   const endDate = new Date(startDate.getTime() + DURATION_MINUTES * 60 * 1000);
-  const dayLabel = startDate.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
-  const timeLabel = `${startDate.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} – ${endDate.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`;
+  const dayLabel = startDate.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", timeZone: DISPLAY_TIME_ZONE });
+  const timeLabel = `${startDate.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZone: DISPLAY_TIME_ZONE })} – ${endDate.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZone: DISPLAY_TIME_ZONE })}`;
 
   return (
     <div>

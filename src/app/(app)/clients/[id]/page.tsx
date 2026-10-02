@@ -9,6 +9,7 @@ import { EditClientModal } from "./edit-client-modal";
 import { uploadClientDocument, deleteClientDocument } from "./documents-actions";
 import { removeSavedCard } from "./card-actions";
 import { formatInvoiceLabel } from "@/utils/invoice-label";
+import { DISPLAY_TIME_ZONE } from "@/utils/timezone";
 
 const STATUS_LABEL: Record<string, string> = {
   active: "Active",
@@ -453,6 +454,7 @@ export default async function ClientDetailPage({
                                 day: "numeric",
                                 hour: "numeric",
                                 minute: "2-digit",
+                                timeZone: DISPLAY_TIME_ZONE,
                               })}
                             </span>
                             <span className="text-text-3">{a.type}</span>
@@ -733,6 +735,7 @@ export default async function ClientDetailPage({
                           year: "numeric",
                           hour: "numeric",
                           minute: "2-digit",
+                          timeZone: DISPLAY_TIME_ZONE,
                         })}
                       </span>
                     </li>

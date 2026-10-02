@@ -1,4 +1,5 @@
 import { sendEmail } from "@/utils/resend/send";
+import { DISPLAY_TIME_ZONE } from "@/utils/timezone";
 
 // See appointment-email.ts's logoHtml -- same reasoning, duplicated rather
 // than shared across the two small util files to avoid a cross-import for
@@ -9,6 +10,7 @@ function logoHtml(logoUrl?: string | null): string {
 
 function formatWhen(startsAt: string) {
   return new Date(startsAt).toLocaleString("en-US", {
+    timeZone: DISPLAY_TIME_ZONE,
     weekday: "long",
     month: "long",
     day: "numeric",

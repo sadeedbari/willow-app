@@ -5,6 +5,7 @@ import Link from "next/link";
 import { PortalTabs } from "../tabs";
 import { cancelMyAppointment } from "./actions";
 import { PortalHeader } from "../portal-header";
+import { DISPLAY_TIME_ZONE } from "@/utils/timezone";
 
 const TYPE_LABEL: Record<string, string> = {
   individual: "Individual therapy",
@@ -34,6 +35,7 @@ function formatDateTime(iso: string) {
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
+    timeZone: DISPLAY_TIME_ZONE,
   });
 }
 

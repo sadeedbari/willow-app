@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getPracticeOverviewData } from "./data";
 import { RevenueChart } from "./revenue-chart";
 import { SessionMixChart } from "./session-mix-chart";
+import { DISPLAY_TIME_ZONE } from "@/utils/timezone";
 
 function StatCard({
   label,
@@ -102,7 +103,7 @@ export default async function PracticeOverviewPage({
 
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <StatCard
-          label={`Practice revenue (${new Date().toLocaleDateString(undefined, { month: "short" })})`}
+          label={`Practice revenue (${new Date().toLocaleDateString(undefined, { month: "short", timeZone: DISPLAY_TIME_ZONE })})`}
           value={`$${(data.revenueThisMonthCents / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
           trend={
             data.revenueChangePct !== null

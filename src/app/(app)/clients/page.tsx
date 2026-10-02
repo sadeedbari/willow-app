@@ -4,6 +4,7 @@ import Link from "next/link";
 import { avatarColorFor, initialsOf } from "@/utils/avatar-color";
 import { AddClientModal } from "./add-client-modal";
 import { LiveSearchInput } from "@/components/live-search-input";
+import { DISPLAY_TIME_ZONE } from "@/utils/timezone";
 
 const CONSENT_STATUS_STYLE: Record<string, string> = {
   pending: "bg-warn-tint text-warn",
@@ -25,11 +26,15 @@ function formatSince(createdAt: string) {
 
 function formatNextSession(startsAt: string) {
   const d = new Date(startsAt);
-  const isToday = d.toDateString() === new Date().toDateString();
-  const time = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-  return isToday
+  // Compared as Toronto-local calendar days (not .toDateString(), which
+  // reads the server process's own TZ -- UTC in production) so "Today"
+  // doesn't mislabel an evening appointment as tomorrow.
+  const dayKey = d.toLocaleDateString("en-CA", { timeZone: DISPLAY_TIME_ZONE });
+  const todayKey = new Date().toLocaleDateString("en-CA", { timeZone: DISPLAY_TIME_ZONE });
+  const time = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZone: DISPLAY_TIME_ZONE });
+  return dayKey === todayKey
     ? `Today · ${time}`
-    : `${d.toLocaleDateString(undefined, { month: "short", day: "numeric" })} · ${time}`;
+    : `${d.toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: DISPLAY_TIME_ZONE })} · ${time}`;
 }
 
 export default async function ClientsPage({

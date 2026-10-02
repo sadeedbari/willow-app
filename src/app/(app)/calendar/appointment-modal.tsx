@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
 import { rescheduleAppointment, setAppointmentStatus, updateAutoSendInvoice } from "./[id]/actions";
+import { DISPLAY_TIME_ZONE } from "@/utils/timezone";
 
 const TYPE_LABEL: Record<string, string> = {
   individual: "Individual",
@@ -100,6 +101,7 @@ export async function AppointmentModal({
                   day: "numeric",
                   hour: "numeric",
                   minute: "2-digit",
+                  timeZone: DISPLAY_TIME_ZONE,
                 })}{" "}
                 · {durationMinutes} min
               </p>

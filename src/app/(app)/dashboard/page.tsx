@@ -5,6 +5,7 @@ import { getDashboardData } from "./data";
 import { getThreadList } from "../messages/data";
 import { avatarColorFor, initialsOf } from "@/utils/avatar-color";
 import { APPOINTMENT_TYPE_SHORT_LABEL } from "@/utils/appointment-type-label";
+import { DISPLAY_TIME_ZONE } from "@/utils/timezone";
 
 function greeting() {
   const hour = new Date().getHours();
@@ -55,7 +56,7 @@ export default async function DashboardPage() {
 
   const firstName = staff.fullName.split(" ")[0];
   const today = new Date();
-  const dateLabel = today.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  const dateLabel = today.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", timeZone: DISPLAY_TIME_ZONE });
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -134,7 +135,7 @@ export default async function DashboardPage() {
           }
         />
         <StatCard
-          label={`Collected (${today.toLocaleDateString(undefined, { month: "short" })})`}
+          label={`Collected (${today.toLocaleDateString(undefined, { month: "short", timeZone: DISPLAY_TIME_ZONE })})`}
           value={`$${(data.collectedThisMonthCents / 100).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
           trend={
             data.collectedChangePct !== null
@@ -163,7 +164,7 @@ export default async function DashboardPage() {
             {data.todayAppointments.length ? (
               data.todayAppointments.map((a) => {
                 const color = avatarColorFor(a.client_id);
-                const time = new Date(a.starts_at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+                const time = new Date(a.starts_at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZone: DISPLAY_TIME_ZONE });
                 const typeLabel = `${APPOINTMENT_TYPE_SHORT_LABEL[a.type] ?? a.type} · ${a.location_type === "telehealth" ? "Telehealth" : "Office"}`;
                 return (
                   <div key={a.id} className="flex items-center gap-3.5 border-b border-border py-2.5 last:border-0">

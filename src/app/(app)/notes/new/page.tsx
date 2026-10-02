@@ -3,6 +3,7 @@ import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import { createNote } from "./actions";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { DISPLAY_TIME_ZONE } from "@/utils/timezone";
 
 const RISK_OPTIONS = [
   { value: "none", label: "None identified" },
@@ -80,7 +81,7 @@ export default async function NewNotePage({
       {lockedClient && (
         <p className="mt-1 text-[12.5px] text-text-2">
           For the {TYPE_LABEL[appointment!.type] ?? appointment!.type} appointment on{" "}
-          {new Date(appointment!.starts_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+          {new Date(appointment!.starts_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric", timeZone: DISPLAY_TIME_ZONE })}
         </p>
       )}
 

@@ -6,6 +6,7 @@ import { PortalTabs } from "../../../tabs";
 import { PortalHeader } from "../../../portal-header";
 import { rescheduleMyAppointment } from "./actions";
 import { parseDateParamString } from "@/utils/parse-date-param";
+import { DISPLAY_TIME_ZONE } from "@/utils/timezone";
 
 const SLOT_MINUTES = 30;
 
@@ -130,6 +131,7 @@ export default async function RescheduleAppointmentPage({
             day: "numeric",
             hour: "numeric",
             minute: "2-digit",
+            timeZone: DISPLAY_TIME_ZONE,
           })}
         </p>
 
@@ -233,7 +235,7 @@ async function RescheduleSlots({
             href={`/portal/appointments/${appointmentId}/reschedule?date=${selectedDate}&start=${encodeURIComponent(slot.toISOString())}`}
             className="rounded-lg border border-border bg-surface px-2 py-2 text-center text-[12.5px] font-semibold text-text-2 transition hover:border-brand hover:bg-brand-tint hover:text-brand-ink"
           >
-            {slot.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+            {slot.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZone: DISPLAY_TIME_ZONE })}
           </Link>
         ))}
         {!slots.length && (
@@ -263,6 +265,7 @@ function ConfirmReschedule({
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
+    timeZone: DISPLAY_TIME_ZONE,
   });
 
   return (

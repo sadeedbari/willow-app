@@ -5,6 +5,7 @@ import { AppointmentModal } from "./appointment-modal";
 import { NewAppointmentModal } from "./new-appointment-modal";
 import { APPOINTMENT_TYPE_SHORT_LABEL as TYPE_LABEL } from "@/utils/appointment-type-label";
 import { parseDateParam } from "@/utils/parse-date-param";
+import { DISPLAY_TIME_ZONE } from "@/utils/timezone";
 
 type ApptRow = {
   id: string;
@@ -292,7 +293,7 @@ export default async function CalendarPage({
               >
                 <div className="truncate font-semibold">{a.clients?.full_name ?? "Unknown client"}</div>
                 <div className="truncate opacity-80">
-                  {start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} · {TYPE_LABEL[a.type] ?? a.type}
+                  {start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZone: DISPLAY_TIME_ZONE })} · {TYPE_LABEL[a.type] ?? a.type}
                 </div>
               </Link>
             );
@@ -381,7 +382,7 @@ export default async function CalendarPage({
                   >
                     <div className="truncate font-semibold">{a.clients?.full_name ?? "Unknown client"}</div>
                     <div className="truncate opacity-80">
-                      {start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} · {TYPE_LABEL[a.type] ?? a.type}
+                      {start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZone: DISPLAY_TIME_ZONE })} · {TYPE_LABEL[a.type] ?? a.type}
                     </div>
                   </Link>
                 );
