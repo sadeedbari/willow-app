@@ -1,4 +1,5 @@
-import { createClient } from "@/utils/supabase/server";
+import { createServiceRoleClient } from "@/utils/supabase/service-role";
+import { clientIp, rateLimit } from "@/utils/rate-limit";
 import { BrandMark } from "@/components/brand-mark";
 import Link from "next/link";
 
@@ -8,7 +9,19 @@ export default async function VerifyRecoveryEmailPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const supabase = await createClient();
+
+  if (!(await rateLimit("token-page-ip", await clientIp(), 60, 600))) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-surface-2 px-4 py-10">
+        <div className="w-full max-w-sm text-center">
+          <h1 className="text-[22px] font-bold tracking-tight text-foreground">Too many requests</h1>
+          <p className="mt-2 text-[13.5px] text-text-2">Please wait a few minutes and try this link again.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const supabase = createServiceRoleClient();
 
   const { data, error } = await supabase.rpc("confirm_recovery_email", { p_token: token });
   const fullName = data as string | null;

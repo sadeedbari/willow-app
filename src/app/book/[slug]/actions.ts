@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
+import { createServiceRoleClient } from "@/utils/supabase/service-role";
 import { redirect } from "next/navigation";
 import { friendlyErrorMessage } from "@/utils/friendly-error";
 import {
@@ -26,6 +26,14 @@ export async function requestBooking(formData: FormData) {
     redirect(`/book/${slug}?submitted=1`);
   }
 
+  // The checkbox's `required` only guards the browser; consent to the
+  // stated purpose has to be enforced here too.
+  if (formData.get("privacyAck") !== "on") {
+    redirect(
+      `/book/${slug}?${backParams}&error=${encodeURIComponent("Please confirm you've read how your information will be used.")}`,
+    );
+  }
+
   // Each submission emails the requester and the practitioner, so this is
   // also an email-bombing vector, not just spam.
   const allowed = await rateLimitAll([
@@ -39,7 +47,7 @@ export async function requestBooking(formData: FormData) {
     );
   }
 
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await supabase.rpc("submit_public_booking_request", {
     p_slug: slug,
     p_starts_at: startsAt,

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { createClient } from "@/utils/supabase/server";
+import { createServiceRoleClient } from "@/utils/supabase/service-role";
 import { signConsentForm } from "./actions";
 import { clientIp, rateLimit } from "@/utils/rate-limit";
 
@@ -31,7 +31,7 @@ export default async function ConsentSigningPage({
     );
   }
 
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient();
 
   const { data } = await supabase.rpc("get_consent_form_by_token", { p_token: token });
   const form = data?.[0] as

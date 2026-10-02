@@ -1,7 +1,6 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
 import { createServiceRoleClient } from "@/utils/supabase/service-role";
 import { clientIp, rateLimit } from "@/utils/rate-limit";
 
@@ -12,7 +11,7 @@ export async function confirmMfaRecovery(formData: FormData) {
     redirect(`/mfa/recover/${token}?error=${encodeURIComponent("Too many attempts — please try again in a few minutes.")}`);
   }
 
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient();
   const { data, error } = await supabase.rpc("confirm_mfa_recovery", { p_token: token }).maybeSingle();
 
   if (error || !data) {

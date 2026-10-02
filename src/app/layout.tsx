@@ -34,14 +34,17 @@ export const viewport: Viewport = {
 // pattern Next's own docs recommend for exactly this "cookie read in the
 // root layout blocks static prerendering" case. suppressHydrationWarning
 // is required on <html> because the script sets data-theme before React
-// hydrates, which would otherwise look like a mismatch.
-const SET_THEME_FROM_COOKIE = `(function(){try{var m=document.cookie.match(/(?:^|; )theme=([^;]*)/);if(m){var t=decodeURIComponent(m[1]);if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}}catch(e){}})()`;
+// hydrates, which would otherwise look like a mismatch. It's a same-origin
+// file (public/theme-init.js), not inline, because the strict CSP only
+// allows inline script that carries a per-request nonce, and a static page
+// can't have one.
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: SET_THEME_FROM_COOKIE }} />
+        {/* eslint-disable-next-line @next/next/no-sync-scripts -- must run before first paint */}
+        <script src="/theme-init.js" />
       </head>
       <body className="min-h-full flex flex-col">
         <MarketingAnalytics />

@@ -1,0 +1,1 @@
+(function(){try{var m=document.cookie.match(/(?:^|; )theme=([^;]*)/);if(m){var t=decodeURIComponent(m[1]);if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}}catch(e){}})()

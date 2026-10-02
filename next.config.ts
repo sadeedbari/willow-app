@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { STATIC_CSP, STATIC_CSP_PATHS } from "./src/utils/csp";
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -27,6 +28,9 @@ const nextConfig: NextConfig = {
   // data. Telehealth video (Daily.co) always opens in a new tab, never an
   // iframe on this origin (see the "Join video call" links in the calendar
   // and portal), so a restrictive Permissions-Policy here doesn't affect it.
+  // The Content-Security-Policy for server-rendered pages is set per request
+  // in proxy.ts (it needs a fresh nonce); the prerendered marketing pages
+  // can't have one, so they get the static policy here instead.
   async headers() {
     return [
       {
@@ -39,6 +43,10 @@ const nextConfig: NextConfig = {
           { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
         ],
       },
+      ...STATIC_CSP_PATHS.map((source) => ({
+        source,
+        headers: [{ key: "Content-Security-Policy", value: STATIC_CSP }],
+      })),
     ];
   },
 };

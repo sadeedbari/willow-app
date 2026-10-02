@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
+import { createServiceRoleClient } from "@/utils/supabase/service-role";
 import { redirect } from "next/navigation";
 import { stripe, isMissingConnectAccountError } from "@/utils/stripe/server";
 import { friendlyErrorMessage } from "@/utils/friendly-error";
@@ -31,7 +31,7 @@ export async function startInvoicePayment(formData: FormData) {
     redirect(`/pay/${token}?error=${encodeURIComponent("Too many attempts — please try again in a few minutes.")}`);
   }
 
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient();
 
   const { data: invoice } = (await supabase
     .rpc("get_invoice_by_payment_token", { p_token: token })

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { createClient } from "@/utils/supabase/server";
+import { createServiceRoleClient } from "@/utils/supabase/service-role";
+import { clientIp, rateLimit } from "@/utils/rate-limit";
 import Link from "next/link";
 import { requestBooking } from "./actions";
 import { BrandMark } from "@/components/brand-mark";
@@ -145,7 +146,21 @@ export default async function PublicBookingPage({
 }) {
   const { slug } = await params;
   const { date, start, error, submitted } = await searchParams;
-  const supabase = await createClient();
+
+  // The public booking functions are callable only by the server (so the
+  // database can't be hit directly, around this limit) -- see rate-limit.ts.
+  if (!(await rateLimit("book-page-ip", await clientIp(), 120, 600))) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-surface-2 px-4 py-10">
+        <div className="w-full max-w-sm text-center">
+          <h1 className="text-[22px] font-bold tracking-tight text-foreground">Too many requests</h1>
+          <p className="mt-2 text-[13.5px] text-text-2">Please wait a few minutes and try again.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const supabase = createServiceRoleClient();
 
   const { data: profileRows } = await supabase.rpc("get_public_booking_profile", { p_slug: slug });
   const profile = profileRows?.[0] as
@@ -278,7 +293,13 @@ export default async function PublicBookingPage({
         )}
 
         {submitted ? null : start ? (
-          <ConfirmRequest slug={slug} startsAt={start} date={selectedDate} staffName={profile.full_name} />
+          <ConfirmRequest
+            slug={slug}
+            startsAt={start}
+            date={selectedDate}
+            staffName={profile.full_name}
+            practiceName={profile.practice_name}
+          />
         ) : (
           <BookingFlow supabase={supabase} slug={slug} selectedDate={selectedDate} />
         )}
@@ -299,7 +320,7 @@ async function BookingFlow({
   slug,
   selectedDate,
 }: {
-  supabase: Awaited<ReturnType<typeof createClient>>;
+  supabase: ReturnType<typeof createServiceRoleClient>;
   slug: string;
   selectedDate: string;
 }) {
@@ -444,11 +465,13 @@ function ConfirmRequest({
   startsAt,
   date,
   staffName,
+  practiceName,
 }: {
   slug: string;
   startsAt: string;
   date: string;
   staffName: string;
+  practiceName: string;
 }) {
   const startDate = new Date(startsAt);
   const endDate = new Date(startDate.getTime() + DURATION_MINUTES * 60 * 1000);
@@ -526,6 +549,27 @@ function ConfirmRequest({
             rows={3}
             className="mt-1 w-full resize-y rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] leading-relaxed outline-none focus:border-brand focus:ring-1 focus:ring-brand"
           />
+          <p className="mt-1 text-[11.5px] text-text-3">
+            A sentence or two is plenty — please don&apos;t include detailed health information here.
+          </p>
+        </div>
+
+        <div className="rounded-xl bg-surface-2 p-3 text-[12px] leading-relaxed text-text-2">
+          <p>
+            {practiceName} will use your name, email, phone number, and message only to respond to this request and
+            arrange your appointment. They&apos;re stored in Canada and shared only with {practiceName} and its service
+            provider, Willow (operated by Sulo Systems Inc.); the confirmation email is sent through an email provider
+            that may process it outside Canada. You can ask {practiceName} to see, correct, or delete what you&apos;ve
+            submitted. See our{" "}
+            <Link href="/privacy" target="_blank" className="font-semibold text-brand-ink underline">
+              Privacy Policy
+            </Link>
+            .
+          </p>
+          <label className="mt-2.5 flex items-start gap-2 font-semibold text-foreground">
+            <input type="checkbox" name="privacyAck" required className="mt-0.5 h-4 w-4 flex-none accent-brand" />
+            <span>I understand how my information will be used, and I agree to it being collected for this purpose.</span>
+          </label>
         </div>
 
         <button
@@ -534,7 +578,6 @@ function ConfirmRequest({
         >
           Request appointment
         </button>
-        <p className="text-center text-[11.5px] text-text-3">Your information is kept private and confidential.</p>
       </form>
     </div>
   );

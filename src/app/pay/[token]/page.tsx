@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { createClient } from "@/utils/supabase/server";
+import { createServiceRoleClient } from "@/utils/supabase/service-role";
 import { startInvoicePayment } from "./actions";
 import { formatInvoiceLabel } from "@/utils/invoice-label";
 import { clientIp, rateLimit } from "@/utils/rate-limit";
@@ -58,7 +58,7 @@ export default async function PayInvoicePage({
     );
   }
 
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient();
 
   const [{ data: invoiceData }, { data: lineItemsData }] = await Promise.all([
     supabase.rpc("get_invoice_by_payment_token", { p_token: token }).maybeSingle(),
