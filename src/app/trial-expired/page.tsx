@@ -100,6 +100,21 @@ export default async function TrialExpiredPage({
                   </form>
                 </div>
               ))}
+              <div className="border-t border-border pt-4">
+                <div className="text-[13px] font-semibold text-foreground">Need your records?</div>
+                <p className="mt-1 text-[12px] text-text-3">
+                  Download all of your practice&apos;s data — clients, appointments, notes, invoices, consent forms
+                  and messages — as spreadsheet files, whether or not you subscribe.
+                </p>
+                <form method="post" action="/settings/export" className="mt-2.5">
+                  <button
+                    type="submit"
+                    className="rounded-lg border border-border px-3.5 py-2 text-[12.8px] font-semibold text-text-2 transition hover:bg-surface-2"
+                  >
+                    Download all data (ZIP)
+                  </button>
+                </form>
+              </div>
             </div>
           ) : (
             <p className="text-[13.4px] text-text-2">

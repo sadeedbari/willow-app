@@ -111,8 +111,13 @@ export default async function ClientDetailPage({
     staff.role === "practice_admin" || staff.role === "front_desk" || (staff.role === "clinician" && isOwnClient);
   const canDeleteDocuments = staff.role === "practice_admin";
   const canSeeAccessLog = staff.role === "practice_admin";
+  const canExport = staff.role === "practice_admin" || (staff.role === "clinician" && isOwnClient);
 
-  const tabs = canSeeAccessLog ? [...TABS, { key: "access-log", label: "Access Log" }] : TABS;
+  const tabs = [
+    ...TABS,
+    ...(canExport ? [{ key: "export", label: "Export" }] : []),
+    ...(canSeeAccessLog ? [{ key: "access-log", label: "Access Log" }] : []),
+  ];
   const activeTab = tabs.some((t) => t.key === tab) ? tab! : "overview";
 
   const [{ data: notes }, { data: invoices }, { data: consentForms }, { data: templates }, { data: upcoming }, { data: documents }, { data: accessLog }] =
@@ -716,18 +721,56 @@ export default async function ClientDetailPage({
             </div>
           )}
 
+          {/* Export tab (practice_admin, or the assigned clinician) */}
+          {activeTab === "export" && canExport && (
+            <div className="mt-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+              <div className="mb-1 text-[13px] font-bold text-foreground">Export this client&apos;s records</div>
+              <p className="text-[12.5px] leading-relaxed text-text-2">
+                Download everything Willow holds for {client.full_name} as a ZIP of spreadsheet (CSV) files — for a
+                client&apos;s request to access their record, or to hand over to another provider.
+              </p>
+              <ul className="mt-3 list-disc space-y-0.5 pl-5 text-[12.5px] text-text-2">
+                <li>Profile and contact details</li>
+                <li>Appointments</li>
+                <li>Session notes and addenda</li>
+                <li>Invoices and line items</li>
+                <li>Consent forms</li>
+                <li>Messages</li>
+                <li>A list of uploaded documents (the files themselves are downloaded from the Documents tab)</li>
+              </ul>
+              <form method="post" action={`/clients/${id}/export`} className="mt-4">
+                <button
+                  type="submit"
+                  className="rounded-lg bg-brand px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-brand-ink"
+                >
+                  Download ZIP
+                </button>
+              </form>
+              <p className="mt-3 text-[11.5px] text-text-3">
+                The file contains personal health information. Each export is recorded in the access log.
+              </p>
+            </div>
+          )}
+
           {/* Access Log tab (practice_admin only) */}
           {activeTab === "access-log" && canSeeAccessLog && (
             <div className="mt-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
               <div className="mb-1 text-[13px] font-bold text-foreground">Access log</div>
               <p className="mb-3 text-[12px] text-text-3">
-                Every staff view of this client&apos;s record, most recent first.
+                Every staff view and export of this client&apos;s record, most recent first.
               </p>
-              {(accessLog as { id: string; viewed_at: string; staff_full_name: string | null }[] | null)?.length ? (
+              {(accessLog as { id: string; viewed_at: string; staff_full_name: string | null; action: string }[] | null)?.length ? (
                 <ul className="divide-y divide-border">
-                  {(accessLog as { id: string; viewed_at: string; staff_full_name: string | null }[]).map((v) => (
+                  {(accessLog as { id: string; viewed_at: string; staff_full_name: string | null; action: string }[]).map((v) => (
                     <li key={v.id} className="flex items-center justify-between py-2 text-[13px]">
-                      <span className="font-semibold text-foreground">{v.staff_full_name ?? "Unknown staff"}</span>
+                      <span className="font-semibold text-foreground">
+                        {v.staff_full_name ?? "Unknown staff"}
+                        {v.action === "exported_client_data" && (
+                          <span className="ml-2 rounded-full bg-warn-tint px-2 py-0.5 text-[11px] font-semibold text-warn">
+                            Exported record
+                          </span>
+                        )}
+                      </span>
                       <span className="text-text-3">
                         {new Date(v.viewed_at).toLocaleString(undefined, {
                           month: "short",

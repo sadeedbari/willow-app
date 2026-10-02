@@ -65,6 +65,25 @@ export default async function RetentionPage() {
         </p>
       </div>
 
+      <div className="mb-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+        <h3 className="text-[13.5px] font-bold text-foreground">Export all practice data</h3>
+        <p className="mt-1 text-[12.5px] leading-relaxed text-text-2">
+          Download every client and their appointments, session notes, invoices, consent forms and messages as a ZIP
+          of spreadsheet (CSV) files, along with your services and staff list. Use it to keep your own copy, move to
+          another system, or take your records with you if you cancel. This is also available from the screen you
+          see if your subscription ends. Uploaded document files aren&apos;t in the ZIP — download those from each
+          client&apos;s Documents tab.
+        </p>
+        <form method="post" action="/settings/export" className="mt-3">
+          <button
+            type="submit"
+            className="rounded-lg bg-brand px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-brand-ink"
+          >
+            Download all data (ZIP)
+          </button>
+        </form>
+      </div>
+
       <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
         <h3 className="text-[13.5px] font-bold text-foreground">
           Eligible for secure destruction ({eligibleNow.length})
