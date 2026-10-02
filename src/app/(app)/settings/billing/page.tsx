@@ -2,6 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import { startCheckout, openBillingPortal, cancelSubscription, resumeSubscription } from "./actions";
 import { SettingsTabs } from "../tabs";
+import { PLANS } from "@/utils/plans";
 
 const STATUS_LABEL: Record<string, string> = {
   trialing: "Trial",
@@ -26,23 +27,6 @@ const STATUS_STYLE: Record<string, string> = {
 function daysUntil(isoDate: string): number {
   return Math.ceil((new Date(isoDate).getTime() - Date.now()) / 86400000);
 }
-
-const PLANS = [
-  {
-    key: "solo",
-    name: "Solo",
-    price: "$15.90",
-    tagline: "For a one-person practice",
-    detail: "1 staff account",
-  },
-  {
-    key: "team",
-    name: "Team",
-    price: "$49",
-    tagline: "For a small group practice",
-    detail: "Up to 6 staff accounts",
-  },
-] as const;
 
 export default async function BillingPage({
   searchParams,

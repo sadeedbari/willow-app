@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { BrandMark } from "@/components/brand-mark";
 import { logout } from "@/app/(app)/actions";
 import { startCheckout } from "@/app/(app)/settings/billing/actions";
+import { PLANS } from "@/utils/plans";
 
 export default async function TrialExpiredPage({
   searchParams,
@@ -74,20 +75,32 @@ export default async function TrialExpiredPage({
           )}
 
           {staffRow.role === "practice_admin" ? (
-            <>
-              <div className="mb-4 flex items-center justify-between rounded-lg border border-border px-3 py-2.5">
-                <span className="text-[13.4px] text-foreground">Willow Practice Subscription</span>
-                <span className="text-[13.4px] font-semibold text-foreground">$49/month CAD</span>
-              </div>
-              <form action={startCheckout}>
-                <button
-                  type="submit"
-                  className="w-full rounded-lg bg-brand px-4 py-2.5 text-[13.6px] font-semibold text-white transition hover:bg-brand-ink"
+            <div className="space-y-3">
+              {PLANS.map((plan) => (
+                <div
+                  key={plan.key}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5"
                 >
-                  Subscribe
-                </button>
-              </form>
-            </>
+                  <div>
+                    <div className="text-[13.4px] font-semibold text-foreground">
+                      Willow {plan.name}
+                    </div>
+                    <div className="text-[12px] text-text-3">
+                      {plan.price}/month CAD · {plan.detail}
+                    </div>
+                  </div>
+                  <form action={startCheckout}>
+                    <input type="hidden" name="plan" value={plan.key} />
+                    <button
+                      type="submit"
+                      className="flex-none rounded-lg bg-brand px-3.5 py-2 text-[12.8px] font-semibold text-white transition hover:bg-brand-ink"
+                    >
+                      Subscribe
+                    </button>
+                  </form>
+                </div>
+              ))}
+            </div>
           ) : (
             <p className="text-[13.4px] text-text-2">
               Only a practice admin can subscribe.{" "}
