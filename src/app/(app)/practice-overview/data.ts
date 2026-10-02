@@ -11,6 +11,7 @@ function daysAgo(d: Date, n: number) {
 
 export type MonthPoint = { label: string; cents: number };
 export type SessionMixSlice = { label: string; type: string; pct: number; color: string };
+export type ClientSessionsRow = { clientId: string; clientName: string; monthly: number[]; total: number };
 
 export type PracticeOverviewData = {
   revenueThisMonthCents: number;
@@ -25,6 +26,7 @@ export type PracticeOverviewData = {
   netCaseloadChange: number;
   revenueByMonth: MonthPoint[];
   sessionMix: SessionMixSlice[];
+  sessionsByClient: ClientSessionsRow[];
 };
 
 const TYPE_COLOR: Record<string, string> = {
@@ -46,12 +48,16 @@ export async function getPracticeOverviewData(
   supabase: SupabaseClient,
   staffId: string,
   filterStaffId?: string,
+  sessionsYear?: number,
 ): Promise<PracticeOverviewData> {
   const now = new Date();
   const monthStart = firstOfMonth(now);
   const sixMonthsAgo = firstOfMonth(now, -5);
   const thirtyDaysAgo = daysAgo(now, 30);
   const twoDaysAgo = daysAgo(now, 2);
+  const year = sessionsYear ?? now.getFullYear();
+  const yearStart = new Date(year, 0, 1);
+  const yearEnd = new Date(year + 1, 0, 1);
 
   // "Belongs to this clinician" is defined the same way it already is on the
   // invoices page and its own RLS policy: the CLIENT's assigned clinician,
@@ -88,6 +94,15 @@ export async function getPracticeOverviewData(
     .select("starts_at, ends_at, type, status")
     .gte("starts_at", thirtyDaysAgo.toISOString())
     .lt("starts_at", now.toISOString());
+  // Session count by client, for the reporting table below -- "sessions
+  // held" means a completed appointment (not just booked/scheduled, and not
+  // a no-show/cancellation), scoped to the selected year.
+  let sessionsByClientQuery = supabase
+    .from("appointments")
+    .select("starts_at, client_id, clients(full_name)")
+    .eq("status", "completed")
+    .gte("starts_at", yearStart.toISOString())
+    .lt("starts_at", yearEnd.toISOString());
 
   if (filterStaffId) {
     invoicesQuery = invoicesQuery.eq("clients.assigned_staff_id", filterStaffId);
@@ -96,6 +111,7 @@ export async function getPracticeOverviewData(
     newClientsQuery = newClientsQuery.eq("assigned_staff_id", filterStaffId);
     dischargedQuery = dischargedQuery.eq("assigned_staff_id", filterStaffId);
     appointmentsQuery = appointmentsQuery.eq("staff_id", filterStaffId);
+    sessionsByClientQuery = sessionsByClientQuery.eq("staff_id", filterStaffId);
   }
 
   const [
@@ -107,6 +123,7 @@ export async function getPracticeOverviewData(
     { data: availability },
     { data: notesOverview },
     { data: outstandingInvoices },
+    { data: sessionsThisYear },
   ] = await Promise.all([
     invoicesQuery,
     activeClientsQuery,
@@ -119,6 +136,7 @@ export async function getPracticeOverviewData(
     supabase.from("staff_availability").select("start_time, end_time").eq("staff_id", filterStaffId ?? staffId),
     supabase.rpc("get_practice_notes_overview"),
     outstandingQuery,
+    sessionsByClientQuery,
   ]);
 
   // Revenue by month (last 6 calendar months, billed/issued basis).
@@ -207,6 +225,29 @@ export async function getPracticeOverviewData(
     0,
   );
 
+  // Sessions by client, by month, for the selected year -- rows are built
+  // keyed on client_id so two clients sharing one full_name (not unique)
+  // never get merged into a single row.
+  type SessionRow = { starts_at: string; client_id: string; clients: { full_name: string } | null };
+  const sessionRows = (sessionsThisYear ?? []) as unknown as SessionRow[];
+  const byClient = new Map<string, ClientSessionsRow>();
+  for (const row of sessionRows) {
+    const monthIndex = new Date(row.starts_at).getMonth();
+    let entry = byClient.get(row.client_id);
+    if (!entry) {
+      entry = {
+        clientId: row.client_id,
+        clientName: row.clients?.full_name ?? "Unknown client",
+        monthly: new Array(12).fill(0),
+        total: 0,
+      };
+      byClient.set(row.client_id, entry);
+    }
+    entry.monthly[monthIndex] += 1;
+    entry.total += 1;
+  }
+  const sessionsByClient = Array.from(byClient.values()).sort((a, b) => a.clientName.localeCompare(b.clientName));
+
   return {
     revenueThisMonthCents,
     revenueChangePct,
@@ -220,5 +261,6 @@ export async function getPracticeOverviewData(
     netCaseloadChange: (newClientsThisMonth ?? 0) - (dischargedThisMonth ?? 0),
     revenueByMonth,
     sessionMix,
+    sessionsByClient,
   };
 }

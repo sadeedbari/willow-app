@@ -9,14 +9,18 @@ export async function GET(request: Request) {
     redirect("/dashboard");
   }
 
-  const staffId = new URL(request.url).searchParams.get("staffId") || undefined;
+  const params = new URL(request.url).searchParams;
+  const staffId = params.get("staffId") || undefined;
+  const year = Number(params.get("year")) || new Date().getFullYear();
 
   const supabase = await createClient();
-  const data = await getPracticeOverviewData(supabase, staff.id, staffId);
+  const data = await getPracticeOverviewData(supabase, staff.id, staffId, year);
 
   const scopeLabel = staffId
     ? (await supabase.from("staff").select("full_name").eq("id", staffId).single()).data?.full_name ?? "Selected practitioner"
     : "Whole practice";
+
+  const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
   const lines = [
     "Practice Overview Report",
@@ -31,6 +35,10 @@ export async function GET(request: Request) {
     "Session mix (last 30 days)",
     "Type,Share",
     ...data.sessionMix.map((s) => `${s.label},${s.pct}%`),
+    "",
+    `Sessions by client (${year})`,
+    `Client,${MONTH_LABELS.join(",")},Total`,
+    ...data.sessionsByClient.map((row) => `"${row.clientName.replace(/"/g, '""')}",${row.monthly.join(",")},${row.total}`),
     "",
     "Summary",
     `Active clients,${data.activeClientCount}`,
