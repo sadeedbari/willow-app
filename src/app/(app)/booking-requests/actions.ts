@@ -7,6 +7,7 @@ import { friendlyErrorMessage } from "@/utils/friendly-error";
 import { sendAppointmentConfirmationEmail } from "@/utils/appointment-email";
 import { sendBookingRequestDeclinedEmail } from "@/utils/booking-request-email";
 import { createDailyRoomWithAccessLinks } from "@/utils/daily/create-room";
+import { getDailyApiKey } from "@/utils/daily/api-key";
 
 export async function approveBookingRequest(requestId: string) {
   const staff = await getCurrentStaff();
@@ -23,9 +24,8 @@ export async function approveBookingRequest(requestId: string) {
   }
 
   let videoClientUrl: string | null = null;
-  const { data: apiKey } = await supabase.rpc("get_my_practice_daily_api_key");
   const video = await createDailyRoomWithAccessLinks({
-    apiKey,
+    apiKey: await getDailyApiKey(staff.practiceId),
     name: result.appointmentId,
     endsAt: new Date(result.endsAt),
   });

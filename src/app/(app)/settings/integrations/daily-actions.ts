@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
+import { createServiceRoleClient } from "@/utils/supabase/service-role";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
@@ -21,8 +21,9 @@ export async function saveDailyApiKey(formData: FormData) {
     redirect("/settings/integrations?error=Please+enter+an+API+key");
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase
+  // The table is service-role only (a key must never be readable from a
+  // browser session); the admin check above is what authorizes this write.
+  const { error } = await createServiceRoleClient()
     .from("practice_video_settings")
     .upsert({ practice_id: staff.practiceId, daily_api_key: apiKey, updated_at: new Date().toISOString() });
 
@@ -38,8 +39,7 @@ export async function removeDailyApiKey() {
   const staff = await getCurrentStaff();
   requireAdmin(staff.role);
 
-  const supabase = await createClient();
-  await supabase.from("practice_video_settings").delete().eq("practice_id", staff.practiceId);
+  await createServiceRoleClient().from("practice_video_settings").delete().eq("practice_id", staff.practiceId);
 
   revalidatePath("/settings/integrations");
   redirect("/settings/integrations");

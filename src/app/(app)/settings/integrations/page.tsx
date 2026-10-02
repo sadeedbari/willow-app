@@ -16,8 +16,8 @@ export default async function IntegrationsSettingsPage({
   const canEdit = staff.role === "practice_admin";
 
   const supabase = await createClient();
-  const [{ data: videoSettings }, { data: practice }] = await Promise.all([
-    supabase.from("practice_video_settings").select("daily_api_key, updated_at").eq("practice_id", staff.practiceId).maybeSingle(),
+  const [{ data: videoStatusRows }, { data: practice }] = await Promise.all([
+    supabase.rpc("get_my_daily_key_status"),
     supabase
       .from("practices")
       .select("stripe_connect_account_id, stripe_connect_details_submitted, stripe_connect_charges_enabled")
@@ -26,7 +26,8 @@ export default async function IntegrationsSettingsPage({
   ]);
 
   // Never send the full key back to the browser -- only a masked hint.
-  const maskedKey = videoSettings ? `••••${videoSettings.daily_api_key.slice(-4)}` : null;
+  const videoSettings = (videoStatusRows as { last4: string; updated_at: string }[] | null)?.[0] ?? null;
+  const maskedKey = videoSettings ? `••••${videoSettings.last4}` : null;
 
   // Stripe onboarding can be completed, abandoned, or left mid-way in a
   // separate browser tab -- there's no reliable client-side signal for

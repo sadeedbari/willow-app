@@ -6,6 +6,7 @@ import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import { friendlyErrorMessage } from "@/utils/friendly-error";
 import { sendAppointmentConfirmationEmail } from "@/utils/appointment-email";
 import { createDailyRoomWithAccessLinks } from "@/utils/daily/create-room";
+import { getDailyApiKey } from "@/utils/daily/api-key";
 import { zonedTimeToUtc } from "@/utils/timezone";
 
 function dollarsToCents(value: FormDataEntryValue | null) {
@@ -78,9 +79,8 @@ export async function createAppointment(formData: FormData) {
   let videoClientUrl: string | null = null;
 
   if (locationType === "telehealth") {
-    const { data: apiKey } = await supabase.rpc("get_my_practice_daily_api_key");
     const video = await createDailyRoomWithAccessLinks({
-      apiKey,
+      apiKey: await getDailyApiKey(staff.practiceId),
       name: appointment.id,
       endsAt,
     });

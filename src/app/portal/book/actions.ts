@@ -7,6 +7,7 @@ import { SELF_BOOKABLE_TYPES, type SelfBookableType } from "@/utils/appointment-
 import { friendlyErrorMessage } from "@/utils/friendly-error";
 import { sendAppointmentConfirmationEmail } from "@/utils/appointment-email";
 import { createDailyRoomWithAccessLinks } from "@/utils/daily/create-room";
+import { getDailyApiKey } from "@/utils/daily/api-key";
 import { sendPushToStaff } from "@/utils/push/send";
 
 export async function bookAppointment(formData: FormData) {
@@ -32,9 +33,8 @@ export async function bookAppointment(formData: FormData) {
   }
 
   // Self-booked appointments are always telehealth.
-  const { data: apiKey } = await supabase.rpc("get_my_practice_daily_api_key");
   const video = await createDailyRoomWithAccessLinks({
-    apiKey,
+    apiKey: await getDailyApiKey(client.practiceId),
     name: data.appointmentId,
     endsAt: new Date(data.endsAt),
   });
