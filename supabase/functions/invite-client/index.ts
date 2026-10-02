@@ -67,6 +67,23 @@ Deno.serve(async (req: Request) => {
     if (!clientRow.email) return json({ error: "This client has no email on file" }, 400);
     if (clientRow.portal_user_id) return json({ error: "This client already has portal access" }, 400);
 
+    // RLS-respecting -- same practice as staffRow already confirms. Carried
+    // as user_metadata so the (practice-agnostic, dashboard-configured) Auth
+    // "Invite user" email template can render this practice's own branding
+    // via {{ .Data.practice_name }} / {{ .Data.practice_logo_url }} instead
+    // of a generic unbranded invite.
+    const { data: practice } = await userClient
+      .from("practices")
+      .select("name, logo_url")
+      .eq("id", staffRow.practice_id)
+      .single();
+
+    const inviteMetadata = {
+      practice_name: practice?.name ?? "Your practice",
+      practice_logo_url: practice?.logo_url ?? null,
+      invite_type: "client",
+    };
+
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -74,7 +91,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
       clientRow.email,
-      { redirectTo },
+      { redirectTo, data: inviteMetadata },
     );
 
     let userId: string;
@@ -148,6 +165,12 @@ Deno.serve(async (req: Request) => {
       }
 
       userId = existingUserId;
+
+      // resetPasswordForEmail doesn't accept a `data` option itself -- but
+      // {{ .Data }} in the (separate) "Reset password" template reads from
+      // auth.users.user_metadata regardless of which call set it, so this
+      // keeps that email branded too for a returning/already-registered client.
+      await adminClient.auth.admin.updateUserById(existingUserId, { user_metadata: inviteMetadata });
 
       const { error: resetError } = await adminClient.auth.resetPasswordForEmail(clientRow.email, { redirectTo });
       if (resetError) {

@@ -98,11 +98,15 @@ same vendor:
 
 1. **App-level sending** (`RESEND_API_KEY`, `RESEND_FROM_EMAIL`) — appointment
    reminders, booking-request notices, invoice emails, consent-form signing links,
-   portal/staff invites, message notifications, MFA-related emails. Sent via
-   `src/utils/resend/send.ts`.
-2. **Supabase Auth's custom SMTP provider** — signup confirmation, invite, and
-   password-reset emails, configured directly in the Supabase dashboard (not an app
-   env var), also routed through Resend.
+   message notifications, MFA-related emails. Sent via `src/utils/resend/send.ts`.
+2. **Supabase Auth's custom SMTP provider** — signup confirmation, portal/staff
+   invites, and password-reset emails, configured directly in the Supabase
+   dashboard (not an app env var), also routed through Resend. Unlike category 1,
+   these use Supabase's own (dashboard-edited) email templates, not the app's
+   React/HTML ones -- the `invite-staff`/`invite-client` edge functions pass
+   `practice_name`/`practice_logo_url`/`invite_type` as `user_metadata` on the
+   invited user so the dashboard template can render `{{ .Data.practice_name }}`
+   / `{{ .Data.practice_logo_url }}` for that practice's own branding.
 3. **Inbound email** — clients can reply to a Willow email and have it land back in
    the app as a portal message, via `RESEND_WEBHOOK_SECRET` +
    `INBOUND_EMAIL_DOMAIN` and the `/api/webhooks/resend-inbound` route.

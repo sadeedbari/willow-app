@@ -69,7 +69,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: practice } = await adminClient
       .from("practices")
-      .select("subscription_plan")
+      .select("name, logo_url, subscription_plan")
       .eq("id", staffRow.practice_id)
       .single();
 
@@ -112,8 +112,17 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Invalid role" }, 400);
     }
 
+    // Carried as user_metadata so the (practice-agnostic, dashboard-configured)
+    // Auth "Invite user" email template can render this practice's own
+    // branding via {{ .Data.practice_name }} / {{ .Data.practice_logo_url }}
+    // instead of a generic unbranded invite.
     const { error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(email, {
       redirectTo,
+      data: {
+        practice_name: practice?.name ?? "Your practice",
+        practice_logo_url: practice?.logo_url ?? null,
+        invite_type: "staff",
+      },
     });
 
     if (inviteError) {
