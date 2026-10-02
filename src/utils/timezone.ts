@@ -86,6 +86,35 @@ export function zonedStartOfMonth(date: Date, monthOffset = 0, timeZone: string 
   return zonedTimeToUtc(dateStr, "00:00", timeZone);
 }
 
+// Comparable "YYYY-MM-DD" calendar-day key for `date` in `timeZone` -- the
+// zone-aware equivalent of Date#toDateString(), used to match an
+// appointment to the correct day column/bucket instead of the server
+// process's own day (an appointment at 9pm Toronto is already "tomorrow"
+// in UTC, so an unzoned comparison silently sorts it into the wrong day).
+export function zonedDateKey(date: Date, timeZone: string = DISPLAY_TIME_ZONE): string {
+  const { year, month, day } = getZonedDateParts(date, timeZone);
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+// {hour, minute} of `date`'s own clock time in `timeZone` -- the
+// zone-aware equivalent of Date#getHours()/getMinutes(), needed anywhere
+// an appointment's time-of-day drives layout (e.g. its vertical position
+// on an hourly calendar grid), not just its displayed text.
+export function zonedHourMinute(date: Date, timeZone: string = DISPLAY_TIME_ZONE): { hour: number; minute: number } {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hourCycle: "h23",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+    .formatToParts(date)
+    .reduce<Record<string, string>>((acc, p) => {
+      acc[p.type] = p.value;
+      return acc;
+    }, {});
+  return { hour: Number(parts.hour), minute: Number(parts.minute) };
+}
+
 function getZonedOffsetMs(date: Date, timeZone: string): number {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone,

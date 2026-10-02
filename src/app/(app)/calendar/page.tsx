@@ -5,7 +5,7 @@ import { AppointmentModal } from "./appointment-modal";
 import { NewAppointmentModal } from "./new-appointment-modal";
 import { APPOINTMENT_TYPE_SHORT_LABEL as TYPE_LABEL } from "@/utils/appointment-type-label";
 import { parseDateParam } from "@/utils/parse-date-param";
-import { DISPLAY_TIME_ZONE } from "@/utils/timezone";
+import { DISPLAY_TIME_ZONE, zonedStartOfDay, zonedDayOfWeek, zonedDateKey, zonedHourMinute } from "@/utils/timezone";
 
 type ApptRow = {
   id: string;
@@ -50,10 +50,11 @@ const FINE_ROW_PX = 8;
 // more easily on a phone than the desktop grid's compact 8px rows.
 const MOBILE_FINE_ROW_PX = 11;
 
+// Zone-aware: "today"/"this week" must mean Toronto's calendar day, not
+// the server process's own (UTC on Vercel) -- see src/utils/timezone.ts.
 function mondayOf(date: Date) {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  const day = d.getDay(); // 0=Sun..6=Sat
+  const d = zonedStartOfDay(date);
+  const day = zonedDayOfWeek(date); // 0=Sun..6=Sat
   const diff = day === 0 ? -6 : 1 - day;
   d.setDate(d.getDate() + diff);
   return d;
@@ -132,12 +133,12 @@ export default async function CalendarPage({
   // param points to, falling back to today if it's in the displayed week,
   // or Monday otherwise (mirrors the day-strip pattern already used on the
   // public booking, client self-booking, and reschedule pages).
-  const todayStr = toDateParam(new Date());
+  const todayStr = zonedDateKey(new Date());
   const requestedDayStr = day && dayStrs.includes(day) ? day : dayStrs.includes(todayStr) ? todayStr : dayStrs[0];
   const mobileDayIndex = dayStrs.indexOf(requestedDayStr);
 
   const apptCountByDay = days.map(
-    (d) => appointments.filter((a) => new Date(a.starts_at).toDateString() === d.toDateString()).length
+    (d) => appointments.filter((a) => zonedDateKey(new Date(a.starts_at)) === zonedDateKey(d)).length
   );
 
   return (
@@ -274,10 +275,12 @@ export default async function CalendarPage({
           {appointments.map((a) => {
             const start = new Date(a.starts_at);
             const end = new Date(a.ends_at);
-            const dayIndex = days.findIndex((d) => d.toDateString() === start.toDateString());
+            const startDateKey = zonedDateKey(start);
+            const dayIndex = days.findIndex((d) => zonedDateKey(d) === startDateKey);
             if (dayIndex === -1) return null;
 
-            const startMinutes = start.getHours() * 60 + start.getMinutes() - START_HOUR * 60;
+            const { hour: startHour, minute: startMinute } = zonedHourMinute(start);
+            const startMinutes = startHour * 60 + startMinute - START_HOUR * 60;
             const durationMinutes = Math.max(FINE_SLOT_MINUTES, (end.getTime() - start.getTime()) / 60000);
             const rowStart = 2 + Math.max(0, Math.round(startMinutes / FINE_SLOT_MINUTES));
             const rowSpan = Math.max(1, Math.round(durationMinutes / FINE_SLOT_MINUTES));
@@ -362,11 +365,12 @@ export default async function CalendarPage({
 
             {/* Appointment blocks for the selected day only */}
             {appointments
-              .filter((a) => new Date(a.starts_at).toDateString() === days[mobileDayIndex].toDateString())
+              .filter((a) => zonedDateKey(new Date(a.starts_at)) === zonedDateKey(days[mobileDayIndex]))
               .map((a) => {
                 const start = new Date(a.starts_at);
                 const end = new Date(a.ends_at);
-                const startMinutes = start.getHours() * 60 + start.getMinutes() - START_HOUR * 60;
+                const { hour: startHour, minute: startMinute } = zonedHourMinute(start);
+                const startMinutes = startHour * 60 + startMinute - START_HOUR * 60;
                 const durationMinutes = Math.max(FINE_SLOT_MINUTES, (end.getTime() - start.getTime()) / 60000);
                 const rowStart = 1 + Math.max(0, Math.round(startMinutes / FINE_SLOT_MINUTES));
                 const rowSpan = Math.max(1, Math.round(durationMinutes / FINE_SLOT_MINUTES));
