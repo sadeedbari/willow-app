@@ -7,6 +7,11 @@ import { friendlyErrorMessage } from "@/utils/friendly-error";
 import { sendAppointmentConfirmationEmail } from "@/utils/appointment-email";
 import { createDailyRoomWithAccessLinks } from "@/utils/daily/create-room";
 
+function dollarsToCents(value: FormDataEntryValue | null) {
+  const n = parseFloat((value as string) ?? "");
+  return Number.isFinite(n) ? Math.round(n * 100) : 0;
+}
+
 export async function createAppointment(formData: FormData) {
   const staff = await getCurrentStaff();
   const supabase = await createClient();
@@ -33,6 +38,20 @@ export async function createAppointment(formData: FormData) {
   const staffId =
     staff.role === "clinician" ? staff.id : (formData.get("staffId") as string);
 
+  // Every appointment gets a real (draft) invoice line item -- see the
+  // create_invoice_and_note_for_appointment() DB trigger -- so it always
+  // needs billing info: either a real service code, or a custom
+  // description + rate typed directly on the form (service-fields.tsx
+  // only renders one of the two at a time via the "Custom line item…"
+  // option in the same select).
+  const serviceCodeIdRaw = formData.get("serviceCodeId") as string;
+  const serviceCodeId = serviceCodeIdRaw && serviceCodeIdRaw !== "custom" ? serviceCodeIdRaw : null;
+  const customDescription = !serviceCodeId ? ((formData.get("customDescription") as string)?.trim() || null) : null;
+  if (!serviceCodeId && !customDescription) {
+    redirect(`${reopenHref}&error=${encodeURIComponent("Select a service or enter a custom line item")}`);
+  }
+  const customRateCents = !serviceCodeId ? dollarsToCents(formData.get("customRate")) : null;
+
   const { data: appointment, error } = await supabase
     .from("appointments")
     .insert({
@@ -44,6 +63,9 @@ export async function createAppointment(formData: FormData) {
       type,
       location_type: locationType,
       auto_send_invoice: formData.get("autoSendInvoice") === "on",
+      service_code_id: serviceCodeId,
+      custom_description: customDescription,
+      custom_rate_cents: customRateCents,
     })
     .select("id")
     .single();

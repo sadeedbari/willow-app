@@ -3,6 +3,7 @@ import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import Link from "next/link";
 import { createAppointment } from "./new/actions";
 import { ClientClinicianFields } from "./client-clinician-fields";
+import { ServiceFields } from "./service-fields";
 
 export async function NewAppointmentModal({
   closeHref,
@@ -24,7 +25,7 @@ export async function NewAppointmentModal({
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
-  const [{ data: clients }, { data: clinicians }, { data: practice }] = await Promise.all([
+  const [{ data: clients }, { data: clinicians }, { data: practice }, { data: serviceCodes }] = await Promise.all([
     supabase.from("clients").select("id, full_name, assigned_staff_id").order("full_name"),
     staff.role === "clinician"
       ? Promise.resolve({ data: null })
@@ -35,6 +36,11 @@ export async function NewAppointmentModal({
           .eq("active", true)
           .order("full_name"),
     supabase.from("practices").select("auto_send_invoice_default").eq("id", staff.practiceId).single(),
+    supabase
+      .from("service_codes")
+      .select("id, code, description, default_rate_cents, default_for_type")
+      .eq("active", true)
+      .order("code"),
   ]);
 
   const today = date ?? new Date().toISOString().slice(0, 10);
@@ -123,6 +129,8 @@ export async function NewAppointmentModal({
                 </select>
               </div>
             </div>
+
+            <ServiceFields serviceCodes={serviceCodes ?? []} defaultType="individual" />
 
             <div>
               <label className="block text-[12.5px] font-semibold text-text-2">Location</label>

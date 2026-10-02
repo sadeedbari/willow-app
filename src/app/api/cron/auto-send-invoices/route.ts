@@ -86,16 +86,49 @@ export async function POST(request: Request) {
   let skippedStale = 0;
 
   for (const appt of (dueAppointments ?? []) as DueAppointment[]) {
-    // Idempotency: a line item already linked to this appointment means a
-    // previous run (or a manual invoice) already covered it.
+    // Every appointment now gets a draft invoice at booking time (see the
+    // create_invoice_and_note_for_appointment() DB trigger) -- this cron's
+    // job has narrowed to just sending it once the appointment's end time
+    // has passed. A line item already linked to this appointment means
+    // that already happened; finish the send rather than skip entirely,
+    // unless it's already past draft (sent/paid/void -- nothing to do).
     const { data: existingLineItem } = await supabase
       .from("invoice_line_items")
-      .select("id")
+      .select("id, invoice_id, invoices(status)")
       .eq("appointment_id", appt.id)
       .limit(1)
       .maybeSingle();
-    if (existingLineItem) continue;
 
+    if (existingLineItem) {
+      const invoiceStatus = (existingLineItem.invoices as unknown as { status: string } | null)?.status;
+      if (invoiceStatus !== "draft") continue;
+
+      const built = await buildInvoicePdf(supabase, existingLineItem.invoice_id);
+      if (built?.clientEmail) {
+        const sent = await sendInvoiceEmail({
+          clientEmail: built.clientEmail,
+          clientName: built.clientFullName,
+          practiceName: built.practiceName,
+          practiceLogoUrl: built.practiceLogoUrl,
+          invoiceNumber: built.invoiceNumber,
+          invoiceLabel: built.invoiceLabel,
+          status: built.status,
+          totalCents: built.totalCents,
+          balanceCents: built.totalCents - built.amountPaidCents,
+          pdfBuffer: built.pdfBuffer,
+          paymentToken: built.paymentToken,
+        });
+        if (sent) {
+          await supabase.from("invoices").update({ status: "sent" }).eq("id", existingLineItem.invoice_id);
+          invoiced++;
+        }
+      }
+      continue;
+    }
+
+    // Everything below is the pre-existing fallback for an appointment
+    // created before the trigger above existed (so it never got a line
+    // item at booking time) -- unchanged so old backlogs keep working.
     if (new Date(appt.ends_at) < staleCutoff) {
       skippedStale++;
       await notifyOnce(

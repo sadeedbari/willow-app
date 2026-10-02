@@ -45,13 +45,21 @@ export async function AppointmentModal({
 
   if (!appt) return null;
 
-  const { data: existingNote } = await supabase
-    .from("session_notes")
-    .select("id, status")
-    .eq("appointment_id", appointmentId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const [{ data: existingNote }, { data: existingLineItem }] = await Promise.all([
+    supabase
+      .from("session_notes")
+      .select("id, status")
+      .eq("appointment_id", appointmentId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    // Every appointment gets a draft invoice automatically (see the
+    // create_invoice_and_note_for_appointment() DB trigger) -- surfaced
+    // here so the practitioner can see/edit the invoice that was silently
+    // created for them, rather than it only being discoverable from the
+    // Invoices list.
+    supabase.from("invoice_line_items").select("invoice_id").eq("appointment_id", appointmentId).maybeSingle(),
+  ]);
 
   const client = appt.clients as unknown as { full_name: string } | null;
   const clinician = appt.staff as unknown as { full_name: string } | null;
@@ -209,6 +217,11 @@ export async function AppointmentModal({
                   className="text-[12.5px] font-semibold text-brand-ink"
                 >
                   + Session note
+                </Link>
+              )}
+              {existingLineItem && (
+                <Link href={`/invoices/${existingLineItem.invoice_id}`} className="text-[12.5px] font-semibold text-brand-ink">
+                  View invoice
                 </Link>
               )}
             </div>
