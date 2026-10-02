@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { createClient } from "@/utils/supabase/server";
 import { signConsentForm } from "./actions";
+import { clientIp, rateLimit } from "@/utils/rate-limit";
 
 // A token-gated page rendering one specific client's real name and consent
 // form content -- never indexable, even though it must stay reachable for
@@ -18,6 +19,18 @@ export default async function ConsentSigningPage({
 }) {
   const { token } = await params;
   const { error } = await searchParams;
+
+  if (!(await rateLimit("token-page-ip", await clientIp(), 60, 600))) {
+    return (
+      <div className="flex min-h-screen items-start justify-center bg-surface-2 px-4 py-10">
+        <div className="w-full max-w-xl rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8">
+          <h1 className="text-[20px] font-bold text-foreground">Too many requests</h1>
+          <p className="mt-2 text-[13.5px] text-text-2">Please wait a few minutes and try this link again.</p>
+        </div>
+      </div>
+    );
+  }
+
   const supabase = await createClient();
 
   const { data } = await supabase.rpc("get_consent_form_by_token", { p_token: token });

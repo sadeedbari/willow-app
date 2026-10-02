@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { stripe, isMissingConnectAccountError } from "@/utils/stripe/server";
 import { friendlyErrorMessage } from "@/utils/friendly-error";
 import { formatInvoiceLabel } from "@/utils/invoice-label";
+import { clientIp, rateLimit } from "@/utils/rate-limit";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
@@ -25,6 +26,11 @@ type InvoiceByToken = {
 
 export async function startInvoicePayment(formData: FormData) {
   const token = formData.get("token") as string;
+
+  if (!(await rateLimit("pay-start-ip", await clientIp(), 20, 600))) {
+    redirect(`/pay/${token}?error=${encodeURIComponent("Too many attempts — please try again in a few minutes.")}`);
+  }
+
   const supabase = await createClient();
 
   const { data: invoice } = (await supabase

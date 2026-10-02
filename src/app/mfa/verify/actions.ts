@@ -4,12 +4,20 @@ import { createClient } from "@/utils/supabase/server";
 import { sendEmail } from "@/utils/resend/send";
 import { redirect } from "next/navigation";
 import { resolveMfaNext } from "./next";
+import { clientIp, rateLimit } from "@/utils/rate-limit";
 
 export async function verifyMfaChallenge(formData: FormData) {
   const factorId = formData.get("factorId") as string;
   const code = formData.get("code") as string;
   const next = resolveMfaNext(formData.get("next") as string);
   const nextParam = `&next=${encodeURIComponent(next)}`;
+
+  // Six-digit codes are guessable by brute force without a cap.
+  if (!(await rateLimit("mfa-verify", factorId ?? "", 10, 600))) {
+    redirect(
+      `/mfa/verify?error=${encodeURIComponent("Too many attempts — please wait 10 minutes and try again.")}${nextParam}`,
+    );
+  }
 
   const supabase = await createClient();
 
@@ -40,6 +48,12 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 export async function sendMfaRecoveryEmail(formData: FormData) {
   const next = resolveMfaNext(formData.get("next") as string);
   const nextParam = `&next=${encodeURIComponent(next)}`;
+
+  if (!(await rateLimit("mfa-recovery-email-ip", await clientIp(), 5, 3600))) {
+    redirect(
+      `/mfa/verify?error=${encodeURIComponent("Too many recovery requests — please try again in an hour.")}${nextParam}`,
+    );
+  }
 
   const supabase = await createClient();
 

@@ -8,6 +8,7 @@ import {
   sendBookingRequestStaffEmail,
 } from "@/utils/booking-request-email";
 import { sendPushToStaff } from "@/utils/push/send";
+import { clientIp, rateLimitAll } from "@/utils/rate-limit";
 
 export async function requestBooking(formData: FormData) {
   const slug = formData.get("slug") as string;
@@ -23,6 +24,19 @@ export async function requestBooking(formData: FormData) {
   // rather than telling a bot what tripped it.
   if (formData.get("company")) {
     redirect(`/book/${slug}?submitted=1`);
+  }
+
+  // Each submission emails the requester and the practitioner, so this is
+  // also an email-bombing vector, not just spam.
+  const allowed = await rateLimitAll([
+    { bucket: "booking-ip", identifier: await clientIp(), limit: 5, windowSeconds: 3600 },
+    { bucket: "booking-email", identifier: email ?? "", limit: 3, windowSeconds: 86400 },
+    { bucket: "booking-slug", identifier: slug ?? "", limit: 40, windowSeconds: 3600 },
+  ]);
+  if (!allowed) {
+    redirect(
+      `/book/${slug}?${backParams}&error=${encodeURIComponent("Too many requests — please try again later or contact the practice directly.")}`,
+    );
   }
 
   const supabase = await createClient();

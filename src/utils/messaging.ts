@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { sendEmail } from "@/utils/resend/send";
 import { friendlyErrorMessage } from "@/utils/friendly-error";
 import { sendPushToStaff } from "@/utils/push/send";
+import { escapeHtml } from "@/utils/escape-html";
 
 // A thread is unread from one side the moment the other side has posted
 // since that side's last visit -- same rule for staff (staff_last_read_at)
@@ -68,7 +69,7 @@ export async function notifyStaffOfClientMessage(
     await sendEmail({
       to: recipientEmail,
       subject: `New secure message from ${params.clientFullName}`,
-      html: `<p>You have a new secure message from ${params.clientFullName}.</p><p><a href="${siteUrl}/messages/${params.clientId}">Log in to view and reply</a></p>`,
+      html: `<p>You have a new secure message from ${escapeHtml(params.clientFullName)}.</p><p><a href="${siteUrl}/messages/${params.clientId}">Log in to view and reply</a></p>`,
     });
   }
 
@@ -116,7 +117,7 @@ export async function notifyStaffOfClientMessageByClientId(
     await sendEmail({
       to: recipientStaff.email,
       subject: `New secure message from ${params.clientFullName}`,
-      html: `<p>You have a new secure message from ${params.clientFullName}.</p><p><a href="${siteUrl}/messages/${params.clientId}">Log in to view and reply</a></p>`,
+      html: `<p>You have a new secure message from ${escapeHtml(params.clientFullName)}.</p><p><a href="${siteUrl}/messages/${params.clientId}">Log in to view and reply</a></p>`,
     });
   }
 

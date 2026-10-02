@@ -3,11 +3,20 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { friendlyErrorMessage } from "@/utils/friendly-error";
+import { clientIp, rateLimitAll } from "@/utils/rate-limit";
 
 export async function signup(formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const practiceName = formData.get("practiceName") as string;
+
+  const allowed = await rateLimitAll([
+    { bucket: "signup-ip", identifier: await clientIp(), limit: 5, windowSeconds: 3600 },
+    { bucket: "signup-email", identifier: email ?? "", limit: 3, windowSeconds: 3600 },
+  ]);
+  if (!allowed) {
+    redirect(`/signup?error=${encodeURIComponent("Too many sign-up attempts — please try again in an hour.")}`);
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({

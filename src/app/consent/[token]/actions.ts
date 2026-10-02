@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { friendlyErrorMessage } from "@/utils/friendly-error";
+import { clientIp, rateLimit } from "@/utils/rate-limit";
 
 export async function signConsentForm(formData: FormData) {
   const token = formData.get("token") as string;
@@ -10,6 +11,10 @@ export async function signConsentForm(formData: FormData) {
 
   if (!signerName) {
     redirect(`/consent/${token}?error=${encodeURIComponent("Please type your full name to sign.")}`);
+  }
+
+  if (!(await rateLimit("consent-sign-ip", await clientIp(), 20, 600))) {
+    redirect(`/consent/${token}?error=${encodeURIComponent("Too many attempts — please try again in a few minutes.")}`);
   }
 
   const supabase = await createClient();
