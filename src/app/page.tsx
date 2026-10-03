@@ -52,6 +52,16 @@ const jsonLd = {
       email: "sulosystems@gmail.com",
     },
     {
+      // Tells Google the site name is "Willow" (not the parent domain,
+      // sulosystems.com) in search results.
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      name: "Willow",
+      alternateName: "Willow Practice Management",
+      url: SITE_URL,
+      publisher: { "@id": `${SITE_URL}/#organization` },
+    },
+    {
       "@type": "SoftwareApplication",
       "@id": `${SITE_URL}/#software`,
       name: "Willow",
