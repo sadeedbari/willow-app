@@ -6,6 +6,7 @@ const TABS = [
   { href: "/settings/services", label: "Services" },
   { href: "/settings/integrations", label: "Integrations" },
   { href: "/settings/retention", label: "Data Retention" },
+  { href: "/settings/emergency-access", label: "Emergency Access" },
   { href: "/settings/billing", label: "Subscription" },
 ];
 

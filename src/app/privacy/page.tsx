@@ -3,7 +3,7 @@ import Link from "next/link";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://willow.sulosystems.com";
 const PAGE_URL = `${SITE_URL}/privacy`;
-const EFFECTIVE_DATE = "September 25, 2026";
+const EFFECTIVE_DATE = "October 5, 2026";
 
 export const metadata: Metadata = {
   title: "Privacy Policy — Willow",
@@ -80,6 +80,12 @@ export default function PrivacyPolicyPage() {
                 preferences, entered by a Practice or its Clients.
               </li>
               <li>
+                <span className="font-semibold text-foreground">Emergency contact details:</span> if
+                a Practice chooses to name an emergency contact, that person&apos;s name,
+                relationship, email, and phone number, plus a record of when the Practice agreed to
+                the emergency access procedure.
+              </li>
+              <li>
                 <span className="font-semibold text-foreground">Payment information:</span> handled
                 directly by our payment processor, Stripe — Sulo Systems does not receive or store
                 full card numbers.
@@ -119,6 +125,16 @@ export default function PrivacyPolicyPage() {
               (transactional email), and Daily.co (video calls for telehealth appointments, for
               Practices that use that feature). We may also disclose information if required by law
               or to protect the rights, safety, or property of Sulo Systems or others.
+            </p>
+            <p className="mt-2">
+              <span className="font-semibold text-foreground">Emergency access.</span> If a Practice
+              has named an emergency contact and the Practitioner has died or is incapacitated, we
+              may give that person access to the Practice&apos;s account, including its Client
+              records, but only after verifying their identity and the circumstances under the
+              procedure the Practice agreed to in Settings. We use the emergency contact&apos;s
+              details only to verify and communicate with them for this purpose, and we record the
+              change in the Practice&apos;s audit log. A Practice can change or remove its emergency
+              contact at any time.
             </p>
           </section>
 

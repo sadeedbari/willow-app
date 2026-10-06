@@ -3,7 +3,7 @@ import Link from "next/link";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://willow.sulosystems.com";
 const PAGE_URL = `${SITE_URL}/terms`;
-const EFFECTIVE_DATE = "September 25, 2026";
+const EFFECTIVE_DATE = "October 5, 2026";
 
 export const metadata: Metadata = {
   title: "Terms of Service — Willow",
@@ -88,7 +88,31 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-bold text-foreground">4. Subscriptions &amp; payment</h2>
+            <h2 className="text-[15px] font-bold text-foreground">4. Emergency access</h2>
+            <p className="mt-2">
+              A Practice may name one emergency contact in Settings → Emergency Access. By doing so,
+              and by agreeing to the procedure shown there, the Practice instructs Sulo Systems to
+              grant that person Practice Admin access to the Practice&apos;s account if, and only if,
+              the procedure has been followed: the emergency contact verifies their identity, provides
+              proof that the Practitioner has died or is incapacitated, and, after we have tried to
+              reach the Practice and allowed a short waiting period, we are satisfied the request is
+              genuine. We may refuse or delay access if we can&apos;t verify a request to our
+              satisfaction, and we are not liable for doing so, or for granting access in good faith
+              in accordance with the procedure.
+            </p>
+            <p className="mt-2">
+              The Practice is responsible for choosing a trustworthy emergency contact, telling that
+              person they have been named, and keeping their details current. An emergency contact
+              acts on the Practice&apos;s behalf; the Practice, or its legal successor, remains
+              responsible for its obligations as health information custodian. This feature is a
+              service we provide, not legal advice, and doesn&apos;t by itself satisfy any
+              requirement of a regulatory college or law. A Practice with no emergency contact on
+              file has given us no instruction to grant anyone access.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-[15px] font-bold text-foreground">5. Subscriptions &amp; payment</h2>
             <p className="mt-2">
               Practices subscribe to Willow on a recurring basis at the price shown at checkout,
               billed through our payment processor, Stripe. Subscriptions renew automatically until
@@ -105,7 +129,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-bold text-foreground">5. Scheduling, cancellation &amp; rescheduling</h2>
+            <h2 className="text-[15px] font-bold text-foreground">6. Scheduling, cancellation &amp; rescheduling</h2>
             <p className="mt-2">
               Appointments booked through Willow are between a Client and their Practice, and are
               subject to that Practice&apos;s own scheduling and cancellation policies. A Practice
@@ -121,7 +145,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-bold text-foreground">6. Termination</h2>
+            <h2 className="text-[15px] font-bold text-foreground">7. Termination</h2>
             <p className="mt-2">
               We may suspend or terminate access to the Service for a Practice that breaches these
               Terms, doesn&apos;t pay its subscription, or uses the Service in a way that puts other
@@ -131,7 +155,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-bold text-foreground">7. Disclaimers &amp; limitation of liability</h2>
+            <h2 className="text-[15px] font-bold text-foreground">8. Disclaimers &amp; limitation of liability</h2>
             <p className="mt-2">
               The Service is provided &quot;as is,&quot; without warranties of any kind. To the
               maximum extent permitted by law, Sulo Systems will not be liable for indirect,
@@ -141,7 +165,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-bold text-foreground">8. Changes to these Terms</h2>
+            <h2 className="text-[15px] font-bold text-foreground">9. Changes to these Terms</h2>
             <p className="mt-2">
               We may update these Terms from time to time. If we make material changes, we&apos;ll
               provide reasonable notice (for example, by email or an in-app notice) before they take
@@ -150,7 +174,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-bold text-foreground">9. Governing law</h2>
+            <h2 className="text-[15px] font-bold text-foreground">10. Governing law</h2>
             <p className="mt-2">
               These Terms are governed by the laws of the Province of Ontario and the federal laws of
               Canada applicable therein, without regard to conflict-of-law principles.
@@ -158,7 +182,7 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-bold text-foreground">10. Contact</h2>
+            <h2 className="text-[15px] font-bold text-foreground">11. Contact</h2>
             <p className="mt-2">
               Questions about these Terms? Reach us at{" "}
               <a href="mailto:sulosystems@gmail.com" className="font-semibold text-brand-ink underline">
