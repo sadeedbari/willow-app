@@ -46,6 +46,7 @@ export async function sendInvoiceEmail(details: InvoiceEmailDetails): Promise<bo
 
   return sendEmail({
     to: details.clientEmail,
+    fromName: details.practiceName,
     subject: `Invoice ${invoiceLabel} from ${details.practiceName}`,
     html: `
       ${logoHtml(details.practiceLogoUrl)}

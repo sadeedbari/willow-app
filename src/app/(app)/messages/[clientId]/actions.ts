@@ -56,6 +56,7 @@ export async function sendMessageAsStaff(formData: FormData) {
       : `<p>You have a new message from ${practiceName}:</p><p>${escapeHtmlWithBreaks(body)}</p><p>Reply directly to this email to respond.</p>`;
     await sendEmail({
       to: clientRow.email,
+      fromName: staff.practiceName,
       subject: `New secure message from ${staff.practiceName}`,
       html,
       replyTo: replyToAddressFor(inboundToken),

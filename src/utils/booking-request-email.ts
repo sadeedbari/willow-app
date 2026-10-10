@@ -32,6 +32,7 @@ export async function sendBookingRequestReceivedEmail(details: {
 }) {
   await sendEmail({
     to: details.toEmail,
+    fromName: details.practiceName,
     subject: `Request received: ${details.practiceName}`,
     html: `
       ${logoHtml(details.practiceLogoUrl)}
@@ -72,6 +73,7 @@ export async function sendBookingRequestDeclinedEmail(details: {
 }) {
   await sendEmail({
     to: details.toEmail,
+    fromName: details.practiceName,
     subject: `Update on your request to ${details.practiceName}`,
     html: `
       ${logoHtml(details.practiceLogoUrl)}

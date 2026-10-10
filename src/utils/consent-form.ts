@@ -23,6 +23,7 @@ export async function sendConsentFormSigningEmail(params: {
 }): Promise<boolean> {
   return sendEmail({
     to: params.clientEmail,
+    fromName: params.practiceName,
     subject: `${params.formTitle} — please review and sign`,
     html: `
       ${logoHtml(params.practiceLogoUrl)}

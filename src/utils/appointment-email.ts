@@ -68,6 +68,7 @@ export async function sendAppointmentConfirmationEmail(details: AppointmentEmail
 
   await sendEmail({
     to: details.clientEmail,
+    fromName: details.practiceName,
     subject: `Appointment confirmed: ${when}`,
     html: `
       ${logoHtml(details.practiceLogoUrl)}
@@ -89,6 +90,7 @@ export async function sendAppointmentRescheduledEmail(details: AppointmentEmailD
 
   await sendEmail({
     to: details.clientEmail,
+    fromName: details.practiceName,
     subject: `Appointment rescheduled: ${when}`,
     html: `
       ${logoHtml(details.practiceLogoUrl)}
@@ -110,6 +112,7 @@ export async function sendAppointmentCancelledEmail(details: AppointmentEmailDet
 
   await sendEmail({
     to: details.clientEmail,
+    fromName: details.practiceName,
     subject: `Appointment cancelled: ${when}`,
     html: `
       ${logoHtml(details.practiceLogoUrl)}
@@ -131,6 +134,7 @@ export async function sendAppointmentReminderEmail(details: AppointmentEmailDeta
 
   await sendEmail({
     to: details.clientEmail,
+    fromName: details.practiceName,
     subject: `Reminder: upcoming appointment ${when}`,
     html: `
       ${logoHtml(details.practiceLogoUrl)}
