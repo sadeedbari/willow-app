@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://willow.sulosystems.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://willowtherapy.ca";
 
 // Only genuinely public, indexable marketing pages -- every authenticated
 // app/portal route, and thin auth-utility pages (forgot-password, MFA,

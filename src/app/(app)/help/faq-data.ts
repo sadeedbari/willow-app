@@ -145,7 +145,7 @@ export const FAQS: FaqItem[] = [
     steps: [
       "Go to Practitioner Profile (My Account in the sidebar).",
       "Set your Weekly availability first, if you haven't already — the link only shows times inside those hours.",
-      "Under Public booking link, click Enable to get a link like willow.sulosystems.com/book/your-name.",
+      "Under Public booking link, click Enable to get a link like willowtherapy.ca/book/your-name.",
       "Copy it onto your own website, email signature, or social profile so new clients can request a time with you directly.",
     ],
   },

@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { MarketingAnalytics } from "@/components/marketing-analytics";
 import "./globals.css";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://willow.sulosystems.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://willowtherapy.ca";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

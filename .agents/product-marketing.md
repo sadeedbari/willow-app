@@ -106,7 +106,7 @@
 ## Goals
 **Primary business goal:** Convert Ontario solo and small psychotherapy practices into paying subscribers — currently pre-revenue beyond one pilot practice, so the immediate goal is repeatable, real signups.
 **Key conversion action:** Start the 14-day free trial at `/signup` (no credit card required).
-**Current metrics:** 1 real pilot practice (Therapy by Niha); live production app at willow.sulosystems.com; no other paying customers recorded yet.
+**Current metrics:** 1 real pilot practice (Therapy by Niha); live production app at willowtherapy.ca; no other paying customers recorded yet.
 
 ## Changelog
 *Newest first. One line per revision: what changed and why.*

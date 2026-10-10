@@ -5,7 +5,7 @@ import { BrandMark } from "@/components/brand-mark";
 import { PasswordInput } from "@/components/password-input";
 import { PASSWORD_PATTERN, PASSWORD_REQUIREMENTS_HINT } from "@/utils/password";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://willow.sulosystems.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://willowtherapy.ca";
 const PAGE_URL = `${SITE_URL}/signup`;
 
 export const metadata: Metadata = {

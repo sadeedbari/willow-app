@@ -16,7 +16,7 @@ Sulo Systems is a **service provider / processor**: we operate the infrastructur
 
 This document is Sulo Systems' internal runbook for that job. It follows the IPC's own four-step breach-response framework — **Contain, Notify, Investigate, Prevent** — adapted to our role as processor.
 
-A companion, one-paragraph commitment for Practices and their clients lives in the public [Privacy Policy](https://willow.sulosystems.com/privacy) (Section 7, "Data breach notification").
+A companion, one-paragraph commitment for Practices and their clients lives in the public [Privacy Policy](https://willowtherapy.ca/privacy) (Section 7, "Data breach notification").
 
 ## 2. What counts as an incident
 

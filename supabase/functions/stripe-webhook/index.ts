@@ -35,10 +35,11 @@ const adminClient = createClient(
 
 // The Next.js app, not this Deno function, sends the "paid" receipt email --
 // PDF rendering (@react-pdf/renderer) needs a Node runtime this edge function
-// doesn't have. Hardcoded rather than an env var: this function only ever
-// receives events from the live Stripe account, so it only ever needs to
-// reach the one real deployment, never a local dev server.
-const APP_URL = "https://willow.sulosystems.com";
+// doesn't have. This is the deployment's own *.vercel.app address on
+// purpose, not the custom domain: that address never changes when the
+// custom domain does, and a domain redirect would drop the Authorization
+// header from this call. Override with an APP_URL secret if ever needed.
+const APP_URL = Deno.env.get("APP_URL") ?? "https://willow-app-9l8u.vercel.app";
 
 const RELEVANT_EVENTS = [
   "customer.subscription.created",

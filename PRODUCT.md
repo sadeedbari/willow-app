@@ -30,7 +30,7 @@ Practices manage: client records, appointment scheduling (in-person and teleheal
 - Multi-staff support is real and built. A dedicated group-practice oversight/analytics dashboard is not built yet (on hold).
 - AI-assisted note-taking and insurance claim submission/tracking are not built.
 - Mobile-responsive throughout, on both the staff app and the client portal.
-- Deployed at willow.sulosystems.com; the company behind it is Sulo Systems Inc. (Ontario, Canada).
+- Deployed at willowtherapy.ca; the company behind it is Sulo Systems Inc. (Ontario, Canada).
 
 ## Brand Commitments
 

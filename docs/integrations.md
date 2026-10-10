@@ -36,7 +36,12 @@ storage (client documents, practice logos, consent-form PDFs), and Edge Function
 `/api/cron/auto-send-invoices` scheduled job.
 
 - **Deployment URLs:** `willow-app-9l8u.vercel.app` (default) and the custom domain
-  `willow.sulosystems.com`.
+  `willowtherapy.ca` (moved from `willow.sulosystems.com` in October 2026; the old
+  address stays as a permanent redirect so emailed payment, consent, portal and
+  booking links keep working). Internal server-to-server calls (the Stripe webhook's
+  receipt email, the pg_cron jobs) use the `*.vercel.app` address on purpose — it
+  doesn't change with the custom domain, and a redirect would drop their
+  `Authorization` header.
 - **Cron:** `auto-send-invoices` is scheduled from the Vercel dashboard's Cron Jobs
   UI (no `vercel.json` in the repo defines it) — the route itself checks a
   `CRON_SECRET` bearer token so it can't be triggered by anyone else.
@@ -112,7 +117,10 @@ same vendor:
    `INBOUND_EMAIL_DOMAIN` and the `/api/webhooks/resend-inbound` route.
 
 - **Sending domain:** migrated from a placeholder domain to `sulosystems.com` on
-  2026-09-07 (both the app-level sends and the Supabase Auth SMTP config).
+  2026-09-07 (both the app-level sends and the Supabase Auth SMTP config), then to
+  `willowtherapy.ca` (sending) and `reply.willowtherapy.ca` (inbound replies) in
+  October 2026. The inbound webhook still accepts `reply.sulosystems.com` so replies
+  to emails sent before the move keep landing in the right thread.
 - **QA gotcha:** Resend rejects sends to `@example.com` addresses — don't mistake
   that for a real SMTP outage when testing.
 - **Account/billing owner:** confirm with whoever holds the Resend account login.

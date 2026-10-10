@@ -54,8 +54,12 @@ export async function POST(request: Request) {
     return Response.json({ ok: true, skipped: "already processed" });
   }
 
-  const domain = process.env.INBOUND_EMAIL_DOMAIN ?? "reply.sulosystems.com";
-  const tokenPattern = new RegExp(`^reply\\+([^@]+)@${domain.replace(/\./g, "\\.")}$`, "i");
+  // Emails sent before the move to willowtherapy.ca still carry a
+  // reply+<token>@reply.sulosystems.com Reply-To, so replies to those keep
+  // working too. Drop the legacy domain once old threads have gone quiet.
+  const domains = [process.env.INBOUND_EMAIL_DOMAIN ?? "reply.willowtherapy.ca", "reply.sulosystems.com"];
+  const domainPattern = domains.map((d) => d.replace(/\./g, "\\.")).join("|");
+  const tokenPattern = new RegExp(`^reply\\+([^@]+)@(?:${domainPattern})$`, "i");
   const recipient = event.data.to.find((addr) => tokenPattern.test(addr));
   const token = recipient ? tokenPattern.exec(recipient)?.[1] : undefined;
 
