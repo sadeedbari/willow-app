@@ -6,7 +6,7 @@ import { requestBooking } from "./actions";
 import { BrandMark } from "@/components/brand-mark";
 import { APPOINTMENT_TYPE_DURATION_MINUTES, APPOINTMENT_TYPE_LABEL } from "@/utils/appointment-types";
 import { parseDateParamString } from "@/utils/parse-date-param";
-import { DISPLAY_TIME_ZONE, zonedTimeToUtc } from "@/utils/timezone";
+import { DISPLAY_TIME_ZONE, zonedHourMinute, zonedTimeToUtc } from "@/utils/timezone";
 
 // Each slug is a real, legitimate link a clinician embeds on their own site
 // -- so this stays crawlable (no robots.ts disallow) but never indexed,
@@ -84,7 +84,9 @@ function groupByPeriod(slots: Date[]) {
     { label: "Evening", slots: [] as Date[] },
   ];
   for (const s of slots) {
-    const h = s.getHours();
+    // Practice-timezone hour, not the server's: on Vercel (UTC) a 9 AM
+    // Toronto slot would otherwise be bucketed as "Afternoon".
+    const h = zonedHourMinute(s).hour;
     if (h < 12) groups[0].slots.push(s);
     else if (h < 17) groups[1].slots.push(s);
     else groups[2].slots.push(s);

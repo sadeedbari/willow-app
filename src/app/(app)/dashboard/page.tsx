@@ -5,10 +5,10 @@ import { getDashboardData } from "./data";
 import { getThreadList } from "../messages/data";
 import { avatarColorFor, initialsOf } from "@/utils/avatar-color";
 import { APPOINTMENT_TYPE_SHORT_LABEL } from "@/utils/appointment-type-label";
-import { DISPLAY_TIME_ZONE } from "@/utils/timezone";
+import { DISPLAY_TIME_ZONE, zonedHourMinute } from "@/utils/timezone";
 
 function greeting() {
-  const hour = new Date().getHours();
+  const hour = zonedHourMinute(new Date()).hour;
   if (hour < 12) return "Good morning";
   if (hour < 18) return "Good afternoon";
   return "Good evening";
