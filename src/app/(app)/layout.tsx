@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
+import { PROCEDURE_VERSION } from "./settings/emergency-access/procedure";
 import { createClient } from "@/utils/supabase/server";
 import { logout } from "./actions";
 import { toggleTheme } from "./theme-actions";
@@ -186,6 +187,7 @@ export default async function AppLayout({
     { count: pendingBookingRequestCount },
     { data: profileFields },
     { data: practiceFields },
+    { data: emergencyContact },
     { data: factorsData },
   ] = await Promise.all([
     supabase.from("message_threads").select("id, staff_last_read_at, updated_at"),
@@ -197,6 +199,11 @@ export default async function AppLayout({
       .select("logo_url, address, business_number, primary_contact_email, primary_contact_phone")
       .eq("id", staff.practiceId)
       .single(),
+    supabase
+      .from("practice_emergency_contacts")
+      .select("procedure_version")
+      .eq("practice_id", staff.practiceId)
+      .maybeSingle(),
     supabase.auth.mfa.listFactors(),
   ]);
 
@@ -226,6 +233,14 @@ export default async function AppLayout({
           { key: "businessNumber", label: "Business number", href: "/settings", filled: !!practiceFields?.business_number },
           { key: "contactEmail", label: "Contact email", href: "/settings", filled: !!practiceFields?.primary_contact_email },
           { key: "contactPhone", label: "Contact phone", href: "/settings", filled: !!practiceFields?.primary_contact_phone },
+          {
+            key: "emergencyAccess",
+            label: "Emergency access contact",
+            href: "/settings/emergency-access",
+            // An out-of-date confirmation counts as incomplete, same as the
+            // Emergency Access settings page treats it (needs re-confirming).
+            filled: !!emergencyContact && emergencyContact.procedure_version === PROCEDURE_VERSION,
+          },
         ]
       : [];
   const completionFields = [...profileChecklist, ...practiceChecklist];
