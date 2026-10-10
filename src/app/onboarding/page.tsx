@@ -24,6 +24,11 @@ export default async function OnboardingPage({
     if (existingStaffRow) {
       redirect("/dashboard");
     }
+    // Client-portal accounts can't found a practice.
+    const { data: portalClientId } = await supabase.rpc("my_client_id");
+    if (portalClientId) {
+      redirect("/portal");
+    }
   }
 
   // Set at signup (see src/app/signup/actions.ts) -- already asked once,

@@ -45,6 +45,15 @@ function StatCard({
   );
 }
 
+// "Dr. Naomi Osei" -> "Dr. Osei" (not just "Dr."); "Naomi Osei" -> "Naomi".
+function greetingName(fullName: string) {
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length > 1 && /^(dr|mr|mrs|ms|mx|miss|prof)\.?$/i.test(parts[0])) {
+    return `${parts[0]} ${parts[parts.length - 1]}`;
+  }
+  return parts[0];
+}
+
 export default async function DashboardPage() {
   const staff = await getCurrentStaff();
   const supabase = await createClient();
@@ -54,7 +63,7 @@ export default async function DashboardPage() {
     getThreadList(supabase),
   ]);
 
-  const firstName = staff.fullName.split(" ")[0];
+  const firstName = greetingName(staff.fullName);
   const today = new Date();
   const dateLabel = today.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", timeZone: DISPLAY_TIME_ZONE });
 

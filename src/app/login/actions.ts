@@ -33,6 +33,11 @@ export async function login(formData: FormData) {
     redirect("/dashboard");
   }
 
+  const { data: portalClientId } = await supabase.rpc("my_client_id");
+  if (portalClientId) {
+    redirect("/portal");
+  }
+
   const { data: invitation } = await supabase.rpc("get_my_pending_invitation").maybeSingle();
   redirect(invitation ? "/accept-invite" : "/onboarding");
 }

@@ -1,8 +1,22 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
+import { randomUUID } from "node:crypto";
 import { BrandMark } from "@/components/brand-mark";
 import { verifyMfaSetup, skipMfaSetup } from "./actions";
 import { logout } from "@/app/(app)/actions";
+
+async function clearStaleFactors(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  factors: { id: string; created_at: string }[],
+) {
+  const STALE_AFTER_MS = 10_000;
+  const now = Date.now();
+  for (const f of factors) {
+    if (now - new Date(f.created_at).getTime() > STALE_AFTER_MS) {
+      await supabase.auth.mfa.unenroll({ factorId: f.id });
+    }
+  }
+}
 
 export default async function MfaSetupPage({
   searchParams,
@@ -17,6 +31,10 @@ export default async function MfaSetupPage({
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
+
+  // Staff-only: a client-portal login has nothing to enrol here.
+  const { data: portalClientId } = await supabase.rpc("my_client_id");
+  if (portalClientId) redirect("/portal");
 
   // listFactors()'s `.totp` array only ever contains VERIFIED factors --
   // an unverified one only shows up in `.all`. Using `.totp` here would
@@ -36,14 +54,26 @@ export default async function MfaSetupPage({
   // attempt -- its secret was only ever shown once and can't be re-displayed,
   // so there's nothing to recover. Unverified factors can be unenrolled at
   // aal1 (only a *verified* factor requires aal2 to remove).
-  for (const f of allTotpFactors) {
-    await supabase.auth.mfa.unenroll({ factorId: f.id });
-  }
+  //
+  // Only factors older than a few seconds are removed: right after a
+  // redirect (onboarding / accept-invite) this page can be rendered twice at
+  // nearly the same moment, and one render must not delete the factor the
+  // other one is about to show. Each enrollment also gets a unique friendly
+  // name, so concurrent renders can't collide on a name conflict -- which
+  // used to surface as "Couldn't start two-factor setup" on first load.
+  await clearStaleFactors(supabase, allTotpFactors);
 
-  const { data: enrollData, error: enrollError } = await supabase.auth.mfa.enroll({
-    factorType: "totp",
-    friendlyName: "Authenticator app",
-  });
+  const enroll = () =>
+    supabase.auth.mfa.enroll({
+      factorType: "totp",
+      friendlyName: `Authenticator app ${randomUUID().slice(0, 8)}`,
+    });
+
+  let { data: enrollData, error: enrollError } = await enroll();
+  if (enrollError || !enrollData) {
+    // One retry covers a transient failure.
+    ({ data: enrollData, error: enrollError } = await enroll());
+  }
 
   if (enrollError || !enrollData) {
     return (
@@ -51,8 +81,23 @@ export default async function MfaSetupPage({
         <div className="w-full max-w-sm text-center">
           <BrandMark size={56} />
           <p className="mt-5 text-[13.5px] text-bad">
-            Couldn&apos;t start two-factor setup. Please refresh and try again.
+            Couldn&apos;t start two-factor setup. Please try again.
           </p>
+          <div className="mt-5 flex items-center justify-center gap-5">
+            <a href="/mfa/setup" className="text-[13px] font-semibold text-brand-ink">
+              Try again
+            </a>
+            <form action={skipMfaSetup}>
+              <button type="submit" className="text-[13px] font-semibold text-text-2 hover:text-foreground">
+                Skip for now
+              </button>
+            </form>
+            <form action={logout}>
+              <button type="submit" className="text-[13px] font-semibold text-text-2 hover:text-foreground">
+                Log out
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     );

@@ -18,6 +18,11 @@ export async function createPractice(formData: FormData) {
     redirect("/login");
   }
 
+  const { data: portalClientId } = await supabase.rpc("my_client_id");
+  if (portalClientId) {
+    redirect("/portal");
+  }
+
   const { error } = await supabase.rpc("create_practice_with_owner", {
     practice_name: practiceName,
     owner_full_name: ownerFullName,

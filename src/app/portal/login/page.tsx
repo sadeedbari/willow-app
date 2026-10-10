@@ -34,10 +34,11 @@ export default async function PortalLoginPage({
         <form action={portalLogin} className="space-y-4">
           {next && <input type="hidden" name="next" value={next} />}
           <div>
-            <label className="block text-[12.5px] font-semibold text-text-2">
+            <label htmlFor="email" className="block text-[12.5px] font-semibold text-text-2">
               Email
             </label>
             <input
+              id="email"
               name="email"
               type="email"
               required
@@ -46,10 +47,11 @@ export default async function PortalLoginPage({
             />
           </div>
           <div>
-            <label className="block text-[12.5px] font-semibold text-text-2">
+            <label htmlFor="password" className="block text-[12.5px] font-semibold text-text-2">
               Password
             </label>
             <PasswordInput
+              id="password"
               name="password"
               required
               autoComplete="current-password"

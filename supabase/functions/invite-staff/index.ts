@@ -116,17 +116,69 @@ Deno.serve(async (req: Request) => {
     // Auth "Invite user" email template can render this practice's own
     // branding via {{ .Data.practice_name }} / {{ .Data.practice_logo_url }}
     // instead of a generic unbranded invite.
+    const inviteMetadata = {
+      practice_name: practice?.name ?? "Your practice",
+      practice_logo_url: practice?.logo_url ?? null,
+      invite_type: "staff",
+    };
+
     const { error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(email, {
       redirectTo,
-      data: {
-        practice_name: practice?.name ?? "Your practice",
-        practice_logo_url: practice?.logo_url ?? null,
-        invite_type: "staff",
-      },
+      data: inviteMetadata,
     });
 
     if (inviteError) {
-      return json({ error: inviteError.message }, 400);
+      const alreadyRegistered =
+        inviteError.code === "email_exists" ||
+        inviteError.message.toLowerCase().includes("already been registered");
+      if (!alreadyRegistered) {
+        return json({ error: inviteError.message }, 400);
+      }
+
+      // The email already has an auth user -- typically a previous invite that
+      // was revoked, expired, or had its single-use link used up by an email
+      // scanner. Re-inviting must still work for those, but must never hijack
+      // a login that already belongs to a practice or a client portal.
+      const { data: existingUserId, error: lookupError } = await adminClient.rpc(
+        "find_auth_user_by_email",
+        { p_email: email },
+      );
+      if (lookupError || !existingUserId) {
+        return json({ error: "A user with this email already exists, but couldn't be re-invited. Contact support." }, 400);
+      }
+
+      const [{ data: existingStaff }, { data: existingClient }] = await Promise.all([
+        adminClient.from("staff").select("id").eq("user_id", existingUserId).maybeSingle(),
+        adminClient.from("clients").select("id").eq("portal_user_id", existingUserId).maybeSingle(),
+      ]);
+      if (existingStaff || existingClient) {
+        return json(
+          { error: "This email already belongs to an existing Willow account, so it can't be invited to your practice. Use a different email address." },
+          400,
+        );
+      }
+
+      // Same recovery-link approach invite-client uses: the person sets a
+      // password via the reset email, then signing in routes them to
+      // /accept-invite because a pending invitation exists for their email.
+      await adminClient.auth.admin.updateUserById(existingUserId, { user_metadata: inviteMetadata });
+      const { error: resetError } = await adminClient.auth.resetPasswordForEmail(email, { redirectTo });
+      if (resetError) {
+        return json({ error: resetError.message ?? "Could not send invite" }, 400);
+      }
+    }
+
+    // Don't stack duplicate pending rows when an admin re-sends an invite
+    // that is still pending.
+    const { data: existingPending } = await adminClient
+      .from("staff_invitations")
+      .select("id")
+      .eq("practice_id", staffRow.practice_id)
+      .eq("email", email)
+      .eq("status", "pending")
+      .maybeSingle();
+    if (existingPending) {
+      return json({ ok: true });
     }
 
     const { error: dbError } = await adminClient.from("staff_invitations").insert({

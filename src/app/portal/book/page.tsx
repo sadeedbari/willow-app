@@ -111,7 +111,7 @@ export default async function BookAppointmentPage({
         )}
         {booked && (
           <p className="mt-4 rounded-lg bg-ok-tint px-3 py-2 text-[13px] text-ok">
-            Appointment booked! You&apos;ll see it reflected the next time your clinician confirms.
+            Appointment booked! You&apos;ll find it under Appointments, and we&apos;ve emailed you a confirmation.
           </p>
         )}
 

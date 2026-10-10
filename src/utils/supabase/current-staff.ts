@@ -45,7 +45,10 @@ async function getCurrentStaffInternal(opts: { enforceTrial: boolean }): Promise
   };
 
   if (!data) {
-    redirect("/onboarding");
+    // A client-portal login has no staff row either, but it must never be
+    // offered practice onboarding -- send it back to its own portal.
+    const { data: clientId } = await supabase.rpc("my_client_id");
+    redirect(clientId ? "/portal" : "/onboarding");
   }
 
   if (!data.active) {
