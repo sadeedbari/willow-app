@@ -699,6 +699,9 @@ export default async function HomePage() {
             <Link href="/pricing" className="transition hover:text-text-2">
               Pricing
             </Link>
+            <Link href="/for/registered-psychotherapists" className="transition hover:text-text-2">
+              For registered psychotherapists
+            </Link>
             <Link href="/vs/jane-app" className="transition hover:text-text-2">
               vs. Jane.app
             </Link>
