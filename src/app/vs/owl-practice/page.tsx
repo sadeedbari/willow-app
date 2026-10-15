@@ -8,7 +8,7 @@ const PAGE_URL = `${SITE_URL}/vs/owl-practice`;
 export const metadata: Metadata = {
   title: "Owl Practice Alternative for Ontario Therapists | Willow",
   description:
-    "Looking for an Owl Practice alternative? See Willow vs. Owl Practice's Growth and Professional plans: pricing, session limits, telehealth, and what's actually included. Sourced from Owl's own published pricing.",
+    "Looking for an Owl Practice alternative? Compare Willow with Owl's Growth and Professional plans: price, session limits, telehealth. From Owl's pricing.",
   alternates: { canonical: "/vs/owl-practice" },
 };
 
@@ -31,7 +31,7 @@ const jsonLd = {
       url: PAGE_URL,
       name: "Owl Practice Alternative for Ontario Therapists | Willow",
       description:
-        "Looking for an Owl Practice alternative? See Willow vs. Owl Practice's Growth and Professional plans: pricing, session limits, telehealth, and what's actually included. Sourced from Owl's own published pricing.",
+        "Looking for an Owl Practice alternative? Compare Willow with Owl's Growth and Professional plans: price, session limits, telehealth. From Owl's pricing.",
       isPartOf: { "@type": "WebSite", name: "Willow", url: SITE_URL },
     },
   ],

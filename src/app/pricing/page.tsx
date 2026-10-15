@@ -8,7 +8,7 @@ const PAGE_URL = `${SITE_URL}/pricing`;
 export const metadata: Metadata = {
   title: "Willow Pricing — Flat $15.90/month, No Session Caps",
   description:
-    "Solo $15.90/month CAD, Team $49/month CAD — no session caps, no add-on fees, 14-day free trial with no credit card. See how Willow's pricing compares to Jane.app and Owl Practice.",
+    "Willow pricing: Solo $15.90/month CAD, Team $49/month CAD. No session caps or add-on fees, 14-day free trial, no card. Compare with Jane and Owl.",
   alternates: { canonical: "/pricing" },
 };
 

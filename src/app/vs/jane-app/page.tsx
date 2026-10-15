@@ -8,7 +8,7 @@ const PAGE_URL = `${SITE_URL}/vs/jane-app`;
 export const metadata: Metadata = {
   title: "Jane App Alternative for Ontario Therapists | Willow",
   description:
-    "Looking for a Jane App alternative? See Willow vs. Jane.app's Balance plan: pricing, session limits, telehealth, and what's actually included. Sourced from Jane's own published pricing.",
+    "Looking for a Jane App alternative? Compare Willow with Jane's Balance plan: price, 20-session cap, telehealth and add-ons. Sourced from Jane's pricing.",
   alternates: { canonical: "/vs/jane-app" },
 };
 
@@ -31,7 +31,7 @@ const jsonLd = {
       url: PAGE_URL,
       name: "Jane App Alternative for Ontario Therapists | Willow",
       description:
-        "Looking for a Jane App alternative? See Willow vs. Jane.app's Balance plan: pricing, session limits, telehealth, and what's actually included. Sourced from Jane's own published pricing.",
+        "Looking for a Jane App alternative? Compare Willow with Jane's Balance plan: price, 20-session cap, telehealth and add-ons. Sourced from Jane's pricing.",
       isPartOf: { "@type": "WebSite", name: "Willow", url: SITE_URL },
     },
   ],

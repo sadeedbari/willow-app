@@ -28,9 +28,9 @@ import { BrandMark } from "@/components/brand-mark";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://willowtherapy.ca";
 
 export const metadata: Metadata = {
-  title: "Willow — Practice Management Software for Ontario Therapists",
+  title: "Willow Practice Management — Software for Ontario Therapists",
   description:
-    "Scheduling, telehealth, session notes, billing, secure client messaging, and a client portal — in one clean, fast app built for therapy practices in Ontario. 14-day free trial, no credit card required.",
+    "Willow is practice management software for Ontario therapists: scheduling, telehealth, notes, billing and a client portal. 14-day free trial, no card.",
   alternates: { canonical: "/" },
 };
 
@@ -49,7 +49,13 @@ const jsonLd = {
       name: "Sulo Systems Inc.",
       url: SITE_URL,
       logo: `${SITE_URL}/icons/icon-512.png`,
-      email: "sulosystems@gmail.com",
+      email: "info@sulosystems.com",
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Toronto",
+        addressRegion: "ON",
+        addressCountry: "CA",
+      },
     },
     {
       // Tells Google the site name is "Willow" (not the parent domain,
@@ -69,7 +75,17 @@ const jsonLd = {
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       description:
-        "Practice management software for therapists — scheduling, telehealth, session notes, billing, secure client messaging, and a client portal.",
+        "Practice management software for Ontario therapists — scheduling, telehealth, session notes, billing, secure client messaging, and a client portal.",
+      areaServed: { "@type": "AdministrativeArea", name: "Ontario, Canada" },
+      audience: { "@type": "Audience", audienceType: "Therapists and counsellors" },
+      featureList: [
+        "Scheduling and online booking",
+        "Telehealth video sessions",
+        "Session notes",
+        "Invoicing and online payments",
+        "Secure client messaging",
+        "Client portal",
+      ],
       provider: { "@id": `${SITE_URL}/#organization` },
       offers: [
         {
@@ -277,11 +293,11 @@ export default async function HomePage() {
         <div className="mx-auto grid max-w-6xl gap-10 px-6 pb-20 pt-14 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-8 lg:pb-28 lg:pt-20">
           <div className="hero-in">
             <h1 className="text-[36px] font-bold leading-[1.08] tracking-[-0.02em] text-foreground sm:text-[46px] lg:text-[52px]">
-              Practice management software that actually feels good to use.
+              Practice management software for Ontario therapists that actually feels good to use.
             </h1>
             <p className="mt-5 max-w-[46ch] text-[16px] leading-relaxed text-text-2 sm:text-[17px]">
               Scheduling, telehealth, session notes, billing, and a client portal — in one clean,
-              fast app built for therapy practices, whether it&apos;s just you or a small team.
+              fast app built for Ontario therapy practices, whether it&apos;s just you or a small team.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link
