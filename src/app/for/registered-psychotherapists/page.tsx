@@ -314,6 +314,9 @@ export default async function ForRegisteredPsychotherapistsPage() {
             <Link href="/pricing" className="transition hover:text-text-2">
               Pricing
             </Link>
+            <Link href="/for/registered-social-workers" className="transition hover:text-text-2">
+              For registered social workers
+            </Link>
             <Link href="/vs/jane-app" className="transition hover:text-text-2">
               Willow vs. Jane.app
             </Link>
