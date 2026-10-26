@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BrandMark } from "@/components/brand-mark";
+import { SiteCredit } from "@/components/site-credit";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://willowtherapy.ca";
 const PAGE_URL = `${SITE_URL}/vs/jane-app`;
@@ -241,7 +242,7 @@ export default async function WillowVsJaneAppPage() {
             <BrandMark size={24} />
             <span className="text-[13.5px] font-bold text-foreground">Willow</span>
           </div>
-          <div className="flex items-center gap-5 text-[12.5px] text-text-3">
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[12.5px] text-text-3">
             <Link href="/pricing" className="transition hover:text-text-2">
               Pricing
             </Link>
@@ -257,6 +258,7 @@ export default async function WillowVsJaneAppPage() {
             <span>© {new Date().getFullYear()} Sulo Systems Inc.</span>
           </div>
         </div>
+        <SiteCredit />
       </footer>
     </div>
   );
