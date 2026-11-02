@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
-import { startCheckout, openBillingPortal, cancelSubscription, resumeSubscription } from "./actions";
+import { startCheckout, redeemPromoCode, openBillingPortal, cancelSubscription, resumeSubscription } from "./actions";
+import { PromoCodeField } from "./promo-code-field";
 import { SettingsTabs } from "../tabs";
 import { PLANS } from "@/utils/plans";
 
@@ -31,9 +32,9 @@ function daysUntil(isoDate: string): number {
 export default async function BillingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; checkout?: string }>;
+  searchParams: Promise<{ error?: string; checkout?: string; promo?: string; promoApplied?: string }>;
 }) {
-  const { error, checkout } = await searchParams;
+  const { error, checkout, promo, promoApplied } = await searchParams;
   const staff = await getCurrentStaff();
   const supabase = await createClient();
 
@@ -70,6 +71,11 @@ export default async function BillingPage({
       {checkout === "success" && (
         <p className="mt-4 rounded-lg bg-ok-tint px-3 py-2 text-[13px] text-ok">
           Subscription confirmed. Thank you!
+        </p>
+      )}
+      {promoApplied && (
+        <p className="mt-4 rounded-lg bg-ok-tint px-3 py-2 text-[13px] text-ok">
+          Promo code applied — your free trial has been extended.
         </p>
       )}
       {checkout === "cancelled" && (
@@ -156,31 +162,37 @@ export default async function BillingPage({
         </div>
       ) : (
         <div className="mt-6">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {PLANS.map((plan) => (
-              <div key={plan.key} className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
-                <div className="text-[13px] font-semibold text-text-2">{plan.name}</div>
-                <div className="mt-1 text-[28px] font-bold tracking-tight text-foreground">
-                  {plan.price}
-                  <span className="text-[13px] font-semibold text-text-2">/month CAD</span>
-                </div>
-                <p className="mt-1 text-[12.5px] text-text-3">{plan.tagline}</p>
-                <p className="mt-3 text-[13px] font-semibold text-foreground">{plan.detail}</p>
+          {/* One form around the whole picker: the promo box is shared, and
+              each plan's button submits its own plan. */}
+          <form action={startCheckout}>
+            {staff.role === "practice_admin" && (
+              <PromoCodeField defaultValue={promo} applyAction={redeemPromoCode} />
+            )}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {PLANS.map((plan) => (
+                <div key={plan.key} className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
+                  <div className="text-[13px] font-semibold text-text-2">{plan.name}</div>
+                  <div className="mt-1 text-[28px] font-bold tracking-tight text-foreground">
+                    {plan.price}
+                    <span className="text-[13px] font-semibold text-text-2">/month CAD</span>
+                  </div>
+                  <p className="mt-1 text-[12.5px] text-text-3">{plan.tagline}</p>
+                  <p className="mt-3 text-[13px] font-semibold text-foreground">{plan.detail}</p>
 
-                {staff.role === "practice_admin" && (
-                  <form action={startCheckout} className="mt-5">
-                    <input type="hidden" name="plan" value={plan.key} />
+                  {staff.role === "practice_admin" && (
                     <button
                       type="submit"
-                      className="w-full rounded-lg bg-brand px-4 py-2 text-[13.6px] font-semibold text-white transition hover:bg-brand-ink"
+                      name="plan"
+                      value={plan.key}
+                      className="mt-5 w-full rounded-lg bg-brand px-4 py-2 text-[13.6px] font-semibold text-white transition hover:bg-brand-ink"
                     >
                       Subscribe
                     </button>
-                  </form>
-                )}
-              </div>
-            ))}
-          </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </form>
           {staff.role !== "practice_admin" && (
             <p className="mt-4 text-[12.5px] text-text-3">
               Only your practice admin can manage billing.

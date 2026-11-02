@@ -2,15 +2,16 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { BrandMark } from "@/components/brand-mark";
 import { logout } from "@/app/(app)/actions";
-import { startCheckout } from "@/app/(app)/settings/billing/actions";
+import { startCheckout, redeemPromoCode } from "@/app/(app)/settings/billing/actions";
+import { PromoCodeField } from "@/app/(app)/settings/billing/promo-code-field";
 import { PLANS } from "@/utils/plans";
 
 export default async function TrialExpiredPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; promo?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, promo } = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -76,30 +77,32 @@ export default async function TrialExpiredPage({
 
           {staffRow.role === "practice_admin" ? (
             <div className="space-y-3">
-              {PLANS.map((plan) => (
-                <div
-                  key={plan.key}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5"
-                >
-                  <div>
-                    <div className="text-[13.4px] font-semibold text-foreground">
-                      Willow {plan.name}
+              <form action={startCheckout} className="space-y-3">
+                <PromoCodeField defaultValue={promo} applyAction={redeemPromoCode} />
+                {PLANS.map((plan) => (
+                  <div
+                    key={plan.key}
+                    className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5"
+                  >
+                    <div>
+                      <div className="text-[13.4px] font-semibold text-foreground">
+                        Willow {plan.name}
+                      </div>
+                      <div className="text-[12px] text-text-3">
+                        {plan.price}/month CAD · {plan.detail}
+                      </div>
                     </div>
-                    <div className="text-[12px] text-text-3">
-                      {plan.price}/month CAD · {plan.detail}
-                    </div>
-                  </div>
-                  <form action={startCheckout}>
-                    <input type="hidden" name="plan" value={plan.key} />
                     <button
                       type="submit"
+                      name="plan"
+                      value={plan.key}
                       className="flex-none rounded-lg bg-brand px-3.5 py-2 text-[12.8px] font-semibold text-white transition hover:bg-brand-ink"
                     >
                       Subscribe
                     </button>
-                  </form>
-                </div>
-              ))}
+                  </div>
+                ))}
+              </form>
               <div className="border-t border-border pt-4">
                 <div className="text-[13px] font-semibold text-foreground">Need your records?</div>
                 <p className="mt-1 text-[12px] text-text-3">

@@ -3,7 +3,8 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { friendlyErrorMessage } from "@/utils/friendly-error";
-import { clientIp, rateLimitAll } from "@/utils/rate-limit";
+import { clientIp, rateLimit, rateLimitAll } from "@/utils/rate-limit";
+import { findUsablePromo, normalizePromoCode, PROMO_INVALID_MESSAGE } from "@/utils/promo";
 
 export async function signup(formData: FormData) {
   const email = formData.get("email") as string;
@@ -18,6 +19,26 @@ export async function signup(formData: FormData) {
     redirect(`/signup?error=${encodeURIComponent("Too many sign-up attempts — please try again in an hour.")}`);
   }
 
+  // Optional promo code. Only free-trial codes make sense before a practice
+  // exists (discount codes apply at checkout), and a bad code is rejected
+  // here rather than silently dropped, so nobody signs up expecting a longer
+  // trial they won't get. Validated again when the practice is created.
+  const promoCode = normalizePromoCode(formData.get("promoCode"));
+  if (promoCode) {
+    const promoAllowed = await rateLimit("signup-promo-ip", await clientIp(), 10, 3600);
+    const promo = promoAllowed ? await findUsablePromo(promoCode) : null;
+    const promoError = !promoAllowed
+      ? "Too many promo code attempts — please try again later."
+      : !promo
+        ? PROMO_INVALID_MESSAGE
+        : promo.kind !== "trial_days"
+          ? "That code is a checkout discount — enter it when you subscribe, after your trial."
+          : null;
+    if (promoError) {
+      redirect(`/signup?error=${encodeURIComponent(promoError)}&promo=${encodeURIComponent(promoCode)}`);
+    }
+  }
+
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -27,7 +48,7 @@ export async function signup(formData: FormData) {
       // Carries the practice name across the email-confirmation gap (no
       // session exists yet to write it to a practices row) -- onboarding
       // reads it back from user_metadata so it only has to be asked once.
-      data: { practice_name: practiceName },
+      data: { practice_name: practiceName, ...(promoCode ? { promo_code: promoCode } : {}) },
     },
   });
 

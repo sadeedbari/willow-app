@@ -289,5 +289,22 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 
+  // A discount promo code used at checkout (startCheckout puts promo_code_id
+  // on the subscription's metadata). The redemption is recorded only now, once
+  // the subscription is really live, so an abandoned checkout never uses up a
+  // code. record_checkout_promo is idempotent per (code, practice), so Stripe
+  // retries and the created+updated event pair can't double-count. Best-effort:
+  // a failure here must never turn a good subscription event into a 500.
+  const promoCodeId = subscription.metadata?.promo_code_id;
+  if (promoCodeId && (status === "active" || status === "trialing")) {
+    const { error: promoError } = await adminClient.rpc("record_checkout_promo", {
+      p_practice_id: practiceId,
+      p_promo_code_id: promoCodeId,
+    });
+    if (promoError) {
+      console.error("Failed to record checkout promo:", promoError.message);
+    }
+  }
+
   return new Response(JSON.stringify({ received: true }), { status: 200 });
 });

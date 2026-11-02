@@ -28,9 +28,9 @@ const jsonLd = {
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; promo?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, promo } = await searchParams;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-surface-2 px-4 py-10">
@@ -101,6 +101,22 @@ export default async function SignupPage({
                 className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
               />
               <p className="mt-1 text-[11.5px] text-text-3">{PASSWORD_REQUIREMENTS_HINT}</p>
+            </div>
+            <div>
+              <label htmlFor="promoCode" className="block text-[12.5px] font-semibold text-text-2">
+                Promo code <span className="font-normal text-text-3">(optional)</span>
+              </label>
+              <input
+                id="promoCode"
+                name="promoCode"
+                type="text"
+                defaultValue={(promo ?? "").slice(0, 32)}
+                autoComplete="off"
+                autoCapitalize="characters"
+                spellCheck={false}
+                maxLength={32}
+                className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13.6px] uppercase text-foreground outline-none placeholder:normal-case focus:border-brand focus:ring-1 focus:ring-brand"
+              />
             </div>
             <button
               type="submit"

@@ -189,6 +189,7 @@ export default async function AppLayout({
     { data: practiceFields },
     { data: emergencyContact },
     { data: factorsData },
+    { data: isPlatformAdmin },
   ] = await Promise.all([
     supabase.from("message_threads").select("id, staff_last_read_at, updated_at"),
     supabase.from("notifications").select("id", { count: "exact", head: true }).eq("staff_id", staff.id).is("read_at", null),
@@ -205,7 +206,34 @@ export default async function AppLayout({
       .eq("practice_id", staff.practiceId)
       .maybeSingle(),
     supabase.auth.mfa.listFactors(),
+    supabase.rpc("is_platform_admin"),
   ]);
+
+  // Sulo Systems' own platform-admin tools (promo codes) show up only for
+  // the few logins in platform_admins; the page itself also 404s for anyone else.
+  const navSections = isPlatformAdmin
+    ? NAV.map((section) =>
+        section.group === "Practice Admin"
+          ? {
+              ...section,
+              items: [
+                ...section.items,
+                {
+                  href: "/platform/promo-codes",
+                  label: "Promo codes",
+                  color: "bg-hue-admin",
+                  icon: (
+                    <>
+                      <path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z" />
+                      <circle cx="7.5" cy="7.5" r="1" />
+                    </>
+                  ),
+                },
+              ],
+            }
+          : section,
+      )
+    : NAV;
 
   const mfaEnabled = !!factorsData?.totp?.some((f) => f.status === "verified");
 
@@ -297,7 +325,7 @@ export default async function AppLayout({
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
-          {NAV.map((section) => {
+          {navSections.map((section) => {
             const visibleItems = section.items.filter(
               (item) => !item.roles || (item.roles as string[]).includes(staff.role)
             );

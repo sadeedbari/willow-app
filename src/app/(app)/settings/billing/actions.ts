@@ -4,7 +4,11 @@ import { createClient } from "@/utils/supabase/server";
 import { getCurrentStaff, getCurrentStaffAllowExpiredTrial } from "@/utils/supabase/current-staff";
 import { stripe } from "@/utils/stripe/server";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { friendlyErrorMessage } from "@/utils/friendly-error";
+import { createServiceRoleClient } from "@/utils/supabase/service-role";
+import { rateLimit } from "@/utils/rate-limit";
+import { findUsablePromo, normalizePromoCode, PROMO_INVALID_MESSAGE, type PromoCode } from "@/utils/promo";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
@@ -36,6 +40,91 @@ const BILLING_PORTAL_CONFIGURATION_ID = "bpc_1UJ2Uw8nJOCbrtNYDurVpN1W";
 function isMissingCustomerError(err: unknown): boolean {
   const e = err as { code?: string; param?: string; message?: string };
   return e?.code === "resource_missing" && (e.param === "customer" || (e.message ?? "").includes("No such customer"));
+}
+
+// One Stripe coupon per promo code, created the first time someone checks out
+// with it (id derived from our own promo id, so it's idempotent and the coupon
+// always matches what the promo_codes row says).
+async function ensureStripeCoupon(promo: PromoCode): Promise<string> {
+  const id = `willow-promo-${promo.id}`;
+  try {
+    await stripe.coupons.retrieve(id);
+    return id;
+  } catch (err) {
+    if ((err as { code?: string })?.code !== "resource_missing") throw err;
+  }
+  await stripe.coupons.create({
+    id,
+    name: `Promo ${promo.code}`,
+    percent_off: promo.percent_off!,
+    duration: "repeating",
+    duration_in_months: promo.discount_months!,
+    metadata: { promo_code_id: promo.id },
+  });
+  return id;
+}
+
+const PROMO_ERROR_MESSAGES: Record<string, string> = {
+  not_eligible: "Free-trial promo codes can only be applied before you subscribe.",
+  already_used: "Your practice has already used a free-trial promo code.",
+};
+
+// Applies a free-trial code to the signed-in practice via the SECURITY DEFINER
+// redeem_promo_code() function (which re-checks everything under a row lock).
+// Returns an error message, or null on success.
+async function applyTrialPromo(supabase: Awaited<ReturnType<typeof createClient>>, code: string): Promise<string | null> {
+  const { data, error } = await supabase.rpc("redeem_promo_code", { p_code: code });
+  if (error) return "Could not apply that promo code — please try again.";
+  const result = data as { ok: boolean; error?: string } | null;
+  if (result?.ok) return null;
+  return PROMO_ERROR_MESSAGES[result?.error ?? ""] ?? PROMO_INVALID_MESSAGE;
+}
+
+// The Apply button next to the promo box. Free-trial codes extend the trial
+// straight away; a checkout-discount code is applied by the Subscribe buttons
+// instead, so we just say so (and keep the code in the box).
+export async function redeemPromoCode(formData: FormData) {
+  const staff = await getCurrentStaffAllowExpiredTrial();
+  if (staff.role !== "practice_admin") {
+    redirect("/settings/billing?error=Only+practice+admins+can+manage+billing");
+  }
+
+  const supabase = await createClient();
+  const { data: practice } = await supabase
+    .from("practices")
+    .select("subscription_status, trial_ends_at")
+    .eq("id", staff.practiceId)
+    .single();
+  const trialExpired =
+    practice?.subscription_status === "trialing" &&
+    !!practice.trial_ends_at &&
+    new Date(practice.trial_ends_at) < new Date();
+  const returnPath = trialExpired || practice?.subscription_status === "canceled" ? "/trial-expired" : "/settings/billing";
+
+  const code = normalizePromoCode(formData.get("promoCode"));
+  if (!code) {
+    redirect(`${returnPath}?error=${encodeURIComponent("Enter a promo code first.")}`);
+  }
+  const back = (message: string) => `${returnPath}?error=${encodeURIComponent(message)}&promo=${encodeURIComponent(code)}`;
+
+  if (!(await rateLimit("promo-practice", staff.practiceId, 10, 3600))) {
+    redirect(back("Too many promo code attempts — please try again later."));
+  }
+
+  const promo = await findUsablePromo(code);
+  if (!promo) {
+    redirect(back(PROMO_INVALID_MESSAGE));
+  }
+  if (promo.kind === "discount") {
+    redirect(back("That code is a checkout discount — leave it in the box and click Subscribe on the plan you want."));
+  }
+
+  const failure = await applyTrialPromo(supabase, code);
+  if (failure) {
+    redirect(back(failure));
+  }
+  revalidatePath("/", "layout");
+  redirect("/settings/billing?promoApplied=1");
 }
 
 export async function startCheckout(formData: FormData) {
@@ -72,6 +161,44 @@ export async function startCheckout(formData: FormData) {
   const subscriptionCanceled = practice.subscription_status === "canceled";
   const returnPath = trialExpired || subscriptionCanceled ? "/trial-expired" : "/settings/billing";
 
+  // Optional promo code from the box above the plan buttons.
+  const promoInput = normalizePromoCode(formData.get("promoCode"));
+  let discountPromo: PromoCode | null = null;
+  if (promoInput) {
+    const backWith = (message: string) =>
+      `${returnPath}?error=${encodeURIComponent(message)}&promo=${encodeURIComponent(promoInput)}`;
+
+    if (!(await rateLimit("promo-practice", practice.id, 10, 3600))) {
+      redirect(backWith("Too many promo code attempts — please try again later."));
+    }
+    const promo = await findUsablePromo(promoInput);
+    if (!promo) {
+      redirect(backWith(PROMO_INVALID_MESSAGE));
+    }
+
+    if (promo.kind === "trial_days") {
+      // A free-trial code entered at checkout just extends the trial; there's
+      // nothing to charge yet, so don't send them on to Stripe.
+      const failure = await applyTrialPromo(supabase, promoInput);
+      if (failure) {
+        redirect(backWith(failure));
+      }
+      revalidatePath("/", "layout");
+      redirect("/settings/billing?promoApplied=1");
+    }
+
+    const { data: alreadyUsed } = await createServiceRoleClient()
+      .from("promo_redemptions")
+      .select("id")
+      .eq("promo_code_id", promo.id)
+      .eq("practice_id", practice.id)
+      .maybeSingle();
+    if (alreadyUsed) {
+      redirect(backWith("Your practice has already used that promo code."));
+    }
+    discountPromo = promo;
+  }
+
   // Resolved before the try/catch below (which is scoped to the
   // customer/session creation flow and would otherwise swallow this
   // redirect() call's own throw as a generic Stripe error -- see the
@@ -91,6 +218,19 @@ export async function startCheckout(formData: FormData) {
   // below -- TS doesn't carry control-flow narrowing of a `let` into a
   // closure, since it could in principle be reassigned before the closure runs.
   const resolvedPriceId: string = priceId;
+
+  let couponId: string | undefined;
+  let couponError: string | null = null;
+  if (discountPromo) {
+    try {
+      couponId = await ensureStripeCoupon(discountPromo);
+    } catch (err) {
+      couponError = friendlyErrorMessage(err as { code?: string; message?: string }, "Could not apply that promo code");
+    }
+  }
+  if (couponError) {
+    redirect(`${returnPath}?error=${encodeURIComponent(couponError)}&promo=${encodeURIComponent(promoInput)}`);
+  }
 
   let checkoutUrl: string | null = null;
   let errorMessage: string | null = null;
@@ -115,7 +255,12 @@ export async function startCheckout(formData: FormData) {
         mode: "subscription",
         customer: customerId,
         line_items: [{ price: resolvedPriceId, quantity: 1 }],
-        subscription_data: { metadata: { practice_id: practice.id, plan } },
+        ...(couponId ? { discounts: [{ coupon: couponId }] } : {}),
+        // promo_code_id rides on the subscription so the Stripe webhook can
+        // record the redemption once the subscription is really active.
+        subscription_data: {
+          metadata: { practice_id: practice.id, plan, ...(discountPromo ? { promo_code_id: discountPromo.id } : {}) },
+        },
         success_url: `${SITE_URL}${returnPath}?checkout=success`,
         cancel_url: `${SITE_URL}${returnPath}?checkout=cancelled`,
         // Managed Payments (on by default on newer Stripe accounts) requires a
