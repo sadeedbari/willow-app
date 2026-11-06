@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { getCurrentStaff } from "@/utils/supabase/current-staff";
 import { friendlyErrorMessage } from "@/utils/friendly-error";
 import { sendAppointmentConfirmationEmail } from "@/utils/appointment-email";
@@ -76,44 +77,60 @@ export async function createAppointment(formData: FormData) {
     redirect(`${reopenHref}&error=${encodeURIComponent(friendlyErrorMessage(error, "Could not create appointment"))}`);
   }
 
-  let videoClientUrl: string | null = null;
+  // Everything from here on talks to outside services (Daily.co to make the
+  // video room and its two access links, then Resend for the confirmation
+  // email) and used to run BEFORE the redirect, so the practitioner sat
+  // waiting 1-3+ seconds after clicking Schedule for work they don't need to
+  // see finish. after() runs it right after the response is sent -- still in
+  // order (room -> save links -> email, so the email carries the video link),
+  // and still best-effort: a failure here only gets logged, exactly as before,
+  // and never undoes the appointment that's already saved.
+  const practiceId = staff.practiceId;
+  const practiceName = staff.practiceName;
+  after(async () => {
+    try {
+      let videoClientUrl: string | null = null;
 
-  if (locationType === "telehealth") {
-    const video = await createDailyRoomWithAccessLinks({
-      apiKey: await getDailyApiKey(staff.practiceId),
-      name: appointment.id,
-      endsAt,
-    });
-    if (video) {
-      videoClientUrl = video.clientUrl;
-      await supabase
-        .from("appointments")
-        .update({
-          video_room_url: video.roomUrl,
-          video_practitioner_url: video.practitionerUrl,
-          video_client_url: video.clientUrl,
-        })
-        .eq("id", appointment.id);
+      if (locationType === "telehealth") {
+        const video = await createDailyRoomWithAccessLinks({
+          apiKey: await getDailyApiKey(practiceId),
+          name: appointment.id,
+          endsAt,
+        });
+        if (video) {
+          videoClientUrl = video.clientUrl;
+          await supabase
+            .from("appointments")
+            .update({
+              video_room_url: video.roomUrl,
+              video_practitioner_url: video.practitionerUrl,
+              video_client_url: video.clientUrl,
+            })
+            .eq("id", appointment.id);
+        }
+      }
+
+      const [{ data: client }, { data: clinician }] = await Promise.all([
+        supabase.from("clients").select("full_name, email").eq("id", clientId).single(),
+        supabase.from("staff").select("full_name").eq("id", staffId).single(),
+      ]);
+
+      if (client) {
+        await sendAppointmentConfirmationEmail({
+          clientEmail: client.email,
+          clientName: client.full_name,
+          staffName: clinician?.full_name ?? null,
+          practiceName,
+          startsAt: startsAt.toISOString(),
+          type,
+          locationType,
+          videoClientUrl,
+        });
+      }
+    } catch (err) {
+      console.error("Post-scheduling tasks (video room / confirmation email) failed:", err);
     }
-  }
-
-  const [{ data: client }, { data: clinician }] = await Promise.all([
-    supabase.from("clients").select("full_name, email").eq("id", clientId).single(),
-    supabase.from("staff").select("full_name").eq("id", staffId).single(),
-  ]);
-
-  if (client) {
-    await sendAppointmentConfirmationEmail({
-      clientEmail: client.email,
-      clientName: client.full_name,
-      staffName: clinician?.full_name ?? null,
-      practiceName: staff.practiceName,
-      startsAt: startsAt.toISOString(),
-      type,
-      locationType,
-      videoClientUrl,
-    });
-  }
+  });
 
   redirect(returnTo);
 }
