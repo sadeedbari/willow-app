@@ -8,6 +8,7 @@ import { avatarColorFor, initialsOf } from "@/utils/avatar-color";
 import { EditClientModal } from "./edit-client-modal";
 import { uploadClientDocument, deleteClientDocument } from "./documents-actions";
 import { removeSavedCard } from "./card-actions";
+import { sendCardAuthorization, revokeAutoCharge } from "./auto-charge-actions";
 import { formatInvoiceLabel } from "@/utils/invoice-label";
 import { DISPLAY_TIME_ZONE } from "@/utils/timezone";
 
@@ -81,7 +82,7 @@ export default async function ClientDetailPage({
   const { data: client } = await supabase
     .from("clients")
     .select(
-      "id, full_name, date_of_birth, phone, email, presenting_concern, status, payer, balance_cents, assigned_staff_id, portal_user_id, default_appointment_type, session_frequency, created_at, stripe_card_brand, stripe_card_last4, appointment_reminders_enabled, staff:assigned_staff_id(full_name)"
+      "id, full_name, date_of_birth, phone, email, presenting_concern, status, payer, balance_cents, assigned_staff_id, portal_user_id, default_appointment_type, session_frequency, created_at, stripe_card_brand, stripe_card_last4, appointment_reminders_enabled, auto_charge_enabled, auto_charge_consented_at, auto_charge_signed_by, staff:assigned_staff_id(full_name)"
     )
     .eq("id", id)
     .single();
@@ -136,7 +137,7 @@ export default async function ClientDetailPage({
         .order("issue_date", { ascending: false }),
       supabase
         .from("consent_forms")
-        .select("id, form_type, status, signed_at, access_token")
+        .select("id, form_type, status, signed_at, sent_at, access_token, consent_form_templates(slug)")
         .eq("client_id", id)
         .order("created_at", { ascending: false }),
       canSendConsent
@@ -159,6 +160,22 @@ export default async function ClientDetailPage({
         ? supabase.rpc("get_client_access_log", { p_client_id: id })
         : Promise.resolve({ data: null }),
     ]);
+
+  // Automatic payment panel: is the practice able to charge cards, and is a
+  // card-on-file authorization already out waiting for the client's signature?
+  const { data: stripeStatus } = canManageInvoices
+    ? await supabase
+        .from("practices")
+        .select("stripe_connect_charges_enabled")
+        .eq("id", staff.practiceId)
+        .single()
+    : { data: null };
+  const practiceCanCharge = !!stripeStatus?.stripe_connect_charges_enabled;
+  const pendingCardAuth = (consentForms ?? []).find(
+    (f) =>
+      f.status === "pending" &&
+      (f.consent_form_templates as unknown as { slug: string } | null)?.slug === "card_on_file",
+  );
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   const sentForm = consentToken ? consentForms?.find((f) => f.access_token === consentToken) : null;
@@ -604,6 +621,101 @@ export default async function ClientDetailPage({
                     <p className="mt-2 text-[13px] text-text-3">
                       No card on file yet — the client can save one the next time they pay an invoice online.
                     </p>
+                  )}
+                </div>
+              )}
+
+
+              {canManageInvoices && (
+                <div className="mt-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-[13px] font-bold text-foreground">Automatic payment</div>
+                    <span
+                      className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                        client.auto_charge_enabled
+                          ? "bg-ok-tint text-ok"
+                          : pendingCardAuth
+                            ? "bg-warn-tint text-warn"
+                            : "bg-surface-2 text-text-2"
+                      }`}
+                    >
+                      {client.auto_charge_enabled ? "On" : pendingCardAuth ? "Awaiting signature" : "Off"}
+                    </span>
+                  </div>
+
+                  {client.auto_charge_enabled ? (
+                    <>
+                      <p className="mt-2 text-[13px] text-text-2">
+                        {client.auto_charge_signed_by ?? "The client"} authorized automatic payment
+                        {client.auto_charge_consented_at
+                          ? ` on ${new Date(client.auto_charge_consented_at).toLocaleDateString(undefined, {
+                              month: "long",
+                              day: "numeric",
+                              year: "numeric",
+                              timeZone: DISPLAY_TIME_ZONE,
+                            })}`
+                          : ""}
+                        . When an appointment ends, their saved card is charged for the invoice and they get a receipt
+                        by email.
+                      </p>
+                      {!client.stripe_card_last4 && (
+                        <p className="mt-2 rounded-lg bg-warn-tint px-3 py-2 text-[12.5px] text-warn">
+                          No card is saved yet, so invoices are sent as usual until the client saves one. They can do
+                          that by paying an invoice online and ticking &ldquo;save my payment info&rdquo;.
+                        </p>
+                      )}
+                      <form action={revokeAutoCharge} className="mt-3">
+                        <input type="hidden" name="clientId" value={client.id} />
+                        <button type="submit" className="text-[12px] font-semibold text-bad">
+                          Turn off automatic payment
+                        </button>
+                        <span className="ml-2 text-[11.5px] text-text-3">
+                          The client would need to sign a new authorization to turn it back on.
+                        </span>
+                      </form>
+                    </>
+                  ) : (
+                    <>
+                      <p className="mt-2 text-[13px] text-text-2">
+                        Charge this client&apos;s saved card automatically when each appointment ends. It starts only
+                        after the client signs a card-on-file authorization.
+                      </p>
+                      {!practiceCanCharge && (
+                        <p className="mt-2 rounded-lg bg-warn-tint px-3 py-2 text-[12.5px] text-warn">
+                          Connect Stripe under{" "}
+                          <Link href="/settings/integrations" className="font-semibold underline">
+                            Settings → Integrations
+                          </Link>{" "}
+                          before turning this on, so cards can be charged.
+                        </p>
+                      )}
+                      {pendingCardAuth && (
+                        <p className="mt-2 text-[12.5px] text-text-3">
+                          Authorization sent
+                          {pendingCardAuth.sent_at
+                            ? ` ${new Date(pendingCardAuth.sent_at).toLocaleDateString(undefined, {
+                                month: "long",
+                                day: "numeric",
+                                timeZone: DISPLAY_TIME_ZONE,
+                              })}`
+                            : ""}
+                          . Waiting for the client to sign it.
+                        </p>
+                      )}
+                      <form action={sendCardAuthorization} className="mt-3">
+                        <input type="hidden" name="clientId" value={client.id} />
+                        <button
+                          type="submit"
+                          className="rounded-lg border border-border px-3.5 py-2 text-[12.8px] font-semibold text-text-2 transition hover:border-brand hover:text-brand-ink"
+                        >
+                          {pendingCardAuth ? "Send the authorization again" : "Send card-on-file authorization"}
+                        </button>
+                      </form>
+                      <p className="mt-2 text-[11.5px] text-text-3">
+                        Two steps for the client: sign the authorization, then save a card (when they pay an invoice
+                        online they tick &ldquo;save my payment info&rdquo;).
+                      </p>
+                    </>
                   )}
                 </div>
               )}

@@ -67,7 +67,9 @@ export async function createAndSendConsentForm(
       client_id: params.clientId,
       form_type: template.title,
       template_id: params.templateId,
-      body_snapshot: template.body,
+      // {{practice_name}} lets a template (e.g. the card-on-file authorization)
+      // name the practice it is signed for; the snapshot is what the client sees.
+      body_snapshot: template.body.replaceAll("{{practice_name}}", params.practiceName),
       status: "pending",
     })
     .select("access_token")

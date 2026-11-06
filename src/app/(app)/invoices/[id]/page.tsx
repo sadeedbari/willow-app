@@ -55,7 +55,7 @@ export default async function InvoiceDetailPage({
   const { data: invoice } = await supabase
     .from("invoices")
     .select(
-      "id, invoice_number, invoice_label, status, issue_date, due_date, total_cents, amount_paid_cents, payment_method, paid_at, notes, client_id, payment_token, clients(full_name, email, stripe_card_brand, stripe_card_last4), issued_by_staff_id, staff(full_name, credential, license_number, license_province)"
+      "id, invoice_number, invoice_label, status, issue_date, due_date, total_cents, amount_paid_cents, payment_method, paid_at, notes, client_id, payment_token, auto_charge_result, clients(full_name, email, stripe_card_brand, stripe_card_last4), issued_by_staff_id, staff(full_name, credential, license_number, license_province)"
     )
     .eq("id", id)
     .single();
@@ -174,6 +174,20 @@ export default async function InvoiceDetailPage({
           )}
         </div>
       </div>
+
+      {invoice.auto_charge_result && (
+        <p
+          className={`mt-3 rounded-lg px-3 py-2 text-[12.5px] ${
+            invoice.auto_charge_result === "charged" ? "bg-ok-tint text-ok" : "bg-warn-tint text-warn"
+          }`}
+        >
+          {invoice.auto_charge_result === "charged"
+            ? invoice.status === "paid"
+              ? "Paid automatically with the client's saved card."
+              : "Charged automatically with the client's saved card — payment is being confirmed."
+            : `Automatic payment didn't go through (${invoice.auto_charge_result.replace(/^failed: /, "")}). You can send the client a payment link or try Charge saved card.`}
+        </p>
+      )}
 
       {issuer && (
         <p className="mt-2 text-[12px] text-text-3">

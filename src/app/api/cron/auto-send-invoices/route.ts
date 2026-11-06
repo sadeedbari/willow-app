@@ -2,6 +2,9 @@ import { createServiceRoleClient } from "@/utils/supabase/service-role";
 import { buildInvoicePdf } from "@/app/(app)/invoices/[id]/pdf/build";
 import { sendInvoiceEmail } from "@/utils/invoice-email";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { stripe } from "@/utils/stripe/server";
+import { chargeSavedCardOffSession } from "@/utils/auto-charge";
+import { formatInvoiceLabel } from "@/utils/invoice-label";
 
 // A backlog that couldn't be auto-invoiced (e.g. no default service code
 // configured yet) must never surface once the missing setting is fixed --
@@ -19,8 +22,93 @@ type DueAppointment = {
   type: string;
   starts_at: string;
   ends_at: string;
+  auto_send_invoice: boolean;
   auto_invoice_notice_sent_at: string | null;
 };
+
+const APPOINTMENT_COLUMNS =
+  "id, practice_id, client_id, staff_id, type, starts_at, ends_at, auto_send_invoice, auto_invoice_notice_sent_at";
+
+type AutoChargeResult = "charged" | "failed" | "skipped";
+
+// Automatic payment for a client who signed the card-on-file authorization:
+// charge the saved card for the appointment's invoice the moment the
+// appointment has ended. Never throws, and never charges more than once per
+// invoice (the attempt is claimed with an atomic update BEFORE any Stripe
+// call, and the Stripe request itself is idempotent). "skipped" means nothing
+// was attempted (no consent / no card / no Stripe account / already tried);
+// "failed" means a charge was attempted and didn't go through.
+async function tryAutoCharge(supabase: SupabaseClient, appt: DueAppointment, invoiceId: string): Promise<AutoChargeResult> {
+  const { data: client } = await supabase
+    .from("clients")
+    .select("auto_charge_enabled, auto_charge_consented_at, stripe_customer_id")
+    .eq("id", appt.client_id)
+    .single();
+
+  if (!client?.auto_charge_enabled || !client.auto_charge_consented_at || !client.stripe_customer_id) return "skipped";
+  // Only sessions that ended AFTER the client agreed -- turning this on never
+  // reaches back and charges for earlier appointments.
+  if (new Date(appt.ends_at) < new Date(client.auto_charge_consented_at)) return "skipped";
+
+  const [{ data: practice }, { data: invoice }] = await Promise.all([
+    supabase
+      .from("practices")
+      .select("stripe_connect_account_id, stripe_connect_charges_enabled")
+      .eq("id", appt.practice_id)
+      .single(),
+    supabase
+      .from("invoices")
+      .select("status, invoice_number, invoice_label, total_cents, amount_paid_cents, auto_charge_attempted_at, issued_by_staff_id")
+      .eq("id", invoiceId)
+      .single(),
+  ]);
+
+  if (!practice?.stripe_connect_account_id || !practice.stripe_connect_charges_enabled) return "skipped";
+  if (!invoice || invoice.status !== "draft" || invoice.auto_charge_attempted_at) return "skipped";
+
+  const balanceCents = invoice.total_cents - invoice.amount_paid_cents;
+  if (balanceCents <= 0) return "skipped";
+
+  // Claim the one attempt. If another run got here first, this updates 0 rows.
+  const { data: claimed } = await supabase
+    .from("invoices")
+    .update({ auto_charge_attempted_at: new Date().toISOString() })
+    .eq("id", invoiceId)
+    .is("auto_charge_attempted_at", null)
+    .select("id")
+    .maybeSingle();
+  if (!claimed) return "skipped";
+
+  const label = formatInvoiceLabel(invoice.invoice_number, invoice.invoice_label);
+  const outcome = await chargeSavedCardOffSession(stripe, {
+    stripeAccount: practice.stripe_connect_account_id,
+    customerId: client.stripe_customer_id,
+    invoiceId,
+    amountCents: balanceCents,
+    description: `${label} — automatic payment`,
+  });
+
+  if (outcome.kind === "charged") {
+    await supabase.from("invoices").update({ auto_charge_result: "charged" }).eq("id", invoiceId);
+    // The Stripe webhook marks it paid (and emails the receipt). Only move a
+    // still-draft invoice to "sent" -- never overwrite "paid" if the webhook
+    // already got there first.
+    await supabase.from("invoices").update({ status: "sent" }).eq("id", invoiceId).eq("status", "draft");
+    return "charged";
+  }
+
+  const reason = outcome.kind === "no_card" ? "No card is saved for this client anymore." : outcome.reason;
+  await supabase.from("invoices").update({ auto_charge_result: `failed: ${reason}` }).eq("id", invoiceId);
+  await supabase.from("notifications").insert({
+    practice_id: appt.practice_id,
+    staff_id: invoice.issued_by_staff_id ?? appt.staff_id,
+    type: "payment_failed",
+    title: "Automatic payment didn't go through",
+    body: `${label}: ${reason}`,
+    link: `/invoices/${invoiceId}`,
+  });
+  return "failed";
+}
 
 // Fires an admin notification for this appointment at most once -- without
 // this, an unresolved condition (missing service code, a stale backlog)
@@ -74,14 +162,33 @@ export async function POST(request: Request) {
   const now = new Date();
   const staleCutoff = new Date(now.getTime() - STALE_HOURS * 60 * 60 * 1000);
 
-  const { data: dueAppointments } = await supabase
+  const { data: autoSendAppointments } = await supabase
     .from("appointments")
-    .select("id, practice_id, client_id, staff_id, type, starts_at, ends_at, auto_invoice_notice_sent_at")
+    .select(APPOINTMENT_COLUMNS)
     .eq("auto_send_invoice", true)
     .neq("status", "cancelled")
     .lte("ends_at", now.toISOString());
 
+  // Appointments for clients with automatic payment on, even when the
+  // appointment itself isn't set to auto-send its invoice. Recently ended
+  // only: this never sweeps up old sessions.
+  const { data: autoChargeAppointments } = await supabase
+    .from("appointments")
+    .select(`${APPOINTMENT_COLUMNS}, clients!inner(auto_charge_enabled)`)
+    .eq("clients.auto_charge_enabled", true)
+    .neq("status", "cancelled")
+    .lte("ends_at", now.toISOString())
+    .gte("ends_at", staleCutoff.toISOString());
+
+  const dueById = new Map<string, DueAppointment>();
+  for (const a of [...(autoSendAppointments ?? []), ...(autoChargeAppointments ?? [])] as DueAppointment[]) {
+    dueById.set(a.id, a);
+  }
+  const dueAppointments = [...dueById.values()];
+
   let invoiced = 0;
+  let autoCharged = 0;
+  let autoChargeFailed = 0;
   let skippedNoDefault = 0;
   let skippedStale = 0;
 
@@ -102,6 +209,20 @@ export async function POST(request: Request) {
     if (existingLineItem) {
       const invoiceStatus = (existingLineItem.invoices as unknown as { status: string } | null)?.status;
       if (invoiceStatus !== "draft") continue;
+
+      // Clients on automatic payment are charged first; the paid receipt is
+      // emailed by the Stripe webhook, so there's no separate invoice email.
+      const autoResult = await tryAutoCharge(supabase, appt, existingLineItem.invoice_id);
+      if (autoResult === "charged") {
+        autoCharged++;
+        continue;
+      }
+      if (autoResult === "failed") autoChargeFailed++;
+
+      // Not charged (no card yet, or the charge didn't go through): fall back
+      // to the normal invoice email -- but only where this appointment was set
+      // to auto-send; otherwise leave the draft for the practice.
+      if (!appt.auto_send_invoice) continue;
 
       const built = await buildInvoicePdf(supabase, existingLineItem.invoice_id);
       if (built?.clientEmail) {
@@ -202,5 +323,5 @@ export async function POST(request: Request) {
     invoiced++;
   }
 
-  return Response.json({ checked: dueAppointments?.length ?? 0, invoiced, skippedNoDefault, skippedStale });
+  return Response.json({ checked: dueAppointments.length, invoiced, autoCharged, autoChargeFailed, skippedNoDefault, skippedStale });
 }

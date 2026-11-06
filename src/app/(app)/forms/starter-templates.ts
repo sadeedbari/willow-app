@@ -60,6 +60,33 @@ To cancel or reschedule, please contact us at [phone/email] as early as possible
 By signing below, you acknowledge that you have read and understood this policy.`,
   },
   {
+    // Signing a form with this exact slug is what switches on automatic
+    // end-of-appointment charging for that client (see the
+    // sign_consent_form_by_token database function) -- keep the slug as is.
+    // {{practice_name}} is replaced with the practice's real name when the
+    // form is sent.
+    slug: "card_on_file",
+    title: "Card on File Authorization — Automatic Payment",
+    body: `By signing below, I authorize {{practice_name}} (the "Practice") to securely store the credit or debit card I provide and to charge it automatically for the services I receive.
+
+What I am authorizing:
+- At the end of each appointment, the Practice may charge my card on file for the full balance of that appointment's invoice (the session fee plus any applicable taxes). I will receive a receipt by email.
+- The Practice may also charge my card for fees under its cancellation and missed-appointment policy, and for any unpaid balance from earlier appointments.
+- This authorization applies to all of my future appointments until I revoke it. I understand that the amount of each charge depends on the services I receive and may vary.
+
+How my card is handled:
+- My card is processed and stored by Stripe, a secure payment provider. The Practice never sees or stores my full card number.
+- Charges will appear on my statement under the Practice's name.
+
+My rights and responsibilities:
+- I may revoke this authorization at any time by notifying the Practice in writing (for example, by email). Revocation applies to future appointments; any balance already owing remains payable.
+- If a charge is declined, I remain responsible for payment and the Practice may ask me for another form of payment.
+- If I believe a charge is incorrect, I will contact the Practice so it can be reviewed and corrected. Refunds are handled according to the Practice's policies.
+- My receipts and invoices can be submitted to my insurer where my plan covers these services.
+
+I confirm that I am the cardholder, or that I am authorized to use the card I provide, and that I am authorized to give this consent. Typing my name below is my electronic signature.`,
+  },
+  {
     slug: "privacy_practices",
     title: "Notice of Privacy Practices & Personal Health Information",
     body: `This notice describes how your personal health information (PHI) is collected, used, and protected by this practice, in accordance with Ontario's Personal Health Information Protection Act (PHIPA).
