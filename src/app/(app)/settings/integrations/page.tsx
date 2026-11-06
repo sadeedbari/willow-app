@@ -28,6 +28,11 @@ export default async function IntegrationsSettingsPage({
   // Never send the full key back to the browser -- only a masked hint.
   const videoSettings = (videoStatusRows as { last4: string; updated_at: string }[] | null)?.[0] ?? null;
   const maskedKey = videoSettings ? `••••${videoSettings.last4}` : null;
+  // A practice with no key of its own isn't "not connected": getDailyApiKey()
+  // falls back to Willow's shared Daily.co account (DAILY_API_KEY), so
+  // telehealth links work from the first appointment. Only report "Not
+  // connected" if that shared account isn't configured either.
+  const usingSharedVideo = !videoSettings && !!process.env.DAILY_API_KEY;
 
   // Stripe onboarding can be completed, abandoned, or left mid-way in a
   // separate browser tab -- there's no reliable client-side signal for
@@ -152,14 +157,17 @@ export default async function IntegrationsSettingsPage({
         <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
           <div className="mb-3 text-[13px] font-bold text-foreground">Daily.co video account</div>
           <p className="mb-4 text-[12.5px] text-text-2">
-            Telehealth appointments automatically get a unique video call link once this practice&apos;s Daily.co
-            API key is on file. Each practice uses its own Daily.co account.
+            Telehealth appointments automatically get a unique video call link. Every practice starts on
+            Willow&apos;s built-in video account, so there&apos;s nothing to set up. If you&apos;d rather use your own
+            Daily.co account, add its API key below.
           </p>
 
           <div className="mb-4 flex items-center justify-between rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-[13px]">
             <span className="text-text-2">Status</span>
             {videoSettings ? (
-              <span className="font-semibold text-ok">Connected · key ending in {maskedKey}</span>
+              <span className="font-semibold text-ok">Connected · your own Daily.co account (key ending in {maskedKey})</span>
+            ) : usingSharedVideo ? (
+              <span className="font-semibold text-ok">Connected · Willow&apos;s video account</span>
             ) : (
               <span className="font-semibold text-text-3">Not connected</span>
             )}
@@ -170,7 +178,7 @@ export default async function IntegrationsSettingsPage({
               <form action={saveDailyApiKey} className="space-y-3">
                 <div>
                   <label className="block text-[12px] font-semibold text-text-2">
-                    {videoSettings ? "Replace API key" : "Daily.co API key"}
+                    {videoSettings ? "Replace your Daily.co API key" : "Use your own Daily.co account (optional)"}
                   </label>
                   <PasswordInput
                     name="apiKey"
@@ -190,7 +198,7 @@ export default async function IntegrationsSettingsPage({
               {videoSettings && (
                 <form action={removeDailyApiKey} className="mt-3">
                   <button type="submit" className="text-[11.5px] font-semibold text-bad">
-                    Disconnect Daily.co
+                    {process.env.DAILY_API_KEY ? "Switch back to Willow's video account" : "Disconnect Daily.co"}
                   </button>
                 </form>
               )}
